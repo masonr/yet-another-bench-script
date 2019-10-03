@@ -48,11 +48,17 @@ function iperf_test {
 	IPERF_RECVRESULT="$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver)"
 }
 
-IPERF_LOCS=("bouygues.iperf.fr" "ping.online.net" )
-for loc in ${IPERF_LOCS[@]}; do
-	iperf_test $loc	
-	echo "Send result: $IPERF_SENDRESULT"
-	echo "Recv result: $IPERF_RECVRESULT"
+IPERF_LOCS=( \
+	"bouygues.iperf.fr" "Bouygues Telecom" "Paris, FR" \
+	"ping.online.net" "Online.net" "Paris, FR" \
+)
+IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
+IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 3))
+
+for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
+	iperf_test ${IPERF_LOCS[i*3]}
+	echo "${IPERF_LOCS[i*3+1]} in ${IPERF_LOCS[i*3+2]} send result: $IPERF_SENDRESULT"
+	echo "${IPERF_LOCS[i*3+1]} in ${IPERF_LOCS[i*3+2]} recv result: $IPERF_RECVRESULT"
 done
 
 # iperf debug
