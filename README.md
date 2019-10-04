@@ -23,27 +23,32 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Thu Oct  3 10:16:52 EDT 2019
+Thu 03 Oct 2019 10:25:48 PM EDT
 
 Basic System Information:
 ---------------------------------
-Processor: Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
-CPU cores: 4 @ 3499.732 MHz
-RAM      : 1.0G
+Processor  : Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
+CPU cores  : 4 @ 3499.996 MHz
+AES-NI     : ✔ Enabled
+VM-x/AMD-V : ❌ Disabled
+RAM        : 3.9Gi
+Swap       : 511Mi
+Disk       : 66G
 
 iperf3 Speed Tests:
 ---------------------------------
 Provider                  | Location (Link)           | Send Speed      | Recv Speed
                           |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | busy            | busy
-Online.net                | Paris, FR (10G)           | 837 Mbits/sec   | 833 Mbits/sec
-Severius                  | Netherlands (10G)         | 694 Mbits/sec   | 742 Mbits/sec
-Worldstream               | Netherlands (10G)         | 773 Mbits/sec   | 668 Mbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | busy            | busy
-Biznet                    | Bogor, ID (1G)            | 288 Mbits/sec   | 318 Mbits/sec
-Velocity Online           | Tallahassee, FL, US (?G)  | 906 Mbits/sec   | 854 Mbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | 880 Mbits/sec   | 654 Mbits/sec
-Hurricane Electric        | Fremont, CA, US (1G)      | 632 Mbits/sec   | busy
+Bouygues Telecom          | Paris, FR (10G)           | 65.3 Mbits/sec  | 179 Mbits/sec
+Online.net                | Paris, FR (10G)           | 892 Mbits/sec   | 553 Mbits/sec
+Severius                  | The Netherlands (10G)     | 80.0 Mbits/sec  | 133 Mbits/sec
+Worldstream               | The Netherlands (10G)     | 77.9 Mbits/sec  | 122 Mbits/sec
+wilhelm.tel               | Hamburg, DE (10G)         | 79.7 Mbits/sec  | 126 Mbits/sec
+Biznet                    | Bogor, Indonesia (1G)     | 0.00 bits/sec   | 0.00 bits/sec
+Hostkey                   | Moscow, RU (1G)           | 864 Mbits/sec   | 882 Mbits/sec
+Velocity Online           | Tallahassee, FL, US (?G)  | 90.4 Mbits/sec  | 211 Mbits/sec
+Airstream Communications  | Eau Claire, WI, US (10G)  | 57.8 Mbits/sec  | 127 Mbits/sec
+Hurricane Electric        | Fremont, CA, US (1G)      | 4.89 Mbits/sec  | 102 Mbits/sec
 ```
 
 ## License
