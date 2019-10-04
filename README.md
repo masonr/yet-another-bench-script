@@ -8,7 +8,7 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 ## How to Run
 
-`curl https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
+`curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
 
 ## Tests Conducted
 
