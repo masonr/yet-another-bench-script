@@ -27,7 +27,7 @@ TOTAL_RAM=$(free -h | awk 'NR==2 {print $2}')
 echo -e "RAM        : $TOTAL_RAM"
 TOTAL_SWAP=$(free -h | grep Swap | awk '{ print $2 }')
 echo -e "Swap       : $TOTAL_SWAP"
-TOTAL_DISK=$(df -h --total | grep total | awk '{ print $2 }')
+TOTAL_DISK=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total -h | grep total | awk '{ print $2 }')
 echo -e "Disk       : $TOTAL_DISK"
 
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
