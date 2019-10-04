@@ -33,8 +33,8 @@ echo -e "Disk       : $TOTAL_DISK"
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
 IPERF_PATH=/tmp/$DATE/iperf
 mkdir -p $IPERF_PATH
-wget -O $IPERF_PATH/libiperf.so.0 https://iperf.fr/download/ubuntu/libiperf.so.0_3.1.3 -o /dev/null
-wget -O $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 -o /dev/null
+curl -s -o $IPERF_PATH/libiperf.so.0 https://iperf.fr/download/ubuntu/libiperf.so.0_3.1.3 > /dev/null
+curl -s -o $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 > /dev/null
 chmod +x $IPERF_PATH/iperf3
 
 function iperf_test {
