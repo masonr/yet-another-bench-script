@@ -47,10 +47,11 @@ function iperf_test {
 		PORT=`shuf -i $PORTS -n 1`
 		IPERF_RUN_SEND="$(LD_LIBRARY_PATH=$IPERF_PATH timeout 15 $IPERF_PATH/iperf3 -c $URL -p $PORT -P 8)"
 		if [[ "$IPERF_RUN_SEND" == *"receiver"* && "$IPERF_RUN_SEND" != *"error"* ]]; then
-			I=10
+			SPEED=$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver | awk '{ print $6 }')
+			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( $I + 1 )) || I=10
 		else
 			I=$(( $I + 1 ))
-			sleep 3
+			sleep 2
 		fi
 	done
 
@@ -60,10 +61,11 @@ function iperf_test {
 		PORT=`shuf -i $PORTS -n 1`
 		IPERF_RUN_RECV="$(LD_LIBRARY_PATH=$IPERF_PATH timeout 15 $IPERF_PATH/iperf3 -c $URL -p $PORT -P 8 -R)"
 		if [[ "$IPERF_RUN_RECV" == *"receiver"* && "$IPERF_RUN_RECV" != *"error"* ]]; then
-			J=10
+			SPEED=$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver | awk '{ print $6 }')
+			[[ -z $SPEED || "$SPEED" == "0.00" ]] && J=$(( $J + 1 )) || J=10
 		else
 			J=$(( $J + 1 ))
-			sleep 3
+			sleep 2
 		fi
 	done
 
