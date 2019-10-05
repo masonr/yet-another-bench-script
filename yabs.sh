@@ -2,7 +2,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2019-10-03                    #'
+echo -e '#                     v2019-10-04                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -31,7 +31,54 @@ TOTAL_DISK=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs
 echo -e "Disk       : $TOTAL_DISK"
 
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
-IPERF_PATH=/tmp/$DATE/iperf
+YABS_PATH=/tmp/$DATE/
+mkdir -p $YABS_PATH
+
+echo -e
+echo -e "dd Disk Speed Tests:"
+echo -e "---------------------------------"
+
+function dd_test {
+	I=0
+	DD_WRITE_TEST_RES=()
+	DD_READ_TEST_RES=()
+	DD_WRITE_TEST_AVG=0
+	DD_READ_TEST_AVG=0
+	while [ $I -lt 3 ]
+	do
+		DD_WRITE_TEST=$(dd if=/dev/zero of=$DATE.test bs=64k count=16k oflag=direct |& grep copied | awk '{ print $10 " " $11 }')
+		DD_WRITE_TEST_RES+=( "$DD_WRITE_TEST" )
+		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1 | cut -d "." -f 1)
+		DD_WRITE_TEST_AVG=$(( DD_WRITE_TEST_AVG + VAL ))
+	
+		DD_READ_TEST=$(dd if=$DATE.test of=/dev/null bs=64k |& grep copied | awk '{ print $10 " " $11 }')
+		DD_READ_TEST_RES+=( "$DD_READ_TEST" )
+		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1 | cut -d "." -f 1)
+		DD_READ_TEST_AVG=$(( DD_READ_TEST_AVG + VAL ))
+
+		I=$(( $I + 1 ))
+	done	
+	DD_WRITE_TEST_AVG=$((DD_WRITE_TEST_AVG/3))
+	DD_WRITE_TEST_UNIT=$(echo $DD_WRITE_TEST | awk '{ print $2 }')
+	DD_READ_TEST_AVG=$((DD_READ_TEST_AVG/3))
+	DD_READ_TEST_UNIT=$(echo $DD_READ_TEST | awk '{ print $2 }')
+}
+
+touch $DATE.test 2> /dev/null
+if [ -f "$DATE.test" ]; then
+	dd_test
+	rm $DATE.test
+	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
+	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
+	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
+	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
+
+else
+	echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
+fi
+
+
+IPERF_PATH=$YABS_PATH/iperf
 mkdir -p $IPERF_PATH
 curl -s -o $IPERF_PATH/libiperf.so.0 https://iperf.fr/download/ubuntu/libiperf.so.0_3.1.3 > /dev/null
 curl -s -o $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 > /dev/null
@@ -50,7 +97,7 @@ function iperf_test {
 			SPEED=$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver | awk '{ print $6 }')
 			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( $I + 1 )) || I=10
 		else
-			I=$(( $I + 1 ))
+			[[ "$IPERF_RUN_SEND" == *"unable to connect"* ]] && I=10 || I=$(( $I + 1 ))
 			sleep 2
 		fi
 	done
@@ -64,7 +111,7 @@ function iperf_test {
 			SPEED=$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver | awk '{ print $6 }')
 			[[ -z $SPEED || "$SPEED" == "0.00" ]] && J=$(( $J + 1 )) || J=10
 		else
-			J=$(( $J + 1 ))
+			[[ "$IPERF_RUN_RECV" == *"unable to connect"* ]] && J=10 || J=$(( $J + 1 ))
 			sleep 2
 		fi
 	done
@@ -89,7 +136,7 @@ IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
 IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 4))
 
 echo -e
-echo -e "iperf3 Speed Tests:"
+echo -e "iperf3 Network Speed Tests:"
 echo -e "---------------------------------"
 printf "%-25s | %-25s | %-15s | %-15s\n" "Provider" "Location (Link)" "Send Speed" "Recv Speed"
 printf "%-25s | %-25s | %-15s | %-15s\n"
