@@ -71,7 +71,7 @@ if [ -f "$DATE.test" ]; then
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
-	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
+	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read*" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
 
 else
 	echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
