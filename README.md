@@ -10,7 +10,7 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 `curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
 
-Script has been tested on: CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, Ubuntu 18.04
+This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies.
 
 ## Tests Conducted
 
@@ -61,7 +61,7 @@ Velocity Online           | Tallahassee, FL, US (1G)  | 179 Mbits/sec   | 133 Mb
 Airstream Communications  | Eau Claire, WI, US (10G)  | 186 Mbits/sec   | 150 Mbits/sec
 Hurricane Electric        | Fremont, CA, US (1G)      | 168 Mbits/sec   | busy
 
-Geekbench 4 CPU Performance Test:
+Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
