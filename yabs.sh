@@ -2,7 +2,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2019-10-04                    #'
+echo -e '#                     v2019-10-05                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -34,9 +34,7 @@ DATE=`date -Iseconds | sed -e "s/:/_/g"`
 YABS_PATH=/tmp/$DATE/
 mkdir -p $YABS_PATH
 
-echo -e
-echo -e "dd Disk Speed Tests:"
-echo -e "---------------------------------"
+echo -e "Performing dd disk performance test. This may take a couple minutes to complete..."
 
 function dd_test {
 	I=0
@@ -68,15 +66,19 @@ touch $DATE.test 2> /dev/null
 if [ -f "$DATE.test" ]; then
 	dd_test
 	rm $DATE.test
+
+	echo -en "\e[1A"; echo -e "\e[0K\r"
+	echo -e "dd Disk Speed Tests:"
+	echo -e "---------------------------------"
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
 	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read*" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
 
 else
+	echo -en "\e[1A"; echo -e "\e[0K\r"
 	echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
 fi
-
 
 IPERF_PATH=$YABS_PATH/iperf
 mkdir -p $IPERF_PATH
@@ -128,7 +130,7 @@ IPERF_LOCS=( \
 	"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" \
 	"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" \
 	"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" \
-	"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (?G)" \
+	"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" \
 	"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" \
 	"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" \
 )
@@ -142,7 +144,9 @@ printf "%-25s | %-25s | %-15s | %-15s\n" "Provider" "Location (Link)" "Send Spee
 printf "%-25s | %-25s | %-15s | %-15s\n"
 
 for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
+	echo -e "Performing iperf3 test to ${IPERF_LOCS[i*4+2]}..."
 	iperf_test "${IPERF_LOCS[i*4]}" "${IPERF_LOCS[i*4+1]}"
+	echo -en "\e[1A"
 	IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
 	IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
 	IPERF_RECVRESULT_VAL=$(echo $IPERF_RECVRESULT | awk '{ print $6 }')
@@ -151,6 +155,30 @@ for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
 	[ -z "$IPERF_RECVRESULT_VAL" ] && IPERF_RECVRESULT_VAL="busy"
 	printf "%-25s | %-25s | %-15s | %-15s\n" "${IPERF_LOCS[i*4+2]}" "${IPERF_LOCS[i*4+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT"
 done
+
+echo -e "Performing Geekbench 4 CPU performance test. This may take a couple minutes to complete..."
+
+GEEKBENCH_PATH=$YABS_PATH/geekbench
+mkdir -p $GEEKBENCH_PATH
+curl -s http://cdn.geekbench.com/Geekbench-4.3.3-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH
+GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 | grep "https://browser")
+GEEKBENCH_URL=$(echo -e $GEEKBENCH_TEST | head -1)
+GEEKBENCH_URL_CLAIM=$(echo $GEEKBENCH_URL | awk '{ print $2 }')
+GEEKBENCH_URL=$(echo $GEEKBENCH_URL | awk '{ print $1 }')
+sleep 10
+GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "class='score' rowspan")
+GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
+GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(<|>)" '{ print $7 }')
+
+echo -en "\e[1A"; echo -e "\e[0K\r"
+echo -e "Geekbench 4 CPU Performance Test:"
+echo -e "---------------------------------"
+printf "%-15s | %-30s\n" "Test" "Value"
+printf "%-15s | %-30s\n"
+printf "%-15s | %-30s\n" "Single Core" "$GEEKBENCH_SCORES_SINGLE"
+printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
+printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
+[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" > geekbench4_claim.url 2> /dev/null
 
 echo -e
 rm -rf /tmp/$DATE
