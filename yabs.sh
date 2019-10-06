@@ -42,23 +42,26 @@ function dd_test {
 	DD_READ_TEST_RES=()
 	DD_WRITE_TEST_AVG=0
 	DD_READ_TEST_AVG=0
+	OS=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 	while [ $I -lt 3 ]
 	do
-		DD_WRITE_TEST=$(dd if=/dev/zero of=$DATE.test bs=64k count=16k oflag=direct |& grep copied | awk '{ print $10 " " $11 }')
+		DD_WRITE_TEST=$(dd if=/dev/zero of=$DATE.test bs=64k count=16k oflag=direct |& grep copied)
+		[[ "$OS" == *"CentOS"* ]] && DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $8 " " $9 }') || DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $10 " " $11 }')
 		DD_WRITE_TEST_RES+=( "$DD_WRITE_TEST" )
-		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1 | cut -d "." -f 1)
-		DD_WRITE_TEST_AVG=$(( DD_WRITE_TEST_AVG + VAL ))
+		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1)
+		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 	
-		DD_READ_TEST=$(dd if=$DATE.test of=/dev/null bs=64k |& grep copied | awk '{ print $10 " " $11 }')
+		DD_READ_TEST=$(dd if=$DATE.test of=/dev/null bs=64k |& grep copied)
+		[[ "$OS" == *"CentOS"* ]] && DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $8 " " $9 }') || DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $10 " " $11 }')
 		DD_READ_TEST_RES+=( "$DD_READ_TEST" )
-		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1 | cut -d "." -f 1)
-		DD_READ_TEST_AVG=$(( DD_READ_TEST_AVG + VAL ))
+		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1)
+		DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
 		I=$(( $I + 1 ))
 	done	
-	DD_WRITE_TEST_AVG=$((DD_WRITE_TEST_AVG/3))
+	DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 3 }')
 	DD_WRITE_TEST_UNIT=$(echo $DD_WRITE_TEST | awk '{ print $2 }')
-	DD_READ_TEST_AVG=$((DD_READ_TEST_AVG/3))
+	DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 3 }')
 	DD_READ_TEST_UNIT=$(echo $DD_READ_TEST | awk '{ print $2 }')
 }
 
@@ -171,7 +174,7 @@ GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3
 GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(<|>)" '{ print $7 }')
 
 echo -en "\e[1A"; echo -e "\e[0K\r"
-echo -e "Geekbench 4 CPU Performance Test:"
+echo -e "Geekbench 4 Benchmark Test:"
 echo -e "---------------------------------"
 printf "%-15s | %-30s\n" "Test" "Value"
 printf "%-15s | %-30s\n"
