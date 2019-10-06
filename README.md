@@ -12,7 +12,7 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 ## Tests Conducted
 
-* **dd** - the dd utility is utilized to test disk performance. Both write and read speeds are evaluated by writing to and reading from a test file. **\***Disclaimer: read speeds may be heavily influenced by cache depending on configuration of the host.
+* **dd** - the dd utility is utilized to test disk performance. Both write and read speeds are evaluated by writing to and reading from a test file. __\*Disclaimer__: read speeds may be heavily influenced by cache depending on configuration of the host.
 * **iperf3** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 10 tries, the speed test for that location/direction is skipped.
 * **Geekbench 4** - Geekbench is a benchmarking program that meastures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and be compare to other geekbench'd systems. The claim URL to add the Geekbench 4 result to your Geekbench profile is written to a file in the directory that this script is executed from.
 
