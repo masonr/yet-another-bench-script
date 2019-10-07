@@ -34,7 +34,18 @@ DATE=`date -Iseconds | sed -e "s/:/_/g"`
 YABS_PATH=/tmp/$DATE/
 mkdir -p $YABS_PATH
 
-echo -e "Performing dd disk performance test. This may take a couple minutes to complete..."
+SKIP_DD=""
+SHIP_IPERF=""
+SKIP_GEEKBENCH=""
+
+while getopts 'dig' flag; do
+	case "${flag}" in
+		d) SKIP_DD="True" ;;
+		i) SKIP_IPERF="True" ;;
+		g) SKIP_GEEKBENCH="True" ;;
+		*) exit 1 ;;
+	esac
+done
 
 function dd_test {
 	I=0
@@ -65,42 +76,40 @@ function dd_test {
 	DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 3 }')
 }
 
-touch $DATE.test 2> /dev/null
-if [ -f "$DATE.test" ]; then
-	dd_test
-	rm $DATE.test
-
-	if [ $(echo $DD_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
-		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
-		DD_WRITE_TEST_UNIT="GB/s"
+if [ -z "$SKIP_DD" ]; then
+	echo -e "Performing dd disk performance test. This may take a couple minutes to complete..."
+	
+	touch $DATE.test 2> /dev/null
+	if [ -f "$DATE.test" ]; then
+		dd_test
+		rm $DATE.test
+	
+		if [ $(echo $DD_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+			DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
+			DD_WRITE_TEST_UNIT="GB/s"
+		else
+			DD_WRITE_TEST_UNIT="MB/s"
+		fi
+		if [ $(echo $DD_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+			DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
+			DD_READ_TEST_UNIT="GB/s"
+		else
+			DD_READ_TEST_UNIT="MB/s"
+		fi
+	
+		echo -en "\e[1A"; echo -e "\e[0K\r"
+		echo -e "dd Disk Speed Tests:"
+		echo -e "---------------------------------"
+		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
+		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
+		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
+		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read*" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
+	
 	else
-		DD_WRITE_TEST_UNIT="MB/s"
+		echo -en "\e[1A"; echo -e "\e[0K\r"
+		echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
 	fi
-	if [ $(echo $DD_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
-		DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
-		DD_READ_TEST_UNIT="GB/s"
-	else
-		DD_READ_TEST_UNIT="MB/s"
-	fi
-
-	echo -en "\e[1A"; echo -e "\e[0K\r"
-	echo -e "dd Disk Speed Tests:"
-	echo -e "---------------------------------"
-	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
-	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
-	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
-	printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read*" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
-
-else
-	echo -en "\e[1A"; echo -e "\e[0K\r"
-	echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
 fi
-
-IPERF_PATH=$YABS_PATH/iperf
-mkdir -p $IPERF_PATH
-curl -s -o $IPERF_PATH/libiperf.so.0 https://iperf.fr/download/ubuntu/libiperf.so.0_3.1.3 > /dev/null
-curl -s -o $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 > /dev/null
-chmod +x $IPERF_PATH/iperf3
 
 function iperf_test {
 	URL=$1
@@ -161,55 +170,65 @@ function launch_iperf {
 	done
 }
 
-PING_FLAG=$(man ping | grep -- " -4")
-[ -z "$PING_FLAG" ] && IPV4_CHECK=$(ping -c 1 -W 4 google.com) || IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com)
-[[ "$IPV4_CHECK" == *"1 received"* ]] && IPV4_CHECK="True" || IPV4_CHECK=""
-[ -z "$PING_FLAG" ] && IPV6_CHECK=$(ping6 -c 1 -W 4 ipv6.google.com) || IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com)
-[[ "$IPV6_CHECK" == *"1 received"* ]] && IPV6_CHECK="True" || IPV6_CHECK=""
+if [ -z "$SKIP_IPERF" ]; then
+	IPERF_PATH=$YABS_PATH/iperf
+	mkdir -p $IPERF_PATH
+	curl -s -o $IPERF_PATH/libiperf.so.0 https://iperf.fr/download/ubuntu/libiperf.so.0_3.1.3 > /dev/null
+	curl -s -o $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 > /dev/null
+	chmod +x $IPERF_PATH/iperf3
+	
+	PING_FLAG=$(man ping | grep -- " -4")
+	[ -z "$PING_FLAG" ] && IPV4_CHECK=$(ping -c 1 -W 4 google.com 2> /dev/null) || IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com 2> /dev/null)
+	[[ "$IPV4_CHECK" == *"1 received"* ]] && IPV4_CHECK="True" || IPV4_CHECK=""
+	[ -z "$PING_FLAG" ] && IPV6_CHECK=$(ping6 -c 1 -W 4 ipv6.google.com 2> /dev/null) || IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com 2> /dev/null)
+	[[ "$IPV6_CHECK" == *"1 received"* ]] && IPV6_CHECK="True" || IPV6_CHECK=""
+	
+	IPERF_LOCS=( \
+		"bouygues.iperf.fr" "5200-5209" "Bouygues Telecom" "Paris, FR (10G)" "IPv4|IPv6" \
+		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
+		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
+		"speedtest.serverius.net" "5002-5002" "Severius" "The Netherlands (10G)" "IPv4|IPv6" \
+		"iperf.worldstream.nl" "5201-5201" "Worldstream" "The Netherlands (10G)" "IPv4|IPv6" \
+		"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" "IPv4|IPv6" \
+		"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" "IPv4" \
+		"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" "IPv4" \
+		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" "IPv4" \
+		"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
+		"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" "IPv4|IPv6" \
+	)
+	
+	IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
+	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
+	
+	[ -z "$IPv4_CHECK" ] && launch_iperf "IPv4"
+	[ -z "$IPv6_CHECK" ] && launch_iperf "IPv6"
+fi
 
-IPERF_LOCS=( \
-	"bouygues.iperf.fr" "5200-5209" "Bouygues Telecom" "Paris, FR (10G)" "IPv4|IPv6" \
-	"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
-	"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
-	"speedtest.serverius.net" "5002-5002" "Severius" "The Netherlands (10G)" "IPv4|IPv6" \
-	"iperf.worldstream.nl" "5201-5201" "Worldstream" "The Netherlands (10G)" "IPv4|IPv6" \
-	"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" "IPv4|IPv6" \
-	"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" "IPv4" \
-	"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" "IPv4" \
-	"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" "IPv4" \
-	"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
-	"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" "IPv4|IPv6" \
-)
-
-IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
-IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
-
-[ -z "$IPv4_CHECK" ] && launch_iperf "IPv4"
-[ -z "$IPv6_CHECK" ] && launch_iperf "IPv6"
-
-echo -e "Performing Geekbench 4 benchmark test. This may take a couple minutes to complete..."
-
-GEEKBENCH_PATH=$YABS_PATH/geekbench
-mkdir -p $GEEKBENCH_PATH
-curl -s http://cdn.geekbench.com/Geekbench-4.3.3-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH
-GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 | grep "https://browser")
-GEEKBENCH_URL=$(echo -e $GEEKBENCH_TEST | head -1)
-GEEKBENCH_URL_CLAIM=$(echo $GEEKBENCH_URL | awk '{ print $2 }')
-GEEKBENCH_URL=$(echo $GEEKBENCH_URL | awk '{ print $1 }')
-sleep 10
-GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "class='score' rowspan")
-GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
-GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(<|>)" '{ print $7 }')
-
-echo -en "\e[1A"; echo -e "\e[0K\r"
-echo -e "Geekbench 4 Benchmark Test:"
-echo -e "---------------------------------"
-printf "%-15s | %-30s\n" "Test" "Value"
-printf "%-15s | %-30s\n"
-printf "%-15s | %-30s\n" "Single Core" "$GEEKBENCH_SCORES_SINGLE"
-printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
-printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
-[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" > geekbench4_claim.url 2> /dev/null
+if [ -z "$SKIP_GEEKBENCH" ]; then
+	echo -e "Performing Geekbench 4 benchmark test. This may take a couple minutes to complete..."
+	
+	GEEKBENCH_PATH=$YABS_PATH/geekbench
+	mkdir -p $GEEKBENCH_PATH
+	curl -s http://cdn.geekbench.com/Geekbench-4.3.3-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH
+	GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 | grep "https://browser")
+	GEEKBENCH_URL=$(echo -e $GEEKBENCH_TEST | head -1)
+	GEEKBENCH_URL_CLAIM=$(echo $GEEKBENCH_URL | awk '{ print $2 }')
+	GEEKBENCH_URL=$(echo $GEEKBENCH_URL | awk '{ print $1 }')
+	sleep 10
+	GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "class='score' rowspan")
+	GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
+	GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(<|>)" '{ print $7 }')
+	
+	echo -en "\e[1A"; echo -e "\e[0K\r"
+	echo -e "Geekbench 4 Benchmark Test:"
+	echo -e "---------------------------------"
+	printf "%-15s | %-30s\n" "Test" "Value"
+	printf "%-15s | %-30s\n"
+	printf "%-15s | %-30s\n" "Single Core" "$GEEKBENCH_SCORES_SINGLE"
+	printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
+	printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
+	[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" > geekbench4_claim.url 2> /dev/null
+fi
 
 echo -e
 rm -rf /tmp/$DATE

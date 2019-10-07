@@ -10,7 +10,22 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 `curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
 
-This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies nor elevated privileges.
+This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies to be installed nor elevated privileges.
+
+### Skipping Tests
+
+By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
+
+```
+curl https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh -o yabs.sh; chmod +x yabs.sh
+./yabs.sh -{dig}
+```
+
+* `-d` this option disables the dd (disk performance) test
+* `-i` this option disables the iperf (network performance) test
+* `-g` this option disables the Geekbench (system performance) test
+
+Options can be grouped together to skip multiple tests, i.e. `./yabs -dg` to skip the dd and Geekbench tests (effectively only performing the iperf test).
 
 ## Tests Conducted
 
