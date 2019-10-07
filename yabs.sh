@@ -35,7 +35,7 @@ YABS_PATH=/tmp/$DATE/
 mkdir -p $YABS_PATH
 
 SKIP_DD=""
-SHIP_IPERF=""
+SKIP_IPERF=""
 SKIP_GEEKBENCH=""
 
 while getopts 'dig' flag; do
