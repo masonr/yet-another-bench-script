@@ -10,7 +10,7 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 `curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
 
-This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies.
+This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies nor elevated privileges.
 
 ## Tests Conducted
 
@@ -23,51 +23,63 @@ This script has been tested on CentOS 7, Debian 9, Debian 10, Fedora 30, Ubuntu 
 ```
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 #              Yet-Another-Bench-Script              #
-#                     v2019-10-05                    #
+#                     v2019-10-06                    #
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Sat Oct  5 21:44:13 EDT 2019
+Sun Oct  6 22:03:26 EDT 2019
 
 Basic System Information:
 ---------------------------------
-Processor  : Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
-CPU cores  : 32 @ 1200.563 MHz
+Processor  : Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz
+CPU cores  : 8 @ 1600.091 MHz
 AES-NI     : ✔ Enabled
 VM-x/AMD-V : ❌ Disabled
-RAM        : 62G
-Swap       : 59G
-Disk       : 44T
+RAM        : 31G
+Swap       : 7.5G
+Disk       : 213G
 
 dd Disk Speed Tests:
 ---------------------------------
        | Test 1     | Test 2     | Test 3     | Avg
        |            |            |            |
-Write  | 275 MB/s   | 177 MB/s   | 177 MB/s   | 209 MB/s
-Read*  | 537 MB/s   | 539 MB/s   | 536 MB/s   | 537 MB/s
+Write  | 361 MB/s   | 357 MB/s   | 357 MB/s   | 358.333 MB/s
+Read*  | 409 MB/s   | 409 MB/s   | 410 MB/s   | 409.333 MB/s
 
-iperf3 Network Speed Tests:
+iperf3 Network Speed Tests (IPv4):
 ---------------------------------
 Provider                  | Location (Link)           | Send Speed      | Recv Speed
                           |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | 160 Mbits/sec   | 158 Mbits/sec
-Online.net                | Paris, FR (10G)           | 165 Mbits/sec   | 94.2 Mbits/sec
-Severius                  | The Netherlands (10G)     | 161 Mbits/sec   | 151 Mbits/sec
-Worldstream               | The Netherlands (10G)     | 166 Mbits/sec   | 88.1 Mbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | 160 Mbits/sec   | 148 Mbits/sec
-Biznet                    | Bogor, Indonesia (1G)     | 118 Mbits/sec   | 57.5 Mbits/sec
-Hostkey                   | Moscow, RU (1G)           | 148 Mbits/sec   | 135 Mbits/sec
-Velocity Online           | Tallahassee, FL, US (1G)  | 179 Mbits/sec   | 133 Mbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | 186 Mbits/sec   | 150 Mbits/sec
-Hurricane Electric        | Fremont, CA, US (1G)      | 168 Mbits/sec   | busy
+Bouygues Telecom          | Paris, FR (10G)           | 766 Mbits/sec   | 195 Mbits/sec
+Online.net                | Paris, FR (10G)           | 771 Mbits/sec   | 156 Mbits/sec
+Severius                  | The Netherlands (10G)     | 638 Mbits/sec   | 45.5 Mbits/sec
+Worldstream               | The Netherlands (10G)     | 748 Mbits/sec   | 56.7 Mbits/sec
+wilhelm.tel               | Hamburg, DE (10G)         | 756 Mbits/sec   | 69.1 Mbits/sec
+Biznet                    | Bogor, Indonesia (1G)     | busy            | busy
+Hostkey                   | Moscow, RU (1G)           | 722 Mbits/sec   | 489 Mbits/sec
+Velocity Online           | Tallahassee, FL, US (1G)  | 528 Mbits/sec   | 374 Mbits/sec
+Airstream Communications  | Eau Claire, WI, US (10G)  | 825 Mbits/sec   | 156 Mbits/sec
+Hurricane Electric        | Fremont, CA, US (1G)      | 782 Mbits/sec   | busy
+
+iperf3 Network Speed Tests (IPv6):
+---------------------------------
+Provider                  | Location (Link)           | Send Speed      | Recv Speed
+                          |                           |                 |
+Bouygues Telecom          | Paris, FR (10G)           | 463 Mbits/sec   | 186 Mbits/sec
+Online.net                | Paris, FR (10G)           | 713 Mbits/sec   | 75.7 Mbits/sec
+Severius                  | The Netherlands (10G)     | 753 Mbits/sec   | 73.5 Mbits/sec
+Worldstream               | The Netherlands (10G)     | 740 Mbits/sec   | 58.6 Mbits/sec
+wilhelm.tel               | Hamburg, DE (10G)         | 744 Mbits/sec   | 75.0 Mbits/sec
+Airstream Communications  | Eau Claire, WI, US (10G)  | 473 Mbits/sec   | 149 Mbits/sec
+Hurricane Electric        | Fremont, CA, US (1G)      | busy            | busy
 
 Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 3207
-Multi Core      | 37289
-Full Test       | https://browser.geekbench.com/v4/cpu/14763522
+Single Core     | 4012
+Multi Core      | 13007
+Full Test       | https://browser.geekbench.com/v4/cpu/14768101
 
 ```
 

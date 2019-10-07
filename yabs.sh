@@ -2,7 +2,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2019-10-05                    #'
+echo -e '#                     v2019-10-06                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -49,26 +49,39 @@ function dd_test {
 		[[ "$OS" == *"CentOS"* ]] && DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $8 " " $9 }') || DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $10 " " $11 }')
 		DD_WRITE_TEST_RES+=( "$DD_WRITE_TEST" )
 		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1)
+		[[ "$DD_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 	
 		DD_READ_TEST=$(dd if=$DATE.test of=/dev/null bs=64k |& grep copied)
 		[[ "$OS" == *"CentOS"* ]] && DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $8 " " $9 }') || DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $10 " " $11 }')
 		DD_READ_TEST_RES+=( "$DD_READ_TEST" )
 		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1)
+		[[ "$DD_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
 		I=$(( $I + 1 ))
 	done	
 	DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 3 }')
-	DD_WRITE_TEST_UNIT=$(echo $DD_WRITE_TEST | awk '{ print $2 }')
 	DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 3 }')
-	DD_READ_TEST_UNIT=$(echo $DD_READ_TEST | awk '{ print $2 }')
 }
 
 touch $DATE.test 2> /dev/null
 if [ -f "$DATE.test" ]; then
 	dd_test
 	rm $DATE.test
+
+	if [ $(echo $DD_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
+		DD_WRITE_TEST_UNIT="GB/s"
+	else
+		DD_WRITE_TEST_UNIT="MB/s"
+	fi
+	if [ $(echo $DD_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
+		DD_READ_TEST_UNIT="GB/s"
+	else
+		DD_READ_TEST_UNIT="MB/s"
+	fi
 
 	echo -en "\e[1A"; echo -e "\e[0K\r"
 	echo -e "dd Disk Speed Tests:"
@@ -102,8 +115,7 @@ function iperf_test {
 			SPEED=$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver | awk '{ print $6 }')
 			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( $I + 1 )) || I=10
 		else
-			[[ "$IPERF_RUN_SEND" == *"unable to connect"* ]] && I=10 || I=$(( $I + 1 ))
-			sleep 2
+			[[ "$IPERF_RUN_SEND" == *"unable to connect"* ]] && I=10 || I=$(( $I + 1 )) && sleep 2
 		fi
 	done
 
@@ -116,8 +128,7 @@ function iperf_test {
 			SPEED=$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver | awk '{ print $6 }')
 			[[ -z $SPEED || "$SPEED" == "0.00" ]] && J=$(( $J + 1 )) || J=10
 		else
-			[[ "$IPERF_RUN_RECV" == *"unable to connect"* ]] && J=10 || J=$(( $J + 1 ))
-			sleep 2
+			[[ "$IPERF_RUN_RECV" == *"unable to connect"* ]] && J=10 || J=$(( $J + 1 )) && sleep 2
 		fi
 	done
 
@@ -125,41 +136,57 @@ function iperf_test {
 	IPERF_RECVRESULT="$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver)"
 }
 
+function launch_iperf {
+	MODE=$1	
+
+	echo -e
+	echo -e "iperf3 Network Speed Tests ($MODE):"
+	echo -e "---------------------------------"
+	printf "%-25s | %-25s | %-15s | %-15s\n" "Provider" "Location (Link)" "Send Speed" "Recv Speed"
+	printf "%-25s | %-25s | %-15s | %-15s\n"
+	
+	for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
+		if [[ "${IPERF_LOCS[i*5+4]}" == *"$MODE"* ]]; then
+			echo -e "Performing $MODE iperf3 test to ${IPERF_LOCS[i*5+2]}..."
+			iperf_test "${IPERF_LOCS[i*5]}" "${IPERF_LOCS[i*5+1]}"
+			echo -en "\e[1A"
+			IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
+			IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
+			IPERF_RECVRESULT_VAL=$(echo $IPERF_RECVRESULT | awk '{ print $6 }')
+			IPERF_RECVRESULT_UNIT=$(echo $IPERF_RECVRESULT | awk '{ print $7 }')
+			[ -z "$IPERF_SENDRESULT_VAL" ] && IPERF_SENDRESULT_VAL="busy"
+			[ -z "$IPERF_RECVRESULT_VAL" ] && IPERF_RECVRESULT_VAL="busy"
+			printf "%-25s | %-25s | %-15s | %-15s\n" "${IPERF_LOCS[i*5+2]}" "${IPERF_LOCS[i*5+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT"
+		fi
+	done
+}
+
+IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com)
+[[ "$IPV4_CHECK" == *"1 received"* ]] && IPV4_CHECK="True" || IPV4_CHECK=""
+IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com)
+[[ "$IPV6_CHECK" == *"1 received"* ]] && IPV6_CHECK="True" || IPV6_CHECK=""
+
 IPERF_LOCS=( \
-	"bouygues.iperf.fr" "5200-5209" "Bouygues Telecom" "Paris, FR (10G)" \
-	"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" \
-	"speedtest.serverius.net" "5002-5002" "Severius" "The Netherlands (10G)" \
-	"iperf.worldstream.nl" "5201-5201" "Worldstream" "The Netherlands (10G)" \
-	"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" \
-	"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" \
-	"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" \
-	"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" \
-	"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" \
-	"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" \
+	"bouygues.iperf.fr" "5200-5209" "Bouygues Telecom" "Paris, FR (10G)" "IPv4|IPv6" \
+	"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
+	"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
+	"speedtest.serverius.net" "5002-5002" "Severius" "The Netherlands (10G)" "IPv4|IPv6" \
+	"iperf.worldstream.nl" "5201-5201" "Worldstream" "The Netherlands (10G)" "IPv4|IPv6" \
+	"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" "IPv4|IPv6" \
+	"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" "IPv4" \
+	"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" "IPv4" \
+	"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" "IPv4" \
+	"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
+	"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" "IPv4|IPv6" \
 )
+
 IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
-IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 4))
+IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 
-echo -e
-echo -e "iperf3 Network Speed Tests:"
-echo -e "---------------------------------"
-printf "%-25s | %-25s | %-15s | %-15s\n" "Provider" "Location (Link)" "Send Speed" "Recv Speed"
-printf "%-25s | %-25s | %-15s | %-15s\n"
+[ -z "$IPv4_CHECK" ] && launch_iperf "IPv4"
+[ -z "$IPv6_CHECK" ] && launch_iperf "IPv6"
 
-for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
-	echo -e "Performing iperf3 test to ${IPERF_LOCS[i*4+2]}..."
-	iperf_test "${IPERF_LOCS[i*4]}" "${IPERF_LOCS[i*4+1]}"
-	echo -en "\e[1A"
-	IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
-	IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
-	IPERF_RECVRESULT_VAL=$(echo $IPERF_RECVRESULT | awk '{ print $6 }')
-	IPERF_RECVRESULT_UNIT=$(echo $IPERF_RECVRESULT | awk '{ print $7 }')
-	[ -z "$IPERF_SENDRESULT_VAL" ] && IPERF_SENDRESULT_VAL="busy"
-	[ -z "$IPERF_RECVRESULT_VAL" ] && IPERF_RECVRESULT_VAL="busy"
-	printf "%-25s | %-25s | %-15s | %-15s\n" "${IPERF_LOCS[i*4+2]}" "${IPERF_LOCS[i*4+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT"
-done
-
-echo -e "Performing Geekbench 4 CPU performance test. This may take a couple minutes to complete..."
+echo -e "Performing Geekbench 4 benchmark test. This may take a couple minutes to complete..."
 
 GEEKBENCH_PATH=$YABS_PATH/geekbench
 mkdir -p $GEEKBENCH_PATH
