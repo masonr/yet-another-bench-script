@@ -2,7 +2,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2019-10-06                    #'
+echo -e '#                     v2019-10-07                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -20,7 +20,7 @@ echo -e "CPU cores  : $CPU_CORES @ $CPU_FREQ"
 CPU_AES=$(cat /proc/cpuinfo | grep aes)
 [[ -z "$CPU_AES" ]] && CPU_AES="\xE2\x9D\x8C Disabled" || CPU_AES="\xE2\x9C\x94 Enabled"
 echo -e "AES-NI     : $CPU_AES"
-CPU_VIRT=$(cat /proc/cpuinfo | grep 'vmx|svm')
+CPU_VIRT=$(cat /proc/cpuinfo | grep 'vmx\|svm')
 [[ -z "$CPU_VIRT" ]] && CPU_VIRT="\xE2\x9D\x8C Disabled" || CPU_VIRT="\xE2\x9C\x94 Enabled"
 echo -e "VM-x/AMD-V : $CPU_VIRT"
 TOTAL_RAM=$(free -h | awk 'NR==2 {print $2}')
