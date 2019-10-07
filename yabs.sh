@@ -161,9 +161,10 @@ function launch_iperf {
 	done
 }
 
-IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com)
+PING_FLAG=$(man ping | grep -- " -4")
+[ -z "$PING_FLAG" ] && IPV4_CHECK=$(ping -c 1 -W 4 google.com) || IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com)
 [[ "$IPV4_CHECK" == *"1 received"* ]] && IPV4_CHECK="True" || IPV4_CHECK=""
-IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com)
+[ -z "$PING_FLAG" ] && IPV6_CHECK=$(ping6 -c 1 -W 4 ipv6.google.com) || IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com)
 [[ "$IPV6_CHECK" == *"1 received"* ]] && IPV6_CHECK="True" || IPV6_CHECK=""
 
 IPERF_LOCS=( \
