@@ -192,9 +192,9 @@ if [ -z "$SKIP_IPERF" ]; then
 		"speedtest.wtnet.de" "5200-5209" "wilhelm.tel" "Hamburg, DE (10G)" "IPv4|IPv6" \
 		"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" "IPv4" \
 		"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" "IPv4" \
-		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (1G)" "IPv4" \
+		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
 		"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
-		"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (1G)" "IPv4|IPv6" \
+		"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (10G)" "IPv4|IPv6" \
 	)
 	
 	IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
