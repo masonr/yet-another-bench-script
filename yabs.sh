@@ -2,7 +2,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2019-10-07                    #'
+echo -e '#                     v2019-10-08                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -31,94 +31,96 @@ TOTAL_DISK=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs
 echo -e "Disk       : $TOTAL_DISK"
 
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
-YABS_PATH=./$DATE/
+YABS_PATH=./$DATE
+touch $DATE.test 2> /dev/null
+if [ ! -f "$DATE.test" ]; then
+	echo -e
+	echo -e "You do not have write permission in this directory. Switch to an owned directory and re-run the script.\nExiting..."
+	exit 1
+fi
+rm $DATE.test
 mkdir -p $YABS_PATH
 
-SKIP_DD=""
+SKIP_DISK=""
 SKIP_IPERF=""
 SKIP_GEEKBENCH=""
 
 while getopts 'dig' flag; do
 	case "${flag}" in
-		d) SKIP_DD="True" ;;
+		d) SKIP_DISK="True" ;;
 		i) SKIP_IPERF="True" ;;
 		g) SKIP_GEEKBENCH="True" ;;
 		*) exit 1 ;;
 	esac
 done
 
-function dd_test {
+function disk_test {
 	I=0
-	DD_WRITE_TEST_RES=()
-	DD_READ_TEST_RES=()
-	DD_WRITE_TEST_AVG=0
-	DD_READ_TEST_AVG=0
+	DISK_WRITE_TEST_RES=()
+	DISK_READ_TEST_RES=()
+	DISK_WRITE_TEST_AVG=0
+	DISK_READ_TEST_AVG=0
 	OS=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 	while [ $I -lt 3 ]
 	do
-		DD_WRITE_TEST=$(dd if=/dev/zero of=$YABS_PATH/$DATE.test bs=64k count=16k oflag=direct |& grep copied)
-		[[ "$OS" == *"CentOS"* ]] && DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $8 " " $9 }') || DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $10 " " $11 }')
-		DD_WRITE_TEST_RES+=( "$DD_WRITE_TEST" )
-		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1)
-		[[ "$DD_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
-		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
+		DISK_WRITE_TEST=$(dd if=/dev/zero of=$DISK_PATH/$DATE.test bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
+		VAL=$(echo $DISK_WRITE_TEST | cut -d " " -f 1)
+		[[ "$DISK_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
+		DISK_WRITE_TEST_RES+=( "$VAL" )
+		DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 	
-		DD_READ_TEST=$(dd if=$YABS_PATH/$DATE.test of=/dev/null bs=64k |& grep copied)
-		[[ "$OS" == *"CentOS"* ]] && DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $8 " " $9 }') || DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $10 " " $11 }')
-		DD_READ_TEST_RES+=( "$DD_READ_TEST" )
-		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1)
-		[[ "$DD_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
-		DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
+		DISK_READ_TEST=$($DISK_PATH/ioping -R -L -D -B -w 6 . | awk '{ print $4 / 1000 / 1000 }')
+		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
+		DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" -v b="$DISK_READ_TEST" 'BEGIN { print a + b }')
 
 		I=$(( $I + 1 ))
 	done	
-	DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 3 }')
-	DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 3 }')
+	DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" 'BEGIN { print a / 3 }')
+	DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" 'BEGIN { print a / 3 }')
 }
 
-if [ -z "$SKIP_DD" ]; then
-	echo -e "Performing dd disk performance test. This may take a couple minutes to complete..."
+if [ -z "$SKIP_DISK" ]; then
+	echo -e "Performing disk performance test. This may take a couple minutes to complete..."
+
+	DISK_PATH=$YABS_PATH/disk
+	mkdir -p $DISK_PATH
+	curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/ioping -o $DISK_PATH/ioping
+	chmod +x $DISK_PATH/ioping
 	
-	touch $YABS_PATH/$DATE.test 2> /dev/null
-	if [ -f "$YABS_PATH/$DATE.test" ]; then
-		dd_test
-	
-		if [ $(echo $DD_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
-			DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
-			DD_WRITE_TEST_UNIT="GB/s"
-		else
-			DD_WRITE_TEST_UNIT="MB/s"
-		fi
-		if [ $(echo $DD_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
-			DD_READ_TEST_AVG=$(awk -v a="$DD_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
-			DD_READ_TEST_UNIT="GB/s"
-		else
-			DD_READ_TEST_UNIT="MB/s"
-		fi
-	
-		echo -en "\e[1A"; echo -e "\e[0K\r"
-		echo -e "dd Disk Speed Tests:"
-		echo -e "---------------------------------"
-		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" " " "Test 1" "Test 2" "Test 3" "Avg"
-		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n"
-		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Write" "${DD_WRITE_TEST_RES[0]}" "${DD_WRITE_TEST_RES[1]}" "${DD_WRITE_TEST_RES[2]}" "${DD_WRITE_TEST_AVG} ${DD_WRITE_TEST_UNIT}" 
-		printf "%-6s | %-10s | %-10s | %-10s | %-10s\n" "Read*" "${DD_READ_TEST_RES[0]}" "${DD_READ_TEST_RES[1]}" "${DD_READ_TEST_RES[2]}" "${DD_READ_TEST_AVG} ${DD_READ_TEST_UNIT}" 
-	
+	disk_test
+
+	if [ $(echo $DISK_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
+		DISK_WRITE_TEST_UNIT="GB/s"
 	else
-		echo -en "\e[1A"; echo -e "\e[0K\r"
-		echo -e "You do not have write permission in this directory\nSwitch to a different directory to test disk speed.\nSkipping dd tests."
+		DISK_WRITE_TEST_UNIT="MB/s"
 	fi
+	if [ $(echo $DISK_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
+		DISK_READ_TEST_UNIT="GB/s"
+	else
+		DISK_READ_TEST_UNIT="MB/s"
+	fi
+
+	echo -en "\e[1A"; echo -e "\e[0K\r"
+	echo -e "Disk Speed Tests:"
+	echo -e "---------------------------------"
+	printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n" "" "Test 1" "" "Test 2" ""  "Test 3" "" "Avg" ""
+	printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n"
+	printf "%-6s | %-6.2f MB/s | %-6.2f MB/s | %-6.2f MB/s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
+	printf "%-6s | %-6.2f MB/s | %-6.2f MB/s | %-6.2f MB/s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 fi
 
 function iperf_test {
 	URL=$1
 	PORTS=$2
+	FLAGS=$3
 	
 	I=0
 	while [ $I -lt 10 ]
 	do
 		PORT=`shuf -i $PORTS -n 1`
-		IPERF_RUN_SEND="$(LD_LIBRARY_PATH=$IPERF_PATH timeout 15 $IPERF_PATH/iperf3 -c $URL -p $PORT -P 8)"
+		IPERF_RUN_SEND="$(LD_LIBRARY_PATH=$IPERF_PATH timeout 15 $IPERF_PATH/iperf3 $FLAGS -c $URL -p $PORT -P 8)"
 		if [[ "$IPERF_RUN_SEND" == *"receiver"* && "$IPERF_RUN_SEND" != *"error"* ]]; then
 			SPEED=$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver | awk '{ print $6 }')
 			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( $I + 1 )) || I=10
@@ -145,7 +147,8 @@ function iperf_test {
 }
 
 function launch_iperf {
-	MODE=$1	
+	MODE=$1
+	[[ "$MODE" == *"IPv6"* ]] && IPERF_FLAGS="-6" || IPERF_FLAGS=""
 
 	echo -e
 	echo -e "iperf3 Network Speed Tests ($MODE):"
@@ -156,7 +159,7 @@ function launch_iperf {
 	for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
 		if [[ "${IPERF_LOCS[i*5+4]}" == *"$MODE"* ]]; then
 			echo -e "Performing $MODE iperf3 test to ${IPERF_LOCS[i*5+2]}..."
-			iperf_test "${IPERF_LOCS[i*5]}" "${IPERF_LOCS[i*5+1]}"
+			iperf_test "${IPERF_LOCS[i*5]}" "${IPERF_LOCS[i*5+1]}" "$IPERF_FLAGS"
 			echo -en "\e[1A"
 			IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
 			IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
@@ -176,11 +179,8 @@ if [ -z "$SKIP_IPERF" ]; then
 	curl -s -o $IPERF_PATH/iperf3 https://iperf.fr/download/ubuntu/iperf3_3.1.3 > /dev/null
 	chmod +x $IPERF_PATH/iperf3
 	
-	PING_FLAG=$(man ping | grep -- " -4")
-	[ -z "$PING_FLAG" ] && IPV4_CHECK=$(ping -c 1 -W 4 google.com 2> /dev/null) || IPV4_CHECK=$(ping -c 1 -W 4 -4 google.com 2> /dev/null)
-	[[ "$IPV4_CHECK" == *"1 received"* ]] && IPV4_CHECK="True" || IPV4_CHECK=""
-	[ -z "$PING_FLAG" ] && IPV6_CHECK=$(ping6 -c 1 -W 4 ipv6.google.com 2> /dev/null) || IPV6_CHECK=$(ping -c 1 -W 4 -6 ipv6.google.com 2> /dev/null)
-	[[ "$IPV6_CHECK" == *"1 received"* ]] && IPV6_CHECK="True" || IPV6_CHECK=""
+	IPV4_CHECK=$(curl -s -4 -m 4 icanhazip.com 2> /dev/null)
+	IPV6_CHECK=$(curl -s -6 -m 4 icanhazip.com 2> /dev/null)
 	
 	IPERF_LOCS=( \
 		"bouygues.iperf.fr" "5200-5209" "Bouygues Telecom" "Paris, FR (10G)" "IPv4|IPv6" \
@@ -199,8 +199,8 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 	
-	[ -z "$IPv4_CHECK" ] && launch_iperf "IPv4"
-	[ -z "$IPv6_CHECK" ] && launch_iperf "IPv6"
+	[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4" "-4"
+	[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6" "-6"
 fi
 
 if [ -z "$SKIP_GEEKBENCH" ]; then
