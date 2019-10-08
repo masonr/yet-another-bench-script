@@ -31,7 +31,7 @@ TOTAL_DISK=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs
 echo -e "Disk       : $TOTAL_DISK"
 
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
-YABS_PATH=/tmp/$DATE/
+YABS_PATH=./$DATE/
 mkdir -p $YABS_PATH
 
 SKIP_DD=""
@@ -56,14 +56,14 @@ function dd_test {
 	OS=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 	while [ $I -lt 3 ]
 	do
-		DD_WRITE_TEST=$(dd if=/dev/zero of=$DATE.test bs=64k count=16k oflag=direct |& grep copied)
+		DD_WRITE_TEST=$(dd if=/dev/zero of=$YABS_PATH/$DATE.test bs=64k count=16k oflag=direct |& grep copied)
 		[[ "$OS" == *"CentOS"* ]] && DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $8 " " $9 }') || DD_WRITE_TEST=$(echo $DD_WRITE_TEST | awk '{ print $10 " " $11 }')
 		DD_WRITE_TEST_RES+=( "$DD_WRITE_TEST" )
 		VAL=$(echo $DD_WRITE_TEST | cut -d " " -f 1)
 		[[ "$DD_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 	
-		DD_READ_TEST=$(dd if=$DATE.test of=/dev/null bs=64k |& grep copied)
+		DD_READ_TEST=$(dd if=$YABS_PATH/$DATE.test of=/dev/null bs=64k |& grep copied)
 		[[ "$OS" == *"CentOS"* ]] && DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $8 " " $9 }') || DD_READ_TEST=$(echo $DD_READ_TEST | awk '{ print $10 " " $11 }')
 		DD_READ_TEST_RES+=( "$DD_READ_TEST" )
 		VAL=$(echo $DD_READ_TEST | cut -d " " -f 1)
@@ -79,10 +79,9 @@ function dd_test {
 if [ -z "$SKIP_DD" ]; then
 	echo -e "Performing dd disk performance test. This may take a couple minutes to complete..."
 	
-	touch $DATE.test 2> /dev/null
-	if [ -f "$DATE.test" ]; then
+	touch $YABS_PATH/$DATE.test 2> /dev/null
+	if [ -f "$YABS_PATH/$DATE.test" ]; then
 		dd_test
-		rm $DATE.test
 	
 		if [ $(echo $DD_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
 			DD_WRITE_TEST_AVG=$(awk -v a="$DD_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
@@ -231,4 +230,4 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 fi
 
 echo -e
-rm -rf /tmp/$DATE
+rm -rf $YABS_PATH
