@@ -21,7 +21,7 @@ curl https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/ya
 ./yabs.sh -{dig}
 ```
 
-* `-d` this option disables the dd/ioping (disk performance) test
+* `-d` this option disables the dd (disk performance) test
 * `-i` this option disables the iperf (network performance) test
 * `-g` this option disables the Geekbench (system performance) test
 
@@ -29,72 +29,82 @@ Options can be grouped together to skip multiple tests, i.e. `./yabs -dg` to ski
 
 ## Tests Conducted
 
-* **dd** & **ioping** - the dd utility is utilized to test sequential write disk performance and the ioping utility is used to test sequential read disk performance.
+* **dd** - the dd utility is utilized to test sequential write and read disk performance.
 * **iperf3** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 10 tries, the speed test for that location/direction is skipped.
 * **Geekbench 4** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench 4 result to your Geekbench profile is written to a file in the directory that this script is executed from.
+
+### Note on Disk Performance Test
+
+This script uses dd's sequential throughput test in order to test both write and read speeds to the disk. It is well known that sequential disk speeds are not necessarily indicative of actual, real-world performance. A superior method to testing disk performance using real-world scenarios is [fio (Flexible I/O Tester)](https://github.com/axboe/fio). Fio was not utilized within this script because the program needs to be compiled and installed on the user's system to run correctly, thus clashes with YABS' tenet to not require any dependencies (installed or compiled) or admin rights to run the script. The sequential dd tests are merely provided as a convienence for the end user.
+
+### Security Notice
+
+This script relies on two external binaries in order to complete the network and system performance tests. For the network test, an iperf3 binary and shared library are downloaded from the official source at iperf.fr. For the system test, a Geekbench 4 tarball is downloaded, extracted, and the resulting binary is run. The security risks of running these binaries are minimal, however, use this script at your own risk as you would with any script publicly available on the net.
 
 ## Example Output
 
 ```
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 #              Yet-Another-Bench-Script              #
-#                     v2019-10-08                    #
+#                     v2020-01-08                    #
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Tue Oct  8 12:27:29 EDT 2019
+Wed 08 Jan 2020 07:33:21 PM UTC
 
 Basic System Information:
 ---------------------------------
-Processor  : Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz
-CPU cores  : 8 @ 1600.270 MHz
+Processor  : Intel(R) Xeon(R) CPU E3-1270 v6 @ 3.80GHz
+CPU cores  : 8 @ 4098.759 MHz
 AES-NI     : ✔ Enabled
 VM-x/AMD-V : ✔ Enabled
-RAM        : 31G
-Swap       : 7.5G
-Disk       : 213G
+RAM        : 31Gi
+Swap       : 0B
+Disk       : 221G
 
-Disk Speed Tests:
+dd Sequential Disk Speed Tests:
 ---------------------------------
        | Test 1      | Test 2      | Test 3      | Avg
        |             |             |             |
-Write  | 363.00 MB/s | 361.00 MB/s | 354.00 MB/s | 359.33 MB/s
-Read   | 411.58 MB/s | 399.94 MB/s | 398.18 MB/s | 403.23 MB/s
+Write  | 291 MB/s    | 286 MB/s    | 281 MB/s    | 286.00 MB/s
+Read   | 179 MB/s    | 188 MB/s    | 179 MB/s    | 182.00 MB/s
 
 iperf3 Network Speed Tests (IPv4):
 ---------------------------------
 Provider                  | Location (Link)           | Send Speed      | Recv Speed
                           |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | 348 Mbits/sec   | 223 Mbits/sec
-Online.net                | Paris, FR (10G)           | 770 Mbits/sec   | 142 Mbits/sec
-Severius                  | The Netherlands (10G)     | 687 Mbits/sec   | 106 Mbits/sec
-Worldstream               | The Netherlands (10G)     | 739 Mbits/sec   | 86.1 Mbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | 775 Mbits/sec   | 85.0 Mbits/sec
-Biznet                    | Bogor, Indonesia (1G)     | busy            | busy
-Hostkey                   | Moscow, RU (1G)           | 639 Mbits/sec   | 438 Mbits/sec
-Velocity Online           | Tallahassee, FL, US (10G) | 852 Mbits/sec   | 312 Mbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | 806 Mbits/sec   | 114 Mbits/sec
-Hurricane Electric        | Fremont, CA, US (10G)     | 728 Mbits/sec   | busy
+Bouygues Telecom          | Paris, FR (10G)           | 2.93 Gbits/sec  | 7.80 Gbits/sec
+Online.net                | Paris, FR (10G)           | 7.79 Gbits/sec  | 5.20 Gbits/sec
+Severius                  | The Netherlands (10G)     | 8.98 Gbits/sec  | 2.53 Gbits/sec
+Worldstream               | The Netherlands (10G)     | 8.65 Gbits/sec  | 8.57 Gbits/sec
+wilhelm.tel               | Hamburg, DE (10G)         | 7.80 Gbits/sec  | 9.03 Gbits/sec
+Biznet                    | Bogor, Indonesia (1G)     | 752 Mbits/sec   | busy
+Hostkey                   | Moscow, RU (1G)           | 905 Mbits/sec   | 449 Mbits/sec
+Vultr                     | Piscataway, NJ, US (1G)   | 448 Mbits/sec   | 51.6 Mbits/sec
+Velocity Online           | Tallahassee, FL, US (10G) | 1.74 Gbits/sec  | 1.61 Gbits/sec
+Airstream Communications  | Eau Claire, WI, US (10G)  | 1.61 Gbits/sec  | 106 Mbits/sec
+Hurricane Electric        | Fremont, CA, US (10G)     | 28.2 Mbits/sec  | 476 Mbits/sec
 
 iperf3 Network Speed Tests (IPv6):
 ---------------------------------
 Provider                  | Location (Link)           | Send Speed      | Recv Speed
                           |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | 724 Mbits/sec   | 241 Mbits/sec
-Online.net                | Paris, FR (10G)           | 608 Mbits/sec   | 93.6 Mbits/sec
-Severius                  | The Netherlands (10G)     | 291 Mbits/sec   | 103 Mbits/sec
-Worldstream               | The Netherlands (10G)     | 699 Mbits/sec   | 80.4 Mbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | 630 Mbits/sec   | 77.3 Mbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | 783 Mbits/sec   | 190 Mbits/sec
-Hurricane Electric        | Fremont, CA, US (10G)     | busy            | busy
+Bouygues Telecom          | Paris, FR (10G)           | 7.78 Gbits/sec  | 6.00 Gbits/sec
+Online.net                | Paris, FR (10G)           | 2.86 Gbits/sec  | 5.74 Gbits/sec
+Severius                  | The Netherlands (10G)     | 6.96 Gbits/sec  | 2.38 Gbits/sec
+Worldstream               | The Netherlands (10G)     | 7.29 Gbits/sec  | 6.02 Gbits/sec
+wilhelm.tel               | Hamburg, DE (10G)         | 4.64 Gbits/sec  | 8.93 Gbits/sec
+Vultr                     | Piscataway, NJ, US (1G)   | 97.5 Mbit/sec   | 37.3 Mbits/sec
+Airstream Communications  | Eau Claire, WI, US (10G)  | busy            | busy
+Hurricane Electric        | Fremont, CA, US (10G)     | 348 Mbits/sec   | 505 Mbits/sec
 
 Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 4015
-Multi Core      | 13157
-Full Test       | https://browser.geekbench.com/v4/cpu/14775012
+Single Core     | 5714
+Multi Core      | 19758
+Full Test       | https://browser.geekbench.com/v4/cpu/15115430
 
 ```
 
