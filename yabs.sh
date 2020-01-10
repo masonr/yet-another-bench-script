@@ -98,7 +98,7 @@ function disk_test {
 		# read test using dd using the 1G file written during the write test
 		DISK_READ_TEST=$(dd if=$DISK_PATH/$DATE.test of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_READ_TEST | cut -d " " -f 1)
-		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { pring a * 1000 }')
+		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
 		DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
