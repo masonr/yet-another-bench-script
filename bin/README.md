@@ -35,7 +35,7 @@ fio static binary will be in current dir
 ```sh
 git clone https://github.com/esnet/iperf
 cd iperf
-./configure "LDFLAGS=--static" --disable-shared --diable-profiling
+./configure "LDFLAGS=--static" --disable-shared --disable-profiling
 make
 ```
 
