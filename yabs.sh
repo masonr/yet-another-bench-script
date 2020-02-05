@@ -8,7 +8,7 @@
 #
 # Purpose:    The purpose of this script is to quickly gauge the performance of a Linux-
 #             based server by benchmarking network performance via iperf3, CPU and
-#             overall system performance via Geekbench 4, and sequential + random  disk
+#             overall system performance via Geekbench 4, and random  disk
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
@@ -164,7 +164,7 @@ function format_iops {
 
 # disk_test
 # Purpose: This method is designed to test the disk performance of the host using the partition that the
-#          script is being run from using fio sequential and random read/write speed tests.
+#          script is being run from using fio random read/write speed tests.
 # Parameters:
 #          - (none)
 function disk_test {
@@ -255,7 +255,7 @@ if [ -z "$SKIP_FIO" ]; then
 	# execute disk performance test
 	disk_test
 
-	if [ -z "$DISK_RW4_TEST" ]; then # fio was killed or returned an error
+	if [ -z "$DISK_RW4_TEST_R" ]; then # fio was killed or returned an error
 		echo -e "fio disk speed tests failed. Run manually to determine cause."
 	else # fio tests completed sucessfully, print results
 		
