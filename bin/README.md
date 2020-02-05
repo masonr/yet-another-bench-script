@@ -1,42 +1,29 @@
-## YABS Static Binaries
+## YABS Pre-Compiled Binaries
 
-This directory contains all of the static binaries required to run the benchmarking tests. Naturally, there is a security risk to your machine and its contents by running this script since, after all, this is just a script on the internet. You'll simply have to have confidence that I don't have malicious intent and am semi-competent at writing a bash script. The script is made public so you can look at the code yourself. The static binaries were compiled on local Debian 7 VMs. The compiled binary version numbers and compilations steps are noted below. Please open an issue if the compiled version is out of date and lacking any security-related and/or performance updates.
+This directory contains all of the binaries required to run the benchmarking tests. Naturally, there is a security risk to your machine and its contents by running this script since, after all, this is just a script on the internet. You'll simply have to have confidence that I don't have malicious intent and am semi-competent at writing a bash script. The script is made public so you can look at the code yourself. The static binaries were compiled using a [Holy Build Box](https://github.com/phusion/holy-build-box) compilation environment in order to ensure the most portability. The compiled binary version numbers and compilations steps are noted below. Please open an issue if the compiled version is out of date and lacking any security-related and/or performance updates.
 
-### Static Binaries
+### Binaries
 
-* **fio_x64.static** - v3.17-66-gb7ed (compiled 13 Jan 2020) - 64-bit version
-* **fio_x86.static** - v3.17-67-g7eff0 (compiled 13 Jan 2020) - 32-bit version
-* **iperf_x64.static** - v3.7+ (compiled 13 Jan 2020) - 64-bit version
-* **iperf_x86.static** - v3.7+ (compiled 13 Jan 2020) - 32-bit version
+* **fio_x64** - v3.17 (compiled 28 Jan 2020) - 64-bit version
+* **fio_x86** - v3.17 (compiled 28 Jan 2020) - 32-bit version
+* **iperf_x64** - v3.7 (compiled 28 Jan 2020) - 64-bit version
+* **iperf_x86** - v3.7 (compiled 28 Jan 2020) - 32-bit version
 
 ### Compile Notes
 
 **Pre-reqs**:
+  * Docker - https://www.docker.com/
 
-```sh
-apt install build-essential git libc6-dev libaio-dev zlib1g-dev libssl-dev
+**Compiling 64-bit binaries**:
+
+```
+docker run -t -i --rm -v `pwd`:/io phusion/holy-build-box-64:latest bash /io/compile.sh
 ```
 
-_(or equivalents in other package repos)_
+**Compiling 32-bit binaries**:
 
-**fio**:
-
-```sh
-git clone https://github.com/axboe/fio
-cd fio
-./configure --build-static
-make
+```
+docker run -t -i --rm -v `pwd`:/io phusion/holy-build-box-32:latest linux32 bash /io/compile.sh
 ```
 
-fio static binary will be in current dir
-
-**iperf3**:
-
-```sh
-git clone https://github.com/esnet/iperf
-cd iperf
-./configure "LDFLAGS=--static" --disable-shared --diable-profiling
-make
-```
-
-iperf3 static binary will be in the src dir
+64-bit and 32-bit binaries will be placed in the current directory.
