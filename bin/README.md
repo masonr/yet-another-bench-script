@@ -16,13 +16,13 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 **Compiling 64-bit binaries**:
 
-```
+```sh
 docker run -t -i --rm -v `pwd`:/io phusion/holy-build-box-64:latest bash /io/compile.sh
 ```
 
 **Compiling 32-bit binaries**:
 
-```
+```sh
 docker run -t -i --rm -v `pwd`:/io phusion/holy-build-box-32:latest linux32 bash /io/compile.sh
 ```
 
