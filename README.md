@@ -117,7 +117,7 @@ GitHub's CDN does not resolve via IPv6. You will need to run the following comma
 
 (2a04:4e42::133 is fastly.net's [GitHub's CDN Provider] IPv6 address)
 
-## Acknoledgements
+## Acknowledgements
 
 This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of both the [HostedTalk](https://hostedtalk.net), [LowEndSpirit](https://talk.lowendspirit.com), and [LowEndTalk](https://www.lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
 
