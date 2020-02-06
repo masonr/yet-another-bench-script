@@ -8,11 +8,11 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 ## How to Run
 
-`curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash`
+`curl -sL yabs.sh | bash`
 
 This script has been tested on CentOS 7, CentOS 8, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies to be installed nor elevated privileges to run.
 
-*IPv6-Only Machines*: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines)
+**IPv6-Only Machines**: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines)
 
 
 ### Skipping Tests
@@ -20,7 +20,7 @@ This script has been tested on CentOS 7, CentOS 8, Debian 9, Debian 10, Fedora 3
 By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
 ```
-curl https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/yabs.sh | bash -s -- -{fig}
+curl -sL yabs.sh | bash -s -- -{fig}
 ```
 
 * `-f`/`-d` this option disables the fio (disk performance) test
@@ -119,7 +119,7 @@ GitHub's CDN does not resolve via IPv6. You will need to run the following comma
 
 ## Acknoledgements
 
-This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of both the [HostBalls](https://hostballs.com) and [LowEndTalk](https://www.lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
+This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of both the [HostedTalk](https://hostedtalk.net), [LowEndSpirit](https://talk.lowendspirit.com), and [LowEndTalk](https://www.lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
 
 ## License
 ```
