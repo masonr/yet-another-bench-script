@@ -12,6 +12,8 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 This script has been tested on CentOS 7, CentOS 8, Debian 9, Debian 10, Fedora 30, Ubuntu 16.04, and Ubuntu 18.04. It is designed to not require any external dependencies to be installed nor elevated privileges to run.
 
+**Local fio/iperf3 Packages**: If the tested system has fio and/or iperf3 already installed, the local package will take precedence over the precompiled binary.
+
 **IPv6-Only Machines**: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines)
 
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4, etc.)
