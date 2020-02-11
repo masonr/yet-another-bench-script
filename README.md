@@ -14,18 +14,20 @@ This script has been tested on CentOS 7, CentOS 8, Debian 9, Debian 10, Fedora 3
 
 **IPv6-Only Machines**: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines)
 
-
-### Skipping Tests
+### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4, etc.)
 
 By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
 ```
-curl -sL yabs.sh | bash -s -- -{fig}
+curl -sL yabs.sh | bash -s -- -{fdighr4}
 ```
 
 * `-f`/`-d` this option disables the fio (disk performance) test
 * `-i` this option disables the iperf (network performance) test
 * `-g` this option disables the Geekbench (system performance) test
+* `-h` this option prints the help message with usage, flags detected, and local package (fio/iperf) status
+* `-r` this option reduces the number of iperf locations (Online.net/WorldStream/HE.net) to lessen bandwidth usage
+* `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).
 
@@ -33,7 +35,7 @@ Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the d
 
 * **fio** - the most comprehensive I/O testing software available, fio grants the ability to evaluate disk performance in a variety of methods with a variety of options. Four random read and write fio disk tests are conducted as part of this script with 4k, 64k, 512k, and 1m block sizes. The tests are designed to evaluate disk throughput in near-real world (using random) scenarios with a 50/50 split (50% reads and 50% writes per test).
 * **iperf3** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 10 tries, the speed test for that location/direction is skipped.
-* **Geekbench 4** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench 4 result to your Geekbench profile is written to a file in the directory that this script is executed from.
+* **Geekbench 5** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench 5 result to your Geekbench profile is written to a file in the directory that this script is executed from. You can run a Geekbench 4 test, instead of v5, by using the "-4" flag.
 
 ### Security Notice
 
