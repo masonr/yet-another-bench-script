@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Updated Feb 2020
+# Initial Oct 2019; Last update Jun 2020
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-02-10                    #'
+echo -e '#                     v2020-06-20                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -40,10 +40,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4_OVERRIDE
+unset SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5
+GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'fdighr4' flag; do
+while getopts 'fdighr49' flag; do
 	case "${flag}" in
 		f) SKIP_FIO="True" ;;
 		d) SKIP_FIO="True" ;;
@@ -51,7 +52,8 @@ while getopts 'fdighr4' flag; do
 		g) SKIP_GEEKBENCH="True" ;;
 		h) PRINT_HELP="True" ;;
 		r) REDUCE_NET="True" ;;
-		4) GEEKBENCH_4_OVERRIDE="True" ;;
+		4) GEEKBENCH_4="True" && unset GEEKBENCH_5 ;;
+		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" ;;
 		*) exit 1 ;;
 	esac
 done
@@ -89,7 +91,8 @@ if [ ! -z "$PRINT_HELP" ]; then
 	[[ ! -z $SKIP_IPERF ]] && echo -e "       -i, skipping iperf network test"
 	[[ ! -z $SKIP_GEEKBENCH ]] && echo -e "       -g, skipping geekbench test"
 	[[ ! -z $REDUCE_NET ]] && echo -e "       -r, using reduced (3) iperf3 locations"
-	[[ ! -z $GEEKBENCH_4_OVERRIDE ]] && echo -e "       -4, running geekbench 4 instead of 5"
+	[[ ! -z $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
+	[[ ! -z $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
 	echo -e
 	echo -e "Local Binary Check:"
 	[[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary" ||
@@ -137,6 +140,19 @@ if [ ! -f "$DATE.test" ]; then
 fi
 rm $DATE.test
 mkdir -p $YABS_PATH
+
+# trap CTRL+C signals to exit script cleanly
+trap catch_abort INT
+
+# catch_abort
+# Purpose: This method will catch CTRL+C signals in order to exit the script cleanly and remove
+#          yabs-related files.
+function catch_abort() {
+	echo -e "\n** Aborting YABS. Cleaning up files...\n"
+	rm -rf $YABS_PATH
+	unset LC_ALL
+	exit 0
+}
 
 # format_speed
 # Purpose: This method is a convienence function to format the output of the fio disk tests which
@@ -216,65 +232,27 @@ function disk_test {
 	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=4k --iodepth=64 --numjobs=2 --size=2G --runtime=1 --gtod_reduce=1 --filename=$DISK_PATH/test.fio --direct=1 --minimal &> /dev/null
 	echo -en "\r\033[0K"
 
-	# run rand read/write mixed 4kb fio test
-	echo -en "Running fio random mixed read + write disk test with 4kb blocks..."
-	DISK_RW4_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_4k --ioengine=libaio --rw=randrw --rwmixread=50 --bs=4k --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_4k)
-	DISK_RW4_IOPS_R=$(echo $DISK_RW4_TEST | awk -F';' '{print $8}')
-	DISK_RW4_IOPS_W=$(echo $DISK_RW4_TEST | awk -F';' '{print $49}')
-	DISK_RW4_IOPS=$(format_iops $(awk -v a="$DISK_RW4_IOPS_R" -v b="$DISK_RW4_IOPS_W" 'BEGIN { print a + b }'))
-	DISK_RW4_IOPS_R=$(format_iops $DISK_RW4_IOPS_R)
-	DISK_RW4_IOPS_W=$(format_iops $DISK_RW4_IOPS_W)
-	DISK_RW4_TEST_R=$(echo $DISK_RW4_TEST | awk -F';' '{print $7}')
-	DISK_RW4_TEST_W=$(echo $DISK_RW4_TEST | awk -F';' '{print $48}')
-	DISK_RW4_TEST=$(format_speed $(awk -v a="$DISK_RW4_TEST_R" -v b="$DISK_RW4_TEST_W" 'BEGIN { print a + b }'))
-	DISK_RW4_TEST_R=$(format_speed $DISK_RW4_TEST_R)
-	DISK_RW4_TEST_W=$(format_speed $DISK_RW4_TEST_W)
-	echo -en "\r\033[0K"
+	# get array of block sizes to evaluate
+	BLOCK_SIZES=("$@")
 
-	# run rand read/write mixed 64kb fio test
-	echo -en "Running fio random mixed read + write disk test with 64kb blocks..."
-	DISK_RW64_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_64k --ioengine=libaio --rw=randrw --rwmixread=50 --bs=64k --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_64k)
-	DISK_RW64_IOPS_R=$(echo $DISK_RW64_TEST | awk -F';' '{print $8}')
-	DISK_RW64_IOPS_W=$(echo $DISK_RW64_TEST | awk -F';' '{print $49}')
-	DISK_RW64_IOPS=$(format_iops $(awk -v a="$DISK_RW64_IOPS_R" -v b="$DISK_RW64_IOPS_W" 'BEGIN { print a + b }'))
-	DISK_RW64_IOPS_R=$(format_iops $DISK_RW64_IOPS_R)
-	DISK_RW64_IOPS_W=$(format_iops $DISK_RW64_IOPS_W)
-	DISK_RW64_TEST_R=$(echo $DISK_RW64_TEST | awk -F';' '{print $7}')
-	DISK_RW64_TEST_W=$(echo $DISK_RW64_TEST | awk -F';' '{print $48}')
-	DISK_RW64_TEST=$(format_speed $(awk -v a="$DISK_RW64_TEST_R" -v b="$DISK_RW64_TEST_W" 'BEGIN { print a + b }'))
-	DISK_RW64_TEST_R=$(format_speed $DISK_RW64_TEST_R)
-	DISK_RW64_TEST_W=$(format_speed $DISK_RW64_TEST_W)
-	echo -en "\r\033[0K"
+	for BS in "${BLOCK_SIZES[@]}"; do
+		# run rand read/write mixed fio test with block size = $BS
+		echo -en "Running fio random mixed R+W disk test with $BS block size..."
+		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
+		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
+		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
+		DISK_IOPS=$(format_iops $(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }'))
+		DISK_IOPS_R=$(format_iops $DISK_IOPS_R)
+		DISK_IOPS_W=$(format_iops $DISK_IOPS_W)
+		DISK_TEST_R=$(echo $DISK_TEST | awk -F';' '{print $7}')
+		DISK_TEST_W=$(echo $DISK_TEST | awk -F';' '{print $48}')
+		DISK_TEST=$(format_speed $(awk -v a="$DISK_TEST_R" -v b="$DISK_TEST_W" 'BEGIN { print a + b }'))
+		DISK_TEST_R=$(format_speed $DISK_TEST_R)
+		DISK_TEST_W=$(format_speed $DISK_TEST_W)
 
-	# run rand read/write mixed 512kb fio test
-	echo -en "Running fio random mixed read + write disk test with 512kb blocks..."
-	DISK_RW512_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_512k --ioengine=libaio --rw=randrw --rwmixread=50 --bs=512k --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_512k)
-	DISK_RW512_IOPS_R=$(echo $DISK_RW512_TEST | awk -F';' '{print $8}')
-	DISK_RW512_IOPS_W=$(echo $DISK_RW512_TEST | awk -F';' '{print $49}')
-	DISK_RW512_IOPS=$(format_iops $(awk -v a="$DISK_RW512_IOPS_R" -v b="$DISK_RW512_IOPS_W" 'BEGIN { print a + b }'))
-	DISK_RW512_IOPS_R=$(format_iops $DISK_RW512_IOPS_R)
-	DISK_RW512_IOPS_W=$(format_iops $DISK_RW512_IOPS_W)
-	DISK_RW512_TEST_R=$(echo $DISK_RW512_TEST | awk -F';' '{print $7}')
-	DISK_RW512_TEST_W=$(echo $DISK_RW512_TEST | awk -F';' '{print $48}')
-	DISK_RW512_TEST=$(format_speed $(awk -v a="$DISK_RW512_TEST_R" -v b="$DISK_RW512_TEST_W" 'BEGIN { print a + b }'))
-	DISK_RW512_TEST_R=$(format_speed $DISK_RW512_TEST_R)
-	DISK_RW512_TEST_W=$(format_speed $DISK_RW512_TEST_W)
-	echo -en "\r\033[0K"
-
-	# run rand read/write mixed 1mb fio test
-	echo -en "Running fio random mixed read + write disk test with 1mb blocks..."
-	DISK_RW1M_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_1m --ioengine=libaio --rw=randrw --rwmixread=50 --bs=1m --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_1m)
-	DISK_RW1M_IOPS_R=$(echo $DISK_RW1M_TEST | awk -F';' '{print $8}')
-	DISK_RW1M_IOPS_W=$(echo $DISK_RW1M_TEST | awk -F';' '{print $49}')
-	DISK_RW1M_IOPS=$(format_iops $(awk -v a="$DISK_RW1M_IOPS_R" -v b="$DISK_RW1M_IOPS_W" 'BEGIN { print a + b }'))
-	DISK_RW1M_IOPS_R=$(format_iops $DISK_RW1M_IOPS_R)
-	DISK_RW1M_IOPS_W=$(format_iops $DISK_RW1M_IOPS_W)
-	DISK_RW1M_TEST_R=$(echo $DISK_RW1M_TEST | awk -F';' '{print $7}')
-	DISK_RW1M_TEST_W=$(echo $DISK_RW1M_TEST | awk -F';' '{print $48}')
-	DISK_RW1M_TEST=$(format_speed $(awk -v a="$DISK_RW1M_TEST_R" -v b="$DISK_RW1M_TEST_W" 'BEGIN { print a + b }'))
-	DISK_RW1M_TEST_R=$(format_speed $DISK_RW1M_TEST_R)
-	DISK_RW1M_TEST_W=$(format_speed $DISK_RW1M_TEST_W)
-	echo -en "\r\033[0K"
+		DISK_RESULTS+=( "$DISK_TEST" "$DISK_TEST_R" "$DISK_TEST_W" "$DISK_IOPS" "$DISK_IOPS_R" "$DISK_IOPS_W" )
+		echo -en "\r\033[0K"
+	done
 }
 
 # dd_test
@@ -338,10 +316,15 @@ if [ -z "$SKIP_FIO" ]; then
 
 	echo -en "\r\033[0K"
 	
-	# execute disk performance test
-	disk_test
+	# init global array to store disk performance values
+	declare -a DISK_RESULTS
+	# disk block sizes to evaluate
+	BLOCK_SIZES=( "4k" "64k" "512k" "1m" )
 
-	if [ -z "$DISK_RW4_TEST_R" ]; then # fio was killed or returned an error, run dd test instead
+	# execute disk performance test
+	disk_test "${BLOCK_SIZES[@]}"
+
+	if [ ${#DISK_RESULTS[@]} -eq 0 ]; then # fio was killed or returned an error, run dd test instead
 		echo -e "fio disk speed tests failed. Run manually to determine cause.\nRunning dd test as fallback..."
 
 		dd_test
@@ -369,20 +352,22 @@ if [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed sucessfully, print results
+		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
+		DISK_COUNT=0
+
 		# print disk speed test results
 		echo -e "fio Disk Speed Tests (Mixed R/W 50/50):"
 		echo -e "---------------------------------"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Block Size" "4kb" "(IOPS)" "64kb" "(IOPS)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "  ------" "---" "---- " "----" "---- "
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "$DISK_RW4_TEST_R" "($DISK_RW4_IOPS_R)" "$DISK_RW64_TEST_R" "($DISK_RW64_IOPS_R)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "$DISK_RW4_TEST_W" "($DISK_RW4_IOPS_W)" "$DISK_RW64_TEST_W" "($DISK_RW64_IOPS_W)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "$DISK_RW4_TEST" "($DISK_RW4_IOPS)" "$DISK_RW64_TEST" "($DISK_RW64_IOPS)"
-		printf "%-10s | %-20s | %-20s\n"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Block Size" "512kb" "(IOPS)" "1mb" "(IOPS)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "  ------" "-----" "---- " "---" "---- "
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "$DISK_RW512_TEST_R" "($DISK_RW512_IOPS_R)" "$DISK_RW1M_TEST_R" "($DISK_RW1M_IOPS_R)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "$DISK_RW512_TEST_W" "($DISK_RW512_IOPS_W)" "$DISK_RW1M_TEST_W" "($DISK_RW1M_IOPS_W)"
-		printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "$DISK_RW512_TEST" "($DISK_RW512_IOPS)" "$DISK_RW1M_TEST" "($DISK_RW1M_IOPS)"
+
+		while [ $DISK_COUNT -lt $DISK_RESULTS_NUM ] ; do
+			if [ $DISK_COUNT -gt 0 ]; then printf "%-10s | %-20s | %-20s\n"; fi
+			printf "%-10s | %-11s %8s | %-11s %8s\n" "Block Size" "${BLOCK_SIZES[DISK_COUNT]}" "(IOPS)" "${BLOCK_SIZES[DISK_COUNT+1]}" "(IOPS)"
+			printf "%-10s | %-11s %8s | %-11s %8s\n" "  ------" "---" "---- " "----" "---- "
+			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
+			printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "${DISK_RESULTS[DISK_COUNT*6+2]}" "(${DISK_RESULTS[DISK_COUNT*6+5]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+2]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+5]})"
+			printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "${DISK_RESULTS[DISK_COUNT*6]}" "(${DISK_RESULTS[DISK_COUNT*6+3]})" "${DISK_RESULTS[(DISK_COUNT+1)*6]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+3]})"
+			DISK_COUNT=$(expr $DISK_COUNT + 2)
+		done
 	fi
 fi
 
@@ -557,28 +542,21 @@ if [ -z "$SKIP_IPERF" ]; then
 	[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
 fi
 
-# if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
-if [ -z "$SKIP_GEEKBENCH" ]; then
+# launch_geekbench
+# Purpose: This method is designed to run the Primate Labs' Geekbench 4/5 Cross-Platform Benchmark utility
+# Parameters:
+#          1. VERSION - indicates which Geekbench version to run
+function launch_geekbench {
+	VERSION=$1
 
 	# create a temp directory to house all geekbench files
-	GEEKBENCH_PATH=$YABS_PATH/geekbench
+	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
 	mkdir -p $GEEKBENCH_PATH
 
-	if [ -z $GEEKBENCH_4_OVERRIDE ]; then # run Geekbench 5 test
-		if [[ $ARCH = *x86* ]]; then # don't run Geekbench 5 if on 32-bit arch
-			echo -e "\nGeekbench 5 cannot run on 32-bit architectures. Re-run with -4 flag to use"
-			echo -e "Geekbench 4, which can support 32-bit architecutes. Skipping Geekbench."
-		else
-			echo -en "\nPerforming Geekbench 5 benchmark test. This may take a couple minutes to complete..."
-			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
-			curl -s http://cdn.geekbench.com/Geekbench-5.1.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
-
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 2>/dev/null | grep "https://browser")
-		fi
-	else # run Geekbench 4 test
-		echo -en "\nPerforming Geekbench 4 benchmark test. This may take a couple minutes to complete..."
+	if [[ $VERSION == *4* ]]; then # Geekbench v4
+		echo -en "\nPerforming Geekbench 4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
-		curl -s http://cdn.geekbench.com/Geekbench-4.3.3-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		curl -s http://cdn.geekbench.com/Geekbench-4.4.2-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
 		if [[ "$ARCH" == *"x86"* ]]; then
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
@@ -589,15 +567,27 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 		fi
 	fi
 
+	if [[ $VERSION == *5* ]]; then # Geekbench v5
+		if [[ $ARCH = *x86* ]]; then # don't run Geekbench 5 if on 32-bit arch
+			echo -e "\nGeekbench 5 cannot run on 32-bit architectures. Re-run with -4 flag to use"
+			echo -e "Geekbench 4, which can support 32-bit architecutes. Skipping Geekbench 5."
+		else
+			echo -en "\nPerforming Geekbench 5 benchmark test... *cue elevator music*"
+			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
+			curl -s http://cdn.geekbench.com/Geekbench-5.2.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 2>/dev/null | grep "https://browser")
+		fi
+	fi
+
 	# ensure the test ran successfully
 	if [ -z "$GEEKBENCH_TEST" ]; then
 		if [ -z "$IPV4_CHECK" ]; then
-			# Geekbench 4 test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
+			# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
 			echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
 		else
 			# if the Geekbench test failed for any reason, exit cleanly and print error message
-			[[ -z "$GEEKBENCH_4_OVERRIDE" ]] && echo -e "\r\033[0KGeekbench 5 test failed. Run manually to determine cause." ||
-				echo -e "\r\033[0KGeekbench 4 test failed. Run manually to determine cause."
+			echo -e "\r\033[0KGeekbench $VERSION test failed. Run manually to determine cause."
 		fi
 	else
 		# if the Geekbench test succeeded, parse the test results URL
@@ -607,15 +597,14 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 		# sleep a bit to wait for results to be made available on the geekbench website
 		sleep 10
 		# parse the public results page for the single and multi core geekbench scores
-		[[ -z "$GEEKBENCH_4_OVERRIDE" ]] && GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "div class='score'") ||
+		[[ $VERSION == *5* ]] && GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "div class='score'") ||
 			GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "class='score' rowspan")
 		GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
 		GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(<|>)" '{ print $7 }')
 	
 		# print the Geekbench results
 		echo -en "\r\033[0K"
-		[[ -z "$GEEKBENCH_4_OVERRIDE" ]] && echo -e "Geekbench 5 Benchmark Test:" ||
-			echo -e "Geekbench 4 Benchmark Test:"
+		echo -e "Geekbench $VERSION Benchmark Test:"
 		echo -e "---------------------------------"
 		printf "%-15s | %-30s\n" "Test" "Value"
 		printf "%-15s | %-30s\n"
@@ -624,7 +613,19 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 		printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
 
 		# write the geekbench claim URL to a file so the user can add the results to their profile (if desired)
-		[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" > geekbench_claim.url 2> /dev/null
+		[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" >> geekbench_claim.url 2> /dev/null
+	fi
+}
+
+# if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
+if [ -z "$SKIP_GEEKBENCH" ]; then
+
+	if [[ $GEEKBENCH_4 == *True* ]]; then
+		launch_geekbench 4
+	fi
+
+	if [[ $GEEKBENCH_5 == *True* ]]; then
+		launch_geekbench 5
 	fi
 fi
 
