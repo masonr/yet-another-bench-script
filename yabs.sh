@@ -22,7 +22,7 @@ echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e
 date
 
-# override locale to eliminate parsing errors (i.e. using commas a delimiters rather than periods)
+# override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
 export LC_ALL=C
 
 # determine architecture of host
@@ -83,6 +83,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "       -r : reduce number of iperf3 network locations (to only three)"
 	echo -e "            to lessen bandwidth usage"
 	echo -e "       -4 : use geekbench 4 instead of geekbench 5"
+	echo -e "       -9 : use both geekbench 4 AND geekbench 5"
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
@@ -194,7 +195,7 @@ function format_speed {
 }
 
 # format_iops
-# Purpose: This method is a convienence function to format the output of the raw IOPS result
+# Purpose: This method is a convenience function to format the output of the raw IOPS result
 # Parameters:
 #          1. RAW - the raw IOPS result
 # Returns:
@@ -517,7 +518,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Bogor, Indonesia (1G)" "IPv4" \
 		"speedtest.hostkey.ru" "5200-5203" "Hostkey" "Moscow, RU (1G)" "IPv4" \
 		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
-		"iperf.airstreamcomm.net" "5201-5205" "Airstream Communications" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
+		"iperf.airstreamcomm.net" "5201-5205" "Airstream Comms" "Eau Claire, WI, US (10G)" "IPv4|IPv6" \
 		"iperf.he.net" "5201-5201" "Hurricane Electric" "Fremont, CA, US (10G)" "IPv4|IPv6" \
 	)
 
@@ -570,7 +571,7 @@ function launch_geekbench {
 	if [[ $VERSION == *5* ]]; then # Geekbench v5
 		if [[ $ARCH = *x86* ]]; then # don't run Geekbench 5 if on 32-bit arch
 			echo -e "\nGeekbench 5 cannot run on 32-bit architectures. Re-run with -4 flag to use"
-			echo -e "Geekbench 4, which can support 32-bit architecutes. Skipping Geekbench 5."
+			echo -e "Geekbench 4, which can support 32-bit architectures. Skipping Geekbench 5."
 		else
 			echo -en "\nPerforming Geekbench 5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
