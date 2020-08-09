@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jun 2020
+# Initial Oct 2019; Last update Aug 2020
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-06-20                    #'
+echo -e '#                     v2020-08-09                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -554,6 +554,14 @@ function launch_geekbench {
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
 	mkdir -p $GEEKBENCH_PATH
 
+        # check if geekbench file exists
+	if test -f "geekbench.license"; then
+		GEEKBENCH_LICENSE="--unlock "`cat geekbench.license`
+	else
+		GEEKBENCH_LICENSE=""
+	fi
+
+
 	if [[ $VERSION == *4* ]]; then # Geekbench v4
 		echo -en "\nPerforming Geekbench 4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
@@ -561,10 +569,10 @@ function launch_geekbench {
 
 		if [[ "$ARCH" == *"x86"* ]]; then
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench_x86_32 2>/dev/null | grep "https://browser")
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench_x86_32 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
 		else
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 2>/dev/null | grep "https://browser")
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
 		fi
 	fi
 
@@ -577,7 +585,7 @@ function launch_geekbench {
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			curl -s http://cdn.geekbench.com/Geekbench-5.2.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 2>/dev/null | grep "https://browser")
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
 		fi
 	fi
 
@@ -596,7 +604,7 @@ function launch_geekbench {
 		GEEKBENCH_URL_CLAIM=$(echo $GEEKBENCH_URL | awk '{ print $2 }')
 		GEEKBENCH_URL=$(echo $GEEKBENCH_URL | awk '{ print $1 }')
 		# sleep a bit to wait for results to be made available on the geekbench website
-		sleep 10
+		sleep 20
 		# parse the public results page for the single and multi core geekbench scores
 		[[ $VERSION == *5* ]] && GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "div class='score'") ||
 			GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "class='score' rowspan")
