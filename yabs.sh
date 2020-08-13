@@ -554,25 +554,27 @@ function launch_geekbench {
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
 	mkdir -p $GEEKBENCH_PATH
 
-        # check if geekbench file exists
-	if test -f "geekbench.license"; then
-		GEEKBENCH_LICENSE="--unlock "`cat geekbench.license`
-	else
-		GEEKBENCH_LICENSE=""
-	fi
-
-
 	if [[ $VERSION == *4* ]]; then # Geekbench v4
 		echo -en "\nPerforming Geekbench 4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
 		curl -s http://cdn.geekbench.com/Geekbench-4.4.2-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
 		if [[ "$ARCH" == *"x86"* ]]; then
+			# check if geekbench file exists
+			if test -f "geekbench.license"; then
+				$GEEKBENCH_PATH/geekbench_x86_32 --unlock "`cat geekbench.license` 2>/dev/null
+			fi
+		
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench_x86_32 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench_x86_32 2>/dev/null | grep "https://browser")
 		else
+			# check if geekbench file exists
+			if test -f "geekbench.license"; then
+				$GEEKBENCH_PATH/geekbench4 --unlock "`cat geekbench.license` 2>/dev/null
+			fi
+			
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench4 2>/dev/null | grep "https://browser")
 		fi
 	fi
 
@@ -585,7 +587,12 @@ function launch_geekbench {
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			curl -s http://cdn.geekbench.com/Geekbench-5.2.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
-			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 $GEEKBENCH_LICENSE 2>/dev/null | grep "https://browser")
+			# check if geekbench file exists
+			if test -f "geekbench.license"; then
+				$GEEKBENCH_PATH/geekbench5 --unlock "`cat geekbench.license` 2>/dev/null
+			fi
+
+			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 2>/dev/null | grep "https://browser")
 		fi
 	fi
 
