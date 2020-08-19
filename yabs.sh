@@ -13,11 +13,11 @@
 #             - either compiled or installed - nor admin privileges to run.
 #
 
-echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
-echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-06-20                    #'
-echo -e '# https://github.com/masonr/yet-another-bench-script #'
-echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
+echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
+echo -e '#              Yet-Another-Bench-Script                 #'
+echo -e '#                     v2020-06-20                       #'
+echo -e '# https://github.com/Cloudcone/yet-another-bench-script #'
+echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
 echo -e
 date
@@ -306,9 +306,9 @@ if [ -z "$SKIP_FIO" ]; then
 	else
 		# download fio binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s https://raw.githubusercontent.com/Cloudcone/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/Cloudcone/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
 		fi
 		chmod +x $DISK_PATH/fio
 
@@ -493,9 +493,9 @@ if [ -z "$SKIP_IPERF" ]; then
 
 		# download iperf3 binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s https://raw.githubusercontent.com/Cloudcone/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/Cloudcone/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		fi
 
 		chmod +x $IPERF_PATH/iperf3
