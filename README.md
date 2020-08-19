@@ -65,11 +65,11 @@ This script relies on external binaries in order to complete the performance tes
 ## Example Output
 
 ```
-# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
-#              Yet-Another-Bench-Script              #
-#                     v2020-02-04                    #
-# https://github.com/masonr/yet-another-bench-script #
-# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
+#              Yet-Another-Bench-Script                 #
+#                     v2020-06-20                       #
+# https://github.com/Cloudcone/yet-another-bench-script #
+# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
 Tue Feb  4 19:04:24 UTC 2020
 
