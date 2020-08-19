@@ -10,6 +10,20 @@ View YABS usage stats [here](https://yabs.rowe.sh).
 
 ## How to Run
 
+**Test Disk**
+
+`curl -sL bench.cloudcone.sh | bash -s -- -ig`
+
+**Test Network Upload/Download**
+
+`curl -sL bench.cloudcone.sh | bash -s -- -fgr`
+
+**Test CPU Performance**
+
+`curl -sL bench.cloudcone.sh | bash -s -- -fi`
+
+**Test All**
+
 `curl -sL bench.cloudcone.sh | bash`
 
 This script has been tested on the following Linux distributions: CentOS 6+, Debian 8+, Fedora 30, and Ubuntu 16.04+. It is designed to not require any external dependencies to be installed nor elevated privileges to run.
