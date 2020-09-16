@@ -6,6 +6,7 @@ source /hbb/activate
 
 set -x 
 
+yum install -y yum-plugin-ovl # fix for docker overlay fs
 yum install -y xz
 
 # determine arch
@@ -31,7 +32,7 @@ source /hbb_exe/activate
 
 # download and compile fio
 cd ~
-curl -L https://github.com/axboe/fio/archive/fio-3.17.tar.gz -o "fio.tar.gz"
+curl -L https://github.com/axboe/fio/archive/fio-3.23.tar.gz -o "fio.tar.gz"
 tar xf fio.tar.gz
 cd fio-fio*
 ./configure --disable-native
@@ -44,7 +45,7 @@ cp fio /io/fio_$ARCH
 
 # download and compile iperf
 cd ~
-curl -L https://github.com/esnet/iperf/archive/3.7.tar.gz -o "iperf.tar.gz"
+curl -L https://github.com/esnet/iperf/archive/3.9.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
 ./configure --disable-shared --disable-profiling

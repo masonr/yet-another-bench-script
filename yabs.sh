@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-09-09                    #'
+echo -e '#                     v2020-09-15                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
