@@ -32,9 +32,9 @@ curl -sL yabs.sh | bash -s -- -{fdighr49}
 * `-i` this option disables the iperf (network performance) test
 * `-g` this option disables the Geekbench (system performance) test
 * `-h` this option prints the help message with usage, flags detected, and local package (fio/iperf) status
-* `-r` this option reduces the number of iperf locations (Online.net/WorldStream/HE.net) to lessen bandwidth usage
+* `-r` this option reduces the number of iperf locations (Online.net/Clouvider LON+NYC) to lessen bandwidth usage
 * `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
-* `-9` this option runs the Geekbench4 test in addition to the Geekbench 5 test
+* `-9` this option runs the Geekbench 4 test in addition to the Geekbench 5 test
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).
 
@@ -55,68 +55,76 @@ This script relies on external binaries in order to complete the performance tes
 ```
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 #              Yet-Another-Bench-Script              #
-#                     v2020-02-04                    #
+#                     v2020-09-21                    #
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Tue Feb  4 19:04:24 UTC 2020
+Mon 21 Sep 2020 12:31:13 AM EDT
 
 Basic System Information:
 ---------------------------------
-Processor  : Intel(R) Xeon(R) CPU E3-1270 v6 @ 3.80GHz
-CPU cores  : 8 @ 800.098 MHz
+Processor  : Intel(R) Xeon(R) E-2276G CPU @ 3.80GHz
+CPU cores  : 12 @ 800.087 MHz
 AES-NI     : ✔ Enabled
 VM-x/AMD-V : ✔ Enabled
-RAM        : 31G
-Swap       : 0B
-Disk       : 221G
+RAM        : 15Gi
+Swap       : 14Gi
+Disk       : 865G
 
 fio Disk Speed Tests (Mixed R/W 50/50):
 ---------------------------------
-Block Size | 4kb           (IOPS) | 64kb          (IOPS)
+Block Size | 4k            (IOPS) | 64k           (IOPS)
   ------   | ---            ----  | ----           ----
-Read       | 69.37 MB/s   (17.3k) | 106.51 MB/s   (1.6k)
-Write      | 69.57 MB/s   (17.3k) | 107.07 MB/s   (1.6k)
-Total      | 138.94 MB/s  (34.7k) | 213.59 MB/s   (3.3k)
+Read       | 445.04 MB/s (111.2k) | 475.05 MB/s   (7.4k)
+Write      | 446.22 MB/s (111.5k) | 477.55 MB/s   (7.4k)
+Total      | 891.26 MB/s (222.8k) | 952.60 MB/s  (14.8k)
            |                      |
-Block Size | 512kb         (IOPS) | 1mb           (IOPS)
-  ------   | -----          ----  | ---            ----
-Read       | 133.52 MB/s    (260) | 141.90 MB/s    (138)
-Write      | 140.61 MB/s    (274) | 151.35 MB/s    (147)
-Total      | 274.13 MB/s    (534) | 293.26 MB/s    (285)
+Block Size | 512k          (IOPS) | 1m            (IOPS)
+  ------   | ---            ----  | ----           ----
+Read       | 474.42 MB/s    (926) | 472.32 MB/s    (461)
+Write      | 499.63 MB/s    (975) | 503.77 MB/s    (491)
+Total      | 974.05 MB/s   (1.9k) | 976.10 MB/s    (952)
 
 iperf3 Network Speed Tests (IPv4):
 ---------------------------------
-Provider                  | Location (Link)           | Send Speed      | Recv Speed
-                          |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | 1.41 Gbits/sec  | 1.13 Gbits/sec
-Online.net                | Paris, FR (10G)           | 1.44 Gbits/sec  | 1.29 Gbits/sec
-Worldstream               | The Netherlands (10G)     | 1.18 Gbits/sec  | 1.22 Gbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | 805 Mbits/sec   | 1.13 Gbits/sec
-Biznet                    | Bogor, Indonesia (1G)     | 768 Mbits/sec   | 38.5 Mbits/sec
-Hostkey                   | Moscow, RU (1G)           | 503 Mbits/sec   | 686 Mbits/sec
-Velocity Online           | Tallahassee, FL, US (10G) | 2.74 Gbits/sec  | 2.67 Gbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | 3.36 Gbits/sec  | 963 Mbits/sec
-Hurricane Electric        | Fremont, CA, US (10G)     | 6.34 Gbits/sec  | 3.76 Gbits/sec
+Provider        | Location (Link)           | Send Speed      | Recv Speed
+                |                           |                 |
+Clouvider       | London, UK (10G)          | 1.19 Gbits/sec  | 2.39 Gbits/sec
+Online.net      | Paris, FR (10G)           | 2.35 Gbits/sec  | 2.04 Gbits/sec
+WorldStream     | The Netherlands (10G)     | 2.17 Gbits/sec  | 1.29 Gbits/sec
+Wifx            | Zurich, CH (10G)          | 1.28 Gbits/sec  | 522 Mbits/sec
+Biznet          | Jakarta, Indonesia (1G)   | 19.4 Mbits/sec  | 41.8 Mbits/sec
+Clouvider       | NYC, NY, US (10G)         | 9.40 Gbits/sec  | 9.41 Gbits/sec
+Velocity Online | Tallahassee, FL, US (10G) | 2.39 Gbits/sec  | 2.94 Gbits/sec
+Clouvider       | Los Angeles, CA, US (10G) | 2.40 Gbits/sec  | 2.89 Gbits/sec
+Iveloz Telecom  | Sao Paulo, BR (2G)        | 136 Mbits/sec   | 192 Mbits/sec
 
 iperf3 Network Speed Tests (IPv6):
 ---------------------------------
-Provider                  | Location (Link)           | Send Speed      | Recv Speed
-                          |                           |                 |
-Bouygues Telecom          | Paris, FR (10G)           | 1.44 Gbits/sec  | 1.25 Gbits/sec
-Online.net                | Paris, FR (10G)           | 1.36 Gbits/sec  | 972 Mbits/sec
-Worldstream               | The Netherlands (10G)     | 1.19 Gbits/sec  | 1.20 Gbits/sec
-wilhelm.tel               | Hamburg, DE (10G)         | 826 Mbits/sec   | 1.14 Gbits/sec
-Airstream Communications  | Eau Claire, WI, US (10G)  | busy            | busy
-Hurricane Electric        | Fremont, CA, US (10G)     | 6.36 Gbits/sec  | 2.95 Gbits/sec
+Provider        | Location (Link)           | Send Speed      | Recv Speed
+                |                           |                 |
+Clouvider       | London, UK (10G)          | 803 Mbits/sec   | 2.09 Gbits/sec
+Online.net      | Paris, FR (10G)           | 2.32 Gbits/sec  | 2.20 Gbits/sec
+WorldStream     | The Netherlands (10G)     | 1.95 Gbits/sec  | 1.49 Gbits/sec
+Wifx            | Zurich, CH (10G)          | 168 Mbits/sec   | 579 Mbits/sec
+Clouvider       | NYC, NY, US (10G)         | 9.28 Gbits/sec  | 9.28 Gbits/sec
+Clouvider       | Los Angeles, CA, US (10G) | 2.80 Gbits/sec  | 2.90 Gbits/sec
 
 Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 5587
-Multi Core      | 19093
-Full Test       | https://browser.geekbench.com/v4/cpu/15200550
+Single Core     | 6035
+Multi Core      | 24473
+Full Test       | https://browser.geekbench.com/v4/cpu/15770150
+
+Geekbench 5 Benchmark Test:
+---------------------------------
+Test            | Value
+                |
+Single Core     | 1348
+Multi Core      | 5857
+Full Test       | https://browser.geekbench.com/v5/cpu/3844555
 
 ```
 
