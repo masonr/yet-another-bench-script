@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-11-12                    #'
+echo -e '#                     v2020-11-20                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -40,7 +40,7 @@ else
 fi
 
 # flags to skip certain performance tests
-unset SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5
+unset SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL
 GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
@@ -113,10 +113,10 @@ fi
 # Returns:
 #          Formatted memory size in KiB, MiB, GiB, or TiB
 function format_mem {
-        RAW=$1 # mem size in KiB
-        RESULT=$RAW
-        local DENOM=1
-        local UNIT="KiB"
+	RAW=$1 # mem size in KiB
+	RESULT=$RAW
+	local DENOM=1
+	local UNIT="KiB"
 
 	# ensure the raw value is a number, otherwise return blank
 	re='^[0-9]+$'
@@ -128,21 +128,21 @@ function format_mem {
 	if [ "$RAW" -ge 1073741824 ]; then
 		DENOM=1073741824
 		UNIT="TiB"
-        elif [ "$RAW" -ge 1048576 ]; then
-                DENOM=1048576
-                UNIT="GiB"
-        elif [ "$RAW" -ge 1024 ]; then
-                DENOM=1024
-                UNIT="MiB"
-        fi
+	elif [ "$RAW" -ge 1048576 ]; then
+		DENOM=1048576
+		UNIT="GiB"
+	elif [ "$RAW" -ge 1024 ]; then
+		DENOM=1024
+		UNIT="MiB"
+	fi
 
-        # divide the raw result to get the corresponding formatted result (based on determined unit)
-        RESULT=$(awk -v a="$RESULT" -v b="$DENOM" 'BEGIN { print a / b }')
-        # shorten the formatted result to two decimal places (i.e. x.x)
-        RESULT=$(echo $RESULT | awk -F. '{ printf "%0.1f",$1"."substr($2,1,2) }')
-        # concat formatted result value with units and return result
-        RESULT="$RESULT $UNIT"
-        echo $RESULT
+	# divide the raw result to get the corresponding formatted result (based on determined unit)
+	RESULT=$(awk -v a="$RESULT" -v b="$DENOM" 'BEGIN { print a / b }')
+	# shorten the formatted result to two decimal places (i.e. x.x)
+	RESULT=$(echo $RESULT | awk -F. '{ printf "%0.1f",$1"."substr($2,1,2) }')
+	# concat formatted result value with units and return result
+	RESULT="$RESULT $UNIT"
+	echo $RESULT
 }
 
 # gather basic system information (inc. CPU, AES-NI/virt status, RAM + swap + disk size)
@@ -321,7 +321,7 @@ function dd_test {
 		# read test using dd using the 1G file written during the write test
 		DISK_READ_TEST=$(dd if=$DISK_PATH/$DATE.test of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_READ_TEST | cut -d " " -f 1)
-		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { pring a * 1000 }')
+		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
 		DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
@@ -345,27 +345,37 @@ if [ -z "$SKIP_FIO" ]; then
 	else
 		# download fio binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
 		fi
-		chmod +x $DISK_PATH/fio
 
-		FIO_CMD=$DISK_PATH/fio
+		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
+			echo -en "\r\033[0K"
+			echo -e "Fio binary download failed. Running dd test as fallback...."
+			DD_FALLBACK=True
+		else
+			chmod +x $DISK_PATH/fio
+			FIO_CMD=$DISK_PATH/fio
+		fi
 	fi
 
-	echo -en "\r\033[0K"
-	
-	# init global array to store disk performance values
-	declare -a DISK_RESULTS
-	# disk block sizes to evaluate
-	BLOCK_SIZES=( "4k" "64k" "512k" "1m" )
+	if [ -z "$DD_FALLBACK" ]; then # if not falling back on dd tests, run fio test
+		echo -en "\r\033[0K"
 
-	# execute disk performance test
-	disk_test "${BLOCK_SIZES[@]}"
+		# init global array to store disk performance values
+		declare -a DISK_RESULTS
+		# disk block sizes to evaluate
+		BLOCK_SIZES=( "4k" "64k" "512k" "1m" )
 
-	if [ ${#DISK_RESULTS[@]} -eq 0 ]; then # fio was killed or returned an error, run dd test instead
-		echo -e "fio disk speed tests failed. Run manually to determine cause.\nRunning dd test as fallback..."
+		# execute disk performance test
+		disk_test "${BLOCK_SIZES[@]}"
+	fi
+
+	if [[ ! -z "$DD_FALLBACK" || ${#DISK_RESULTS[@]} -eq 0 ]]; then # fio download failed or test was killed or returned an error, run dd test instead
+		if [ -z "$DD_FALLBACK" ]; then # print error notice if ended up here due to fio error
+			echo -e "fio disk speed tests failed. Run manually to determine cause.\nRunning dd test as fallback..."
+		fi
 
 		dd_test
 
@@ -532,13 +542,17 @@ if [ -z "$SKIP_IPERF" ]; then
 
 		# download iperf3 binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		fi
 
-		chmod +x $IPERF_PATH/iperf3
-		IPERF_CMD=$IPERF_PATH/iperf3
+		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
+			IPERF_DL_FAIL=True
+		else
+			chmod +x $IPERF_PATH/iperf3
+			IPERF_CMD=$IPERF_PATH/iperf3
+		fi
 	fi
 	
 	# array containing all currently available iperf3 public servers to use for the network test
@@ -576,10 +590,14 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 	
-	# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
-	[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4"
-	# check if the host has IPv6 connectivity, if so, run iperf3 IPv6 tests
-	[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
+	if [ -z "$IPERF_DL_FAIL" ]; then
+		# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
+		[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4"
+		# check if the host has IPv6 connectivity, if so, run iperf3 IPv6 tests
+		[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
+	else
+		echo -e "\niperf3 binary download failed. Skipping iperf network tests..."
+	fi
 fi
 
 # launch_geekbench
@@ -594,7 +612,7 @@ function launch_geekbench {
 	mkdir -p $GEEKBENCH_PATH
 
 	if [[ $VERSION == *4* ]]; then # Geekbench v4
-		echo -en "\nPerforming Geekbench 4 benchmark test... *cue elevator music*"
+		echo -en "\nRunning GB4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
 		curl -s http://cdn.geekbench.com/Geekbench-4.4.2-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
@@ -618,11 +636,13 @@ function launch_geekbench {
 	fi
 
 	if [[ $VERSION == *5* ]]; then # Geekbench v5
-		if [[ $ARCH = *x86* ]]; then # don't run Geekbench 5 if on 32-bit arch
+		if [[ $ARCH = *x86* && $GEEKBENCH_4 == *False* ]]; then # don't run Geekbench 5 if on 32-bit arch
 			echo -e "\nGeekbench 5 cannot run on 32-bit architectures. Re-run with -4 flag to use"
 			echo -e "Geekbench 4, which can support 32-bit architectures. Skipping Geekbench 5."
+		elif [[ $ARCH = *x86* && $GEEKBENCH_4 == *True* ]]; then
+			echo -e "\nGeekbench 5 cannot run on 32-bit architectures. Skipping test."
 		else
-			echo -en "\nPerforming Geekbench 5 benchmark test... *cue elevator music*"
+			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			curl -s http://cdn.geekbench.com/Geekbench-5.2.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
@@ -637,10 +657,10 @@ function launch_geekbench {
 
 	# ensure the test ran successfully
 	if [ -z "$GEEKBENCH_TEST" ]; then
-		if [ -z "$IPV4_CHECK" ]; then
+		if [[ ! -z "$IPV4_CHECK" ]]; then
 			# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
 			echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
-		else
+		elif [[ $ARCH != *x86* ]]; then
 			# if the Geekbench test failed for any reason, exit cleanly and print error message
 			echo -e "\r\033[0KGeekbench $VERSION test failed. Run manually to determine cause."
 		fi
@@ -674,7 +694,6 @@ function launch_geekbench {
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
-
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
