@@ -614,7 +614,7 @@ function launch_geekbench {
 	if [[ $VERSION == *4* ]]; then # Geekbench v4
 		echo -en "\nRunning GB4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
-		curl -s http://cdn.geekbench.com/Geekbench-4.4.2-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		curl -s https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
 		if [[ "$ARCH" == *"x86"* ]]; then
 			# check if geekbench file exists
@@ -644,7 +644,7 @@ function launch_geekbench {
 		else
 			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
-			curl -s http://cdn.geekbench.com/Geekbench-5.2.0-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+			curl -s https://cdn.geekbench.com/Geekbench-5.3.1-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
 			# check if geekbench file exists
 			if test -f "geekbench.license"; then
