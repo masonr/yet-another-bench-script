@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Nov 2020
+# Initial Oct 2019; Last update Dec 2020
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-11-20                    #'
+echo -e '#                     v2020-12-07                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -63,8 +63,8 @@ command -v fio >/dev/null 2>&1 && LOCAL_FIO=true || unset LOCAL_FIO
 command -v iperf3 >/dev/null 2>&1 && LOCAL_IPERF=true || unset LOCAL_IPERF
 
 # test if the host has IPv4/IPv6 connectivity
-IPV4_CHECK=$(curl -s -4 -m 4 icanhazip.com 2> /dev/null)
-IPV6_CHECK=$(curl -s -6 -m 4 icanhazip.com 2> /dev/null)
+IPV4_CHECK=$((ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || curl -s -4 -m 4 icanhazip.com 2> /dev/null)
+IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || curl -s -6 -m 4 icanhazip.com 2> /dev/null)
 
 # print help and exit script, if help flag was passed
 if [ ! -z "$PRINT_HELP" ]; then
@@ -101,6 +101,12 @@ if [ ! -z "$PRINT_HELP" ]; then
 	[[ -z $LOCAL_IPERF ]] && echo -e "       iperf3 not detected, will download precompiled binary" ||
 		echo -e "       iperf3 detected, using local package"
 	echo -e
+	echo -e "Detected Connectivity:"
+	[[ ! -z $IPV4_CHECK ]] && echo -e "       IPv4 connected" ||
+		echo -e "       IPv4 not connected"
+	[[ ! -z $IPV6_CHECK ]] && echo -e "       IPv6 connected" ||
+		echo -e "       IPv6 not connected"
+	echo -e
 	echo -e "Exiting..."
 
 	exit 0
@@ -112,7 +118,7 @@ fi
 #          1. RAW - the raw memory size (RAM/Swap) in kibibytes
 # Returns:
 #          Formatted memory size in KiB, MiB, GiB, or TiB
-function format_mem {
+function format_size {
 	RAW=$1 # mem size in KiB
 	RESULT=$RAW
 	local DENOM=1
@@ -160,12 +166,12 @@ echo -e "AES-NI     : $CPU_AES"
 CPU_VIRT=$(cat /proc/cpuinfo | grep 'vmx\|svm')
 [[ -z "$CPU_VIRT" ]] && CPU_VIRT="\xE2\x9D\x8C Disabled" || CPU_VIRT="\xE2\x9C\x94 Enabled"
 echo -e "VM-x/AMD-V : $CPU_VIRT"
-TOTAL_RAM=$(format_mem $(free | awk 'NR==2 {print $2}'))
+TOTAL_RAM=$(format_size $(free | awk 'NR==2 {print $2}'))
 echo -e "RAM        : $TOTAL_RAM"
-TOTAL_SWAP=$(format_mem $(free | grep Swap | awk '{ print $2 }'))
+TOTAL_SWAP=$(format_size $(free | grep Swap | awk '{ print $2 }'))
 echo -e "Swap       : $TOTAL_SWAP"
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
-TOTAL_DISK=$(format_mem $(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }'))
+TOTAL_DISK=$(format_size $(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }'))
 echo -e "Disk       : $TOTAL_DISK"
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
@@ -567,12 +573,12 @@ if [ -z "$SKIP_IPERF" ]; then
 		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
 		"iperf.worldstream.nl" "5201-5201" "WorldStream" "The Netherlands (10G)" "IPv4|IPv6" \
-		#"iperf.wifx.net" "5200-5209" "Wifx" "Zurich, CH (10G)" "IPv4|IPv6" \
+		"iperf.astra.in.ua" "5201-5201" "Astra" "Lviv, UA (10G)" "IPv4" \
 		"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Jakarta, Indonesia (1G)" "IPv4" \
 		"nyc.speedtest.clouvider.net" "5201-5201" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
 		"la.speedtest.clouvider.net" "5201-5201" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
-		#"speedtest.iveloz.net.br" "5201-5209" "Iveloz Telecom" "Sao Paulo, BR (2G)" "IPv4" \
+		"speedtest.iveloz.net.br" "5201-5209" "Iveloz Telecom" "Sao Paulo, BR (2G)" "IPv4" \
 	)
 
 	# if the "REDUCE_NET" flag is activated, then do a shorter iperf test with only three locations
