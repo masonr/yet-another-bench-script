@@ -664,7 +664,7 @@ function launch_geekbench {
 	# ensure the test ran successfully
 	if [ -z "$GEEKBENCH_TEST" ]; then
 		if [[ ! -z "$IPV4_CHECK" ]]; then
-			# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
+			# Geekbench test failed to download because host lacks IPv6 (cdn.geekbench.com = IPv4 only)
 			echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
 		elif [[ $ARCH != *x86* ]]; then
 			# if the Geekbench test failed for any reason, exit cleanly and print error message
