@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2020-12-07                    #'
+echo -e '#                     v2020-12-27                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -69,9 +69,9 @@ IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) ||
 # print help and exit script, if help flag was passed
 if [ ! -z "$PRINT_HELP" ]; then
 	echo -e
-	echo -e "Usage: ./yabs.sh [-fdighr4]"
+	echo -e "Usage: ./yabs.sh [-fdighr49]"
 	echo -e "       curl -sL yabs.sh | bash"
-	echo -e "       curl -sL yabs.sh | bash -s -- -{fdighr4}"
+	echo -e "       curl -sL yabs.sh | bash -s -- -{fdighr49}"
 	echo -e
 	echo -e "Flags:"
 	echo -e "       -f/d : skips the fio disk benchmark test"
@@ -338,8 +338,12 @@ function dd_test {
 	DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" 'BEGIN { print a / 3 }')
 }
 
+# check if disk performance is being tested and the host has required space (2G)
+AVAIL_SPACE=`df -k . | awk 'NR==2{print $4}'`
+if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 ]]; then # 2GB = 2097152KB
+	echo -e "\nLess than 2GB of space available. Skipping disk test..."
 # if the skip disk flag was set, skip the disk performance test, otherwise test disk performance
-if [ -z "$SKIP_FIO" ]; then
+elif [ -z "$SKIP_FIO" ]; then
 	echo -en "\nPreparing system for disk tests..."
 
 	# create temp directory to store disk write/read test files
