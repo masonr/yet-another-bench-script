@@ -4,8 +4,8 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 ### Binaries
 
-* **fio_x64** - v3.17 (compiled 27 Sep 2020) - 64-bit version
-* **fio_x86** - v3.17 (compiled 27 Sep 2020) - 32-bit version
+* **fio_x64** - v3.25 (compiled 29 Dec 2020) - 64-bit version
+* **fio_x86** - v3.25 (compiled 29 Dec 2020) - 32-bit version
 * **iperf_x64** - v3.9 (compiled 15 Sep 2020) - 64-bit version
 * **iperf_x86** - v3.9 (compiled 15 Sep 2020) - 32-bit version
 
