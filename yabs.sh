@@ -346,6 +346,56 @@ if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 ]]; then # 2GB = 2097152KB
 elif [ -z "$SKIP_FIO" ]; then
 	echo -en "\nPreparing system for disk tests..."
 
+# Perform ZFS filesystem detection and determine if we have enough free space according to spa_asize_inflation
+ZFSCHECK="/sys/module/zfs/parameters/spa_asize_inflation"
+if [[ -f "$ZFSCHECK" ]];then
+	mul_spa=$((($(cat /sys/module/zfs/parameters/spa_asize_inflation)*2)))
+	warning=0
+	poss=()
+	
+	for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
+	do
+		if [[ "${PWD##$pathls}" != "${PWD}" ]]; then
+			poss+=($pathls)
+		fi
+	done
+	
+	long=""
+	m=-1
+	for x in ${poss[@]}
+	do
+		if [ ${#x} -gt $m ];then
+			m=${#x}
+			long=$x
+		fi
+	done
+	
+	size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c 2 | head -c 1)
+	free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
+	
+	if [[ $size_b == 'T' ]]; then
+		free_space=$(bc <<< "$free_space*1024")
+		size_b='G'
+	fi
+	
+	if [[ $(df -Th | grep -w $long) == *"zfs"* ]];then
+		
+		if [[ $size_b == 'G' ]]; then
+			if [[ $(echo "$free_space < $mul_spa" | bc) -ne 0 ]];then
+				warning=1
+			fi
+		else
+			warning=1
+		fi
+		
+	fi
+	
+	if [[ $warning -eq 1 ]];then
+		echo -en "\nWarning! You are running YABS on a ZFS Filesystem and your disk space is too low for the fio test. Your test results will be inaccurate. You need at least $mul_spa GB free in order to complete this test accurately. For more information, please see https://github.com/masonr/yet-another-bench-script/issues/13\n"
+	fi
+fi
+
+
 	# create temp directory to store disk write/read test files
 	DISK_PATH=$YABS_PATH/disk
 	mkdir -p $DISK_PATH
