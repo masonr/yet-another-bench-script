@@ -2,7 +2,8 @@
 
 Here's an attempt to create _yet another_ damn Linux server *bench*marking _script_.
 
-![](https://imgs.xkcd.com/comics/standards.png)
+![](https://user-images.githubusercontent.com/8313125/106475387-e1f6da00-6473-11eb-918c-c785ebeef8b9.jpg)
+Logo design by [Dian Pratama](https://dianpratama.com/)
 
 This script isn't an attempt to be a golden standard. It's just yet another bench script to add to your arsenal. Included are several tests that I think are most beneficial for the end-user. If there's features that you would like to see added, feel free to submit an issue describing your feature request or fork the project!
 
