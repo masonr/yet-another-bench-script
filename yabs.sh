@@ -495,12 +495,12 @@ function iperf_test {
 	HOST=$3
 	FLAGS=$4
 	
-	# attempt the iperf send test 10 times, allowing for a slot to become available on the
+	# attempt the iperf send test 5 times, allowing for a slot to become available on the
 	#   server or to throw out any bad/error results
 	I=1
-	while [ $I -le 10 ]
+	while [ $I -le 5 ]
 	do
-		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 10)..."
+		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 5)..."
 		# select a random iperf port from the range provided
 		PORT=`shuf -i $PORTS -n 1`
 		# run the iperf test sending data from the host to the iperf server; includes
@@ -523,12 +523,12 @@ function iperf_test {
 	# small sleep necessary to give iperf server a breather to get ready for a new test
 	sleep 1
 
-	# attempt the iperf recieve test 10 times, allowing for a slot to become available on
+	# attempt the iperf recieve test 5 times, allowing for a slot to become available on
 	#   the server or to throw out any bad/error results
 	J=1
-	while [ $J -le 10 ]
+	while [ $J -le 5 ]
 	do
-		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 10)..."
+		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 5)..."
 		# select a random iperf port from the range provided
 		PORT=`shuf -i $PORTS -n 1`
 		# run the iperf test recieving data from the iperf server to the host; includes
@@ -622,14 +622,14 @@ if [ -z "$SKIP_IPERF" ]; then
 	#   4. location and advertised speed link of the iperf server
 	#   5. network modes supported by the iperf server (IPv4 = IPv4-only, IPv4|IPv6 = IPv4 + IPv6, etc.)
 	IPERF_LOCS=( \
-		"lon.speedtest.clouvider.net" "5201-5201" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
+		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
 		"iperf.worldstream.nl" "5201-5201" "WorldStream" "The Netherlands (10G)" "IPv4|IPv6" \
 		"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Jakarta, Indonesia (1G)" "IPv4" \
-		"nyc.speedtest.clouvider.net" "5201-5201" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
+		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
-		"la.speedtest.clouvider.net" "5201-5201" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
+		"la.speedtest.clouvider.net" "5200-5209" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
 		"speedtest.iveloz.net.br" "5201-5209" "Iveloz Telecom" "Sao Paulo, BR (2G)" "IPv4" \
 	)
 
@@ -637,10 +637,10 @@ if [ -z "$SKIP_IPERF" ]; then
 	# (Clouvider London, Clouvider NYC, and Online.net France)
 	if [ ! -z "$REDUCE_NET" ]; then
 		IPERF_LOCS=( \
-			"lon.speedtest.clouvider.net" "5201-5201" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
+			"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 			"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 			"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
-			"nyc.speedtest.clouvider.net" "5201-5201" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
+			"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		)
 	fi
 	
