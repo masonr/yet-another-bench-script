@@ -137,7 +137,7 @@ Full Test       | https://browser.geekbench.com/v5/cpu/3844555
 
 GitHub's CDN does not resolve via IPv6. You will need to run the following command to download and run the script.
 
-`curl -s -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/yabs.sh | bash`
+`curl -s -k -g --header 'Host: raw.githubusercontent.com' "https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/yabs.sh" | bash`
 
 (2a04:4e42::133 is fastly.net's [GitHub's CDN Provider] IPv6 address)
 
