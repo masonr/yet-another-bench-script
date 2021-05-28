@@ -6,6 +6,9 @@ source /hbb/activate
 
 set -x 
 
+# temp workaround to fix issue with phusion's repo
+rm -f /etc/yum.repos.d/phusion_centos-6-scl-i386.repo
+
 yum install -y yum-plugin-ovl # fix for docker overlay fs
 yum install -y xz
 
@@ -32,7 +35,7 @@ source /hbb_exe/activate
 
 # download and compile fio
 cd ~
-curl -L https://github.com/axboe/fio/archive/fio-3.25.tar.gz -o "fio.tar.gz"
+curl -L https://github.com/axboe/fio/archive/fio-3.27.tar.gz -o "fio.tar.gz"
 tar xf fio.tar.gz
 cd fio-fio*
 ./configure --disable-native
@@ -45,7 +48,7 @@ cp fio /io/fio_$ARCH
 
 # download and compile iperf
 cd ~
-curl -L https://github.com/esnet/iperf/archive/3.9.tar.gz -o "iperf.tar.gz"
+curl -L https://github.com/esnet/iperf/archive/3.10.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
 ./configure --disable-shared --disable-profiling
