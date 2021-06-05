@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update May 2021
+# Initial Oct 2019; Last update June 2021
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2021-05-28                    #'
+echo -e '#                     v2021-06-05                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -33,6 +33,16 @@ if [[ $ARCH = *x86_64* ]]; then
 elif [[ $ARCH = *i?86* ]]; then
 	# host is running a 32-bit kernel
 	ARCH="x86"
+elif [[ $ARCH = *aarch* || $ARCH = *arm* ]]; then
+	KERNEL_BIT=`getconf LONG_BIT`
+	if [[ $KERNEL_BIT = *64* ]]; then
+		# host is running an ARM 64-bit kernel
+		ARCH="aarch64"
+	else
+		# host is running an ARM 32-bit kernel
+		ARCH="arm"
+	fi
+	echo -e "\nARM-compatibility is considered *experimental*"
 else
 	# host is running a non-supported kernel
 	echo -e "Architecture not supported by YABS."
@@ -155,10 +165,20 @@ function format_size {
 echo -e 
 echo -e "Basic System Information:"
 echo -e "---------------------------------"
-CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
+else
+	CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+fi
 echo -e "Processor  : $CPU_PROC"
-CPU_CORES=$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)
-CPU_FREQ=$(awk -F: ' /cpu MHz/ {freq=$2} END {print freq " MHz"}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+	CPU_CORES=$(lscpu | grep "CPU(s):" | sed 's/CPU(s): *//g')
+	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
+	CPU_FREQ="${CPU_FREQ} MHz"
+else
+	CPU_CORES=$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)
+	CPU_FREQ=$(awk -F: ' /cpu MHz/ {freq=$2} END {print freq " MHz"}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+fi
 echo -e "CPU cores  : $CPU_CORES @ $CPU_FREQ"
 CPU_AES=$(cat /proc/cpuinfo | grep aes)
 [[ -z "$CPU_AES" ]] && CPU_AES="\xE2\x9D\x8C Disabled" || CPU_AES="\xE2\x9C\x94 Enabled"
@@ -273,9 +293,15 @@ function format_iops {
 # Parameters:
 #          - (none)
 function disk_test {
+	if [[ "$ARCH" = "aarch64" || "$ARCH" = "arm" ]]; then
+		FIO_SIZE=512M
+	else
+		FIO_SIZE=2G
+	fi
+
 	# run a quick test to generate the fio test file to be used by the actual tests
 	echo -en "Generating fio test file..."
-	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=4k --iodepth=64 --numjobs=2 --size=2G --runtime=1 --gtod_reduce=1 --filename=$DISK_PATH/test.fio --direct=1 --minimal &> /dev/null
+	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=64k --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=1 --gtod_reduce=1 --filename=$DISK_PATH/test.fio --direct=1 --minimal &> /dev/null
 	echo -en "\r\033[0K"
 
 	# get array of block sizes to evaluate
@@ -284,7 +310,7 @@ function disk_test {
 	for BS in "${BLOCK_SIZES[@]}"; do
 		# run rand read/write mixed fio test with block size = $BS
 		echo -en "Running fio random mixed R+W disk test with $BS block size..."
-		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=2G --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
+		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
 		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
 		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
 		DISK_IOPS=$(format_iops $(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }'))
@@ -340,8 +366,10 @@ function dd_test {
 
 # check if disk performance is being tested and the host has required space (2G)
 AVAIL_SPACE=`df -k . | awk 'NR==2{print $4}'`
-if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 ]]; then # 2GB = 2097152KB
+if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 && "$ARCH" != "aarch64" && "$ARCH" != "arm" ]]; then # 2GB = 2097152KB
 	echo -e "\nLess than 2GB of space available. Skipping disk test..."
+elif [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 524288 && ("$ARCH" = "aarch64" || "$ARCH" = "arm") ]]; then # 512MB = 524288KB
+	echo -e "\nLess than 512MB of space available. Skipping disk test..."
 # if the skip disk flag was set, skip the disk performance test, otherwise test disk performance
 elif [ -z "$SKIP_FIO" ]; then
 	# Perform ZFS filesystem detection and determine if we have enough free space according to spa_asize_inflation
@@ -669,7 +697,9 @@ function launch_geekbench {
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
 	mkdir -p $GEEKBENCH_PATH
 
-	if [[ $VERSION == *4* ]]; then # Geekbench v4
+	if [[ $VERSION == *4* && ($ARCH = *aarch64* || $ARCH = *arm*) ]]; then
+		echo -e "\nARM architecture not supported by Geekbench 4, use Geekbench 5."
+	elif [[ $VERSION == *4* && $ARCH != *aarch64* && $ARCH != *arm* ]]; then # Geekbench v4
 		echo -en "\nRunning GB4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
 		curl -s https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
@@ -702,7 +732,11 @@ function launch_geekbench {
 		else
 			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
-			curl -s https://cdn.geekbench.com/Geekbench-5.4.1-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+				curl -s https://cdn.geekbench.com/Geekbench-5.4.1-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+			else
+				curl -s https://cdn.geekbench.com/Geekbench-5.4.1-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+			fi
 
 			# check if geekbench file exists
 			if test -f "geekbench.license"; then

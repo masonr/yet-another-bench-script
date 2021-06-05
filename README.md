@@ -21,6 +21,8 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 
 **Local fio/iperf3 Packages**: If the tested system has fio and/or iperf3 already installed, the local package will take precedence over the precompiled binary.
 
+**Experimental ARM Compatibility**: Initial ARM compatibilty has been introduced, however, is not considered entirely stable due to limited testing on distinct ARM devices. Report any errors or issues.
+
 **IPv6-Only Machines**: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines).
 
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
