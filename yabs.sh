@@ -172,8 +172,9 @@ else
 fi
 echo -e "Processor  : $CPU_PROC"
 if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
-	CPU_CORES=$(lscpu | grep "CPU(s):" | sed 's/CPU(s): *//g')
+	CPU_CORES=$(lscpu | grep "^[[:blank:]]*CPU(s):" | sed 's/CPU(s): *//g')
 	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
+	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
 	CPU_FREQ="${CPU_FREQ} MHz"
 else
 	CPU_CORES=$(awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo)
