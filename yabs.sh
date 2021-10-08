@@ -222,7 +222,7 @@ function catch_abort() {
 }
 
 # format_speed
-# Purpose: This method is a convienence function to format the output of the fio disk tests which
+# Purpose: This method is a convenience function to format the output of the fio disk tests which
 #          always returns a result in KB/s. If result is >= 1 GB/s, use GB/s. If result is < 1 GB/s
 #          and >= 1 MB/s, then use MB/s. Otherwise, use KB/s.
 # Parameters:
@@ -489,7 +489,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n"
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
-	else # fio tests completed sucessfully, print results
+	else # fio tests completed successfully, print results
 		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
 		DISK_COUNT=0
 
@@ -512,7 +512,7 @@ fi
 # iperf_test
 # Purpose: This method is designed to test the network performance of the host by executing an
 #          iperf3 test to/from the public iperf server passed to the function. Both directions 
-#          (send and recieve) are tested.
+#          (send and receive) are tested.
 # Parameters:
 #          1. URL - URL/domain name of the iperf server
 #          2. PORTS - the range of ports on which the iperf server operates
@@ -552,7 +552,7 @@ function iperf_test {
 	# small sleep necessary to give iperf server a breather to get ready for a new test
 	sleep 1
 
-	# attempt the iperf recieve test 5 times, allowing for a slot to become available on
+	# attempt the iperf receive test 5 times, allowing for a slot to become available on
 	#   the server or to throw out any bad/error results
 	J=1
 	while [ $J -le 5 ]
@@ -560,7 +560,7 @@ function iperf_test {
 		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 5)..."
 		# select a random iperf port from the range provided
 		PORT=`shuf -i $PORTS -n 1`
-		# run the iperf test recieving data from the iperf server to the host; includes
+		# run the iperf test receiving data from the iperf server to the host; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
 		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c $URL -p $PORT -P 8 -R 2> /dev/null)"
@@ -577,7 +577,7 @@ function iperf_test {
 		echo -en "\r\033[0K"
 	done
 
-	# parse the resulting send and recieve speed results
+	# parse the resulting send and receive speed results
 	IPERF_SENDRESULT="$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver)"
 	IPERF_RECVRESULT="$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver)"
 }
@@ -604,7 +604,7 @@ function launch_iperf {
 		if [[ "${IPERF_LOCS[i*5+4]}" == *"$MODE"* ]]; then
 			# call the iperf_test function passing the required parameters
 			iperf_test "${IPERF_LOCS[i*5]}" "${IPERF_LOCS[i*5+1]}" "${IPERF_LOCS[i*5+2]}" "$IPERF_FLAGS"
-			# parse the send and recieve speed results
+			# parse the send and receive speed results
 			IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
 			IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
 			IPERF_RECVRESULT_VAL=$(echo $IPERF_RECVRESULT | awk '{ print $6 }')
