@@ -439,9 +439,9 @@ elif [ -z "$SKIP_FIO" ]; then
 	else
 		# download fio binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio_$ARCH -o $DISK_PATH/fio
+			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
 		fi
 
 		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
@@ -636,9 +636,9 @@ if [ -z "$SKIP_IPERF" ]; then
 
 		# download iperf3 binary
 		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
 		fi
 
 		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
