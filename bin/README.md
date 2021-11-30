@@ -4,16 +4,16 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 ### Binaries
 
-| Binary Name | Version | Compiled Date | Architecture | OS |
+| Binary Name | Version | Compile Date | Architecture | OS |
 |:-:|:-:|:-:|:-:|:-:|
-| fio_x64 | 3.27 | 28-MAY-2021 | x86_64 | 64-bit |
-| fio_x86 | 3.27 |  28-MAY-2021 | x86 | 32-bit |
-| fio_aarch64 | 3.27 | 05-JUN-2021 | ARM | 64-bit |
-| fio_arm | 3.27 | 05-JUN-2021 | ARM | 32-bit |
-| iperf_x64 | 3.10 | 28-MAY-2021 | x86_64 | 64-bit |
-| iperf_x86 | 3.10 |  28-MAY-2021 | x86 | 32-bit |
-| iperf_aarch64 | 3.10 | 05-JUN-2021 | ARM | 64-bit |
-| iperf_arm | 3.10 | 05-JUN-2021 | ARM | 32-bit |
+| fio_x64 | 3.28 | 30-NOV-2021 | x86_64 | 64-bit |
+| fio_x86 | 3.28 |  30-NOV-2021 | x86 | 32-bit |
+| fio_aarch64 | 3.28 | 30-NOV-2021 | ARM | 64-bit |
+| fio_arm | 3.28 | 30-NOV-2021 | ARM | 32-bit |
+| iperf_x64 | 3.10.1 | 30-NOV-2021 | x86_64 | 64-bit |
+| iperf_x86 | 3.10.1 |  30-NOV-2021 | x86 | 32-bit |
+| iperf_aarch64 | 3.10.1 | 30-NOV-2021 | ARM | 64-bit |
+| iperf_arm | 3.10.1 | 30-NOV-2021 | ARM | 32-bit |
 
 Note: ARM compatibilty is considered experimental. Static binaries for ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
