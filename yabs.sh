@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Oct 2021
+# Initial Oct 2019; Last update Nov 2021
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2021-10-09                    #'
+echo -e '#                     v2021-11-29                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -23,7 +23,13 @@ echo -e
 date
 
 # override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
-export LC_ALL=C
+if locale -a | grep ^C$ > /dev/null ; then
+	# locale "C" installed
+	export LC_ALL=C
+else
+	# locale "C" not installed, display warning
+        echo -e "\nWarning: locale 'C' not detected. Test outputs may not be parsed correctly."
+fi
 
 # determine architecture of host
 ARCH=$(uname -m)
