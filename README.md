@@ -32,9 +32,10 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
 ```
-curl -sL yabs.sh | bash -s -- -{fdighr49}
+curl -sL yabs.sh | bash -s -- -{bfdighr49}
 ```
 
+* `-b` this option forces use of pre-compiled binaries from repo over local packages
 * `-f`/`-d` this option disables the fio (disk performance) test
 * `-i` this option disables the iperf (network performance) test
 * `-g` this option disables the Geekbench (system performance) test
@@ -50,7 +51,7 @@ Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the d
 ## Tests Conducted
 
 * **fio** - the most comprehensive I/O testing software available, fio grants the ability to evaluate disk performance in a variety of methods with a variety of options. Four random read and write fio disk tests are conducted as part of this script with 4k, 64k, 512k, and 1m block sizes. The tests are designed to evaluate disk throughput in near-real world (using random) scenarios with a 50/50 split (50% reads and 50% writes per test).
-* **iperf3** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 10 tries, the speed test for that location/direction is skipped.
+* **iperf3** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 5 tries, the speed test for that location/direction is skipped.
 * **Geekbench** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench result to your Geekbench profile is written to a file in the directory that this script is executed from. By default, Geekbench 5 is the only Geekbench test performed, however, Geekbench 4 can also be toggled on by passing the appropriate flag.
 
 ### Security Notice
