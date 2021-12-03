@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Nov 2021
+# Initial Oct 2019; Last update Dec 2021
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2021-11-30                    #'
+echo -e '#                     v2021-12-03                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -28,7 +28,7 @@ if locale -a | grep ^C$ > /dev/null ; then
 	export LC_ALL=C
 else
 	# locale "C" not installed, display warning
-        echo -e "\nWarning: locale 'C' not detected. Test outputs may not be parsed correctly."
+	echo -e "\nWarning: locale 'C' not detected. Test outputs may not be parsed correctly."
 fi
 
 # determine architecture of host
