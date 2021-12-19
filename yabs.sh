@@ -87,6 +87,7 @@ IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) ||
 if [ ! -z "$PRINT_HELP" ]; then
 	echo -e
 	echo -e "Usage: ./yabs.sh [-flags]"
+	echo -e "       bash <(wget -qO- yabs.sh) [-flags]"
 	echo -e "       curl -sL yabs.sh | bash"
 	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49}"
 	echo -e
