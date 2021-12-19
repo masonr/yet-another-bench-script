@@ -11,9 +11,13 @@ View YABS usage stats [here](https://yabs.rowe.sh).
 
 ## How to Run
 
+`bash <(wget -qO- yabs.sh)` 
+
+or
+
 `curl -sL yabs.sh | bash` 
 
-or 
+or
 
 `wget -qO- yabs.sh | bash`
 
