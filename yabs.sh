@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2021-12-03                    #'
+echo -e '#                     v2021-12-28                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -667,7 +667,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
 		"iperf.worldstream.nl" "5201-5201" "WorldStream" "The Netherlands (10G)" "IPv4|IPv6" \
 		#"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Jakarta, Indonesia (1G)" "IPv4" \
-		"iperf.sgp.webhorizon.in" "9201-9205" "WebHorizon" "Singapore (1G)" "IPv4|IPv6" \
+		"iperf.sgp.webhorizon.in" "9201-9205" "WebHorizon" "Singapore (400M)" "IPv4|IPv6" \
 		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
 		"la.speedtest.clouvider.net" "5200-5209" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
@@ -746,9 +746,9 @@ function launch_geekbench {
 			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
-				curl -s https://cdn.geekbench.com/Geekbench-5.4.3-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				curl -s https://cdn.geekbench.com/Geekbench-5.4.4-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			else
-				curl -s https://cdn.geekbench.com/Geekbench-5.4.3-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				curl -s https://cdn.geekbench.com/Geekbench-5.4.4-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			fi
 
 			# check if geekbench file exists
