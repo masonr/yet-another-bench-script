@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Dec 2021
+# Initial Oct 2019; Last update Feb 2022
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2021-12-28                    #'
+echo -e '#                     v2022-02-18                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -82,6 +82,10 @@ command -v iperf3 >/dev/null 2>&1 && LOCAL_IPERF=true || unset LOCAL_IPERF
 # test if the host has IPv4/IPv6 connectivity
 IPV4_CHECK=$((ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || curl -s -4 -m 4 icanhazip.com 2> /dev/null)
 IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || curl -s -6 -m 4 icanhazip.com 2> /dev/null)
+if [[ -z "$IPV4_CHECK" && -z "$IPV6_CHECK" ]]; then
+	echo -e
+	echo -e "Warning: Both IPv4 AND IPv6 connectivity were not detected. Check for DNS issues..."
+fi
 
 # print help and exit script, if help flag was passed
 if [ ! -z "$PRINT_HELP" ]; then
@@ -443,11 +447,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		FIO_CMD=fio
 	else
 		# download fio binary
-		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
-		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
-		fi
+		curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
 
 		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
 			echo -en "\r\033[0K"
@@ -640,11 +640,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		mkdir -p $IPERF_PATH
 
 		# download iperf3 binary
-		if [ ! -z "$IPV4_CHECK" ]; then # if IPv4 is enabled
-			curl -s -4 --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
-		else # no IPv4, use IPv6 - below is necessary since raw.githubusercontent.com has no AAAA record
-			curl -s -6 --connect-timeout 5 --retry 5 --retry-delay 0 -k -g --header 'Host: raw.githubusercontent.com' https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
-		fi
+		curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
 
 		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
 			IPERF_DL_FAIL=True

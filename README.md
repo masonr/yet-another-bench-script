@@ -23,8 +23,6 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 
 **Experimental ARM Compatibility**: Initial ARM compatibilty has been introduced, however, is not considered entirely stable due to limited testing on distinct ARM devices. Report any errors or issues.
 
-**IPv6-Only Machines**: The above command will not work on IPv6-only machines. [See below](#ipv6-only-machines).
-
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
 
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4, etc.)
@@ -135,14 +133,6 @@ Multi Core      | 5857
 Full Test       | https://browser.geekbench.com/v5/cpu/3844555
 
 ```
-
-## IPv6 Only Machines
-
-GitHub's CDN does not resolve via IPv6. You will need to run the following command to download and run the script.
-
-`curl -s -k -g --header 'Host: raw.githubusercontent.com' "https://[2a04:4e42::133]/masonr/yet-another-bench-script/master/yabs.sh" | bash`
-
-(2a04:4e42::133 is fastly.net's [GitHub's CDN Provider] IPv6 address)
 
 ## Acknowledgements
 
