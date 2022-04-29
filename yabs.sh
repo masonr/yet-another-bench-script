@@ -661,7 +661,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
-		"speedtest-nl-oum.hybula.net" "5201-5201" "Hybula" "The Netherlands (40G)" "IPv4|IPv6" \
+		"speedtest-nl-oum.hybula.net" "5201-5206" "Hybula" "The Netherlands (40G)" "IPv4|IPv6" \
 		"iperf.worldstream.nl" "5201-5201" "WorldStream" "The Netherlands (10G)" "IPv4|IPv6" \
 		#"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Jakarta, Indonesia (1G)" "IPv4" \
 		"iperf.sgp.webhorizon.in" "9201-9205" "WebHorizon" "Singapore (400M)" "IPv4|IPv6" \
@@ -678,7 +678,6 @@ if [ -z "$SKIP_IPERF" ]; then
 			"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 			"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 			"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
-			"speedtest-nl-oum.hybula.net" "5201-5201" "Hybula" "The Netherlands (40G)" "IPv4|IPv6" \
 			"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		)
 	fi
