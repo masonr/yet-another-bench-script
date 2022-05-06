@@ -15,7 +15,7 @@ This directory contains all of the binaries required to run the benchmarking tes
 | iperf_aarch64 | 3.10.1 | 30-NOV-2021 | ARM | 64-bit |
 | iperf_arm | 3.10.1 | 30-NOV-2021 | ARM | 32-bit |
 
-Note: ARM compatibilty is considered experimental. Static binaries for ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
+Note: ARM compatibility is considered experimental. Static binaries for ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
 ### Compile Notes
 
