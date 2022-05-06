@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Apr 2022
+# Initial Oct 2019; Last update May 2022
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2022-04-30                    #'
+echo -e '#                     v2022-05-06                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -79,9 +79,13 @@ done
 command -v fio >/dev/null 2>&1 && LOCAL_FIO=true || unset LOCAL_FIO
 command -v iperf3 >/dev/null 2>&1 && LOCAL_IPERF=true || unset LOCAL_IPERF
 
+# check for curl/wget
+command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
+
 # test if the host has IPv4/IPv6 connectivity
-IPV4_CHECK=$((ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || curl -s -4 -m 4 icanhazip.com 2> /dev/null)
-IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || curl -s -6 -m 4 icanhazip.com 2> /dev/null)
+[[ ! -z $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
+IPV4_CHECK=$((ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -4 icanhazip.com 2> /dev/null)
+IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -6 icanhazip.com 2> /dev/null)
 if [[ -z "$IPV4_CHECK" && -z "$IPV6_CHECK" ]]; then
 	echo -e
 	echo -e "Warning: Both IPv4 AND IPv6 connectivity were not detected. Check for DNS issues..."
@@ -93,6 +97,8 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "Usage: ./yabs.sh [-flags]"
 	echo -e "       curl -sL yabs.sh | bash"
 	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49}"
+	echo -e "       wget -qO- yabs.sh | bash"
+	echo -e "       wget -q0- yabs.sh | bash -s -- -{bfdighr49}"
 	echo -e
 	echo -e "Flags:"
 	echo -e "       -b : prefer pre-compiled binaries from repo over local packages"
@@ -180,6 +186,8 @@ function format_size {
 echo -e 
 echo -e "Basic System Information:"
 echo -e "---------------------------------"
+UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
+echo -e "Uptime     : $UPTIME"
 if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
@@ -209,6 +217,10 @@ echo -e "Swap       : $TOTAL_SWAP"
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
 TOTAL_DISK=$(format_size $(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }'))
 echo -e "Disk       : $TOTAL_DISK"
+DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
+echo -e "Distro     : $DISTRO"
+KERNEL=$(uname -r)
+echo -e "Kernel     : $KERNEL"
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
@@ -447,7 +459,11 @@ elif [ -z "$SKIP_FIO" ]; then
 		FIO_CMD=fio
 	else
 		# download fio binary
-		curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
+		if [[ ! -z $LOCAL_CURL ]]; then
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
+		else
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O $DISK_PATH/fio
+		fi
 
 		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
 			echo -en "\r\033[0K"
@@ -640,7 +656,11 @@ if [ -z "$SKIP_IPERF" ]; then
 		mkdir -p $IPERF_PATH
 
 		# download iperf3 binary
-		curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
+		if [[ ! -z $LOCAL_CURL ]]; then
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
+		else
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O $IPERF_PATH/iperf3
+		fi
 
 		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
 			IPERF_DL_FAIL=True
@@ -707,12 +727,15 @@ function launch_geekbench {
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
 	mkdir -p $GEEKBENCH_PATH
 
+	# check for curl vs wget
+	[[ ! -z $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
+
 	if [[ $VERSION == *4* && ($ARCH = *aarch64* || $ARCH = *arm*) ]]; then
 		echo -e "\nARM architecture not supported by Geekbench 4, use Geekbench 5."
 	elif [[ $VERSION == *4* && $ARCH != *aarch64* && $ARCH != *arm* ]]; then # Geekbench v4
 		echo -en "\nRunning GB4 benchmark test... *cue elevator music*"
 		# download the latest Geekbench 4 tarball and extract to geekbench temp directory
-		curl -s https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		$DL_CMD https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 
 		if [[ "$ARCH" == *"x86"* ]]; then
 			# check if geekbench file exists
@@ -743,9 +766,9 @@ function launch_geekbench {
 			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
-				curl -s https://cdn.geekbench.com/Geekbench-5.4.4-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.4-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			else
-				curl -s https://cdn.geekbench.com/Geekbench-5.4.4-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.4-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			fi
 
 			# check if geekbench file exists
@@ -774,8 +797,8 @@ function launch_geekbench {
 		# sleep a bit to wait for results to be made available on the geekbench website
 		sleep 20
 		# parse the public results page for the single and multi core geekbench scores
-		[[ $VERSION == *5* ]] && GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "div class='score'") ||
-			GEEKBENCH_SCORES=$(curl -s $GEEKBENCH_URL | grep "span class='score'")
+		[[ $VERSION == *5* ]] && GEEKBENCH_SCORES=$($DL_CMD $GEEKBENCH_URL | grep "div class='score'") ||
+			GEEKBENCH_SCORES=$($DL_CMD $GEEKBENCH_URL | grep "span class='score'")
 		GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
 		GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $7 }')
 	
