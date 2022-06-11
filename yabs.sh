@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update May 2022
+# Initial Oct 2019; Last update Jun 2022
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -15,7 +15,7 @@
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2022-05-06                    #'
+echo -e '#                     v2022-06-11                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -682,13 +682,10 @@ if [ -z "$SKIP_IPERF" ]; then
 		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
 		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
 		"speedtest-nl-oum.hybula.net" "5201-5206" "Hybula" "The Netherlands (40G)" "IPv4|IPv6" \
-		#"iperf.worldstream.nl" "5201-5201" "WorldStream" "The Netherlands (10G)" "IPv4|IPv6" \
-		#"iperf.biznetnetworks.com" "5201-5203" "Biznet" "Jakarta, Indonesia (1G)" "IPv4" \
-		#"iperf.sgp.webhorizon.in" "9201-9205" "WebHorizon" "Singapore (400M)" "IPv4|IPv6" \
+		"speedtest.uztelecom.uz" "5200-5207" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
 		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
-		"iperf3.velocityonline.net" "5201-5210" "Velocity Online" "Tallahassee, FL, US (10G)" "IPv4" \
+		"dal.speedtest.clouvider.net" "5200-5209" "Clouvider" "Dallas, TX, US (10G)" "IPv4" \
 		"la.speedtest.clouvider.net" "5200-5209" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
-		#"speedtest.iveloz.net.br" "5201-5209" "Iveloz Telecom" "Sao Paulo, BR (2G)" "IPv4" \
 	)
 
 	# if the "REDUCE_NET" flag is activated, then do a shorter iperf test with only three locations
