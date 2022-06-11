@@ -98,7 +98,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "       curl -sL yabs.sh | bash"
 	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49}"
 	echo -e "       wget -qO- yabs.sh | bash"
-	echo -e "       wget -q0- yabs.sh | bash -s -- -{bfdighr49}"
+	echo -e "       wget -qO- yabs.sh | bash -s -- -{bfdighr49}"
 	echo -e
 	echo -e "Flags:"
 	echo -e "       -b : prefer pre-compiled binaries from repo over local packages"
@@ -551,12 +551,12 @@ function iperf_test {
 	HOST=$3
 	FLAGS=$4
 	
-	# attempt the iperf send test 5 times, allowing for a slot to become available on the
+	# attempt the iperf send test 3 times, allowing for a slot to become available on the
 	#   server or to throw out any bad/error results
 	I=1
-	while [ $I -le 5 ]
+	while [ $I -le 3 ]
 	do
-		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 5)..."
+		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 3)..."
 		# select a random iperf port from the range provided
 		PORT=`shuf -i $PORTS -n 1`
 		# run the iperf test sending data from the host to the iperf server; includes
@@ -579,12 +579,12 @@ function iperf_test {
 	# small sleep necessary to give iperf server a breather to get ready for a new test
 	sleep 1
 
-	# attempt the iperf receive test 5 times, allowing for a slot to become available on
+	# attempt the iperf receive test 3 times, allowing for a slot to become available on
 	#   the server or to throw out any bad/error results
 	J=1
-	while [ $J -le 5 ]
+	while [ $J -le 3 ]
 	do
-		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 5)..."
+		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 3)..."
 		# select a random iperf port from the range provided
 		PORT=`shuf -i $PORTS -n 1`
 		# run the iperf test receiving data from the iperf server to the host; includes
