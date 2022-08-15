@@ -1,0 +1,34 @@
+{
+	"version": "v2022-08-15",
+	"arch": "x64",
+	"ipv4": true,
+	"ipv6": false,
+	"uptime": 3916629.77,
+	"cpu": {
+		"model": "Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz",
+		"cores": 12,
+		"freq": "4000.093 MHz"
+	},
+	"aes": true,
+	"virt": true,
+	"ram": 32720272,
+	"swap": 41904120,
+	"disk": 47170290544,
+	"distro": "Ubuntu 20.04.4 LTS",
+	"kernel": "5.4.0-120-generic",
+	"fio": [
+		["4k", 154305, 38576, 154712, 38678, 309017, 77254],
+		["64k", 210851, 3294, 211961, 3311, 422812, 6605],
+		["512k", 222221, 434, 234028, 457, 456249, 891],
+		["1m", 227198, 221, 242330, 236, 469528, 457]
+	],
+	"iperf": [
+		["IPv4", "Clouvider", "London, UK (10G)", "128 Mbits/sec", "65.4 Mbits/sec"],
+		["IPv4", "Online.net", "Paris, FR (10G)", "116 Mbits/sec", "busy "],
+		["IPv4", "Clouvider", "NYC, NY, US (10G)", "140 Mbits/sec", "97.1 Mbits/sec"]
+	],
+	"geekbench": [
+		[4, 5449, 24198, "https://browser.geekbench.com/v4/cpu/16602397"],
+		[5, 1170, 5999, "https://browser.geekbench.com/v5/cpu/16636699"]
+	]
+}

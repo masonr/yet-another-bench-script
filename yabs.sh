@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jun 2022
+# Initial Oct 2019; Last update Aug 2022
 #
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,10 +12,11 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
+YABS_VERSION="v2022-08-15"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     v2022-06-11                    #'
+echo -e '#                     '$YABS_VERSION'                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -56,11 +57,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON_SEND JSON_RESULT
 GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdighr49' flag; do
+while getopts 'bfdighr49j:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -71,6 +72,7 @@ while getopts 'bfdighr49' flag; do
 		r) REDUCE_NET="True" ;;
 		4) GEEKBENCH_4="True" && unset GEEKBENCH_5 ;;
 		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" ;;
+		j) JSON_SEND=${OPTARG} ;; 
 		*) exit 1 ;;
 	esac
 done
@@ -96,9 +98,9 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e
 	echo -e "Usage: ./yabs.sh [-flags]"
 	echo -e "       curl -sL yabs.sh | bash"
-	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49}"
+	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49j}"
 	echo -e "       wget -qO- yabs.sh | bash"
-	echo -e "       wget -qO- yabs.sh | bash -s -- -{bfdighr49}"
+	echo -e "       wget -qO- yabs.sh | bash -s -- -{bfdighr49j}"
 	echo -e
 	echo -e "Flags:"
 	echo -e "       -b : prefer pre-compiled binaries from repo over local packages"
@@ -112,6 +114,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "            to lessen bandwidth usage"
 	echo -e "       -4 : use geekbench 4 instead of geekbench 5"
 	echo -e "       -9 : use both geekbench 4 AND geekbench 5"
+	echo -e "       -j <url> : send jsonified YABS results to URL"
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
@@ -137,6 +140,10 @@ if [ ! -z "$PRINT_HELP" ]; then
 		echo -e "       IPv4 not connected"
 	[[ ! -z $IPV6_CHECK ]] && echo -e "       IPv6 connected" ||
 		echo -e "       IPv6 not connected"
+	echo -e
+	echo -e "Sending JSON Results:"
+	[[ ! -z $JSON_SEND ]] && echo -e "       TRUE ($JSON_SEND)" ||
+		echo -e "       FALSE"
 	echo -e
 	echo -e "Exiting..."
 
@@ -210,17 +217,31 @@ echo -e "AES-NI     : $CPU_AES"
 CPU_VIRT=$(cat /proc/cpuinfo | grep 'vmx\|svm')
 [[ -z "$CPU_VIRT" ]] && CPU_VIRT="\xE2\x9D\x8C Disabled" || CPU_VIRT="\xE2\x9C\x94 Enabled"
 echo -e "VM-x/AMD-V : $CPU_VIRT"
-TOTAL_RAM=$(format_size $(free | awk 'NR==2 {print $2}'))
+TOTAL_RAM_RAW=$(free | awk 'NR==2 {print $2}')
+TOTAL_RAM=$(format_size $TOTAL_RAM_RAW)
 echo -e "RAM        : $TOTAL_RAM"
-TOTAL_SWAP=$(format_size $(free | grep Swap | awk '{ print $2 }'))
+TOTAL_SWAP_RAW=$(free | grep Swap | awk '{ print $2 }')
+TOTAL_SWAP=$(format_size $TOTAL_SWAP_RAW)
 echo -e "Swap       : $TOTAL_SWAP"
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
-TOTAL_DISK=$(format_size $(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }'))
+TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
+TOTAL_DISK=$(format_size $TOTAL_DISK_RAW)
 echo -e "Disk       : $TOTAL_DISK"
 DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
+
+if [ ! -z $JSON_SEND ]; then
+	UPTIME_S=$(awk '{print $1}' /proc/uptime)
+	IPV4=$([ ! -z $IPV4_CHECK ] && echo "true" || echo "false")
+	IPV6=$([ ! -z $IPV6_CHECK ] && echo "true" || echo "false")
+	AES=$([[ "$CPU_AES" = *Enabled* ]] && echo "true" || echo "false")
+	VIRT=$([[ "$CPU_VIRT" = *Enabled* ]] && echo "true" || echo "false")
+	JSON_RESULT='{"version":"'$YABS_VERSION'","arch":"'$ARCH'","ipv4":'$IPV4',"ipv6":'$IPV6',"uptime":'$UPTIME_S',"cpu":{"model":"'$CPU_PROC'"'
+	JSON_RESULT+=',"cores":'$CPU_CORES',"freq":"'$CPU_FREQ'"},"aes":'$AES',"virt":'$VIRT',"ram":'$TOTAL_RAM_RAW',"swap":'$TOTAL_SWAP_RAW','
+	JSON_RESULT+='"disk":'$TOTAL_DISK_RAW',"distro":"'$DISTRO'","kernel":"'$KERNEL'"'
+fi
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
 DATE=`date -Iseconds | sed -e "s/:/_/g"`
@@ -341,12 +362,16 @@ function disk_test {
 		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
 		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
 		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
-		DISK_IOPS=$(format_iops $(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }'))
-		DISK_IOPS_R=$(format_iops $DISK_IOPS_R)
-		DISK_IOPS_W=$(format_iops $DISK_IOPS_W)
+		DISK_IOPS=$(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }')
 		DISK_TEST_R=$(echo $DISK_TEST | awk -F';' '{print $7}')
 		DISK_TEST_W=$(echo $DISK_TEST | awk -F';' '{print $48}')
-		DISK_TEST=$(format_speed $(awk -v a="$DISK_TEST_R" -v b="$DISK_TEST_W" 'BEGIN { print a + b }'))
+		DISK_TEST=$(awk -v a="$DISK_TEST_R" -v b="$DISK_TEST_W" 'BEGIN { print a + b }')
+		DISK_RESULTS_RAW+=( "$DISK_TEST" "$DISK_TEST_R" "$DISK_TEST_W" "$DISK_IOPS" "$DISK_IOPS_R" "$DISK_IOPS_W" )
+
+		DISK_IOPS=$(format_iops $DISK_IOPS)
+		DISK_IOPS_R=$(format_iops $DISK_IOPS_R)
+		DISK_IOPS_W=$(format_iops $DISK_IOPS_W)
+		DISK_TEST=$(format_speed $DISK_TEST)
 		DISK_TEST_R=$(format_speed $DISK_TEST_R)
 		DISK_TEST_W=$(format_speed $DISK_TEST_W)
 
@@ -479,7 +504,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		echo -en "\r\033[0K"
 
 		# init global array to store disk performance values
-		declare -a DISK_RESULTS
+		declare -a DISK_RESULTS DISK_RESULTS_RAW
 		# disk block sizes to evaluate
 		BLOCK_SIZES=( "4k" "64k" "512k" "1m" )
 
@@ -517,6 +542,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed successfully, print results
+		[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"fio":['
 		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
 		DISK_COUNT=0
 
@@ -531,8 +557,15 @@ elif [ -z "$SKIP_FIO" ]; then
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "${DISK_RESULTS[DISK_COUNT*6+2]}" "(${DISK_RESULTS[DISK_COUNT*6+5]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+2]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+5]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "${DISK_RESULTS[DISK_COUNT*6]}" "(${DISK_RESULTS[DISK_COUNT*6+3]})" "${DISK_RESULTS[(DISK_COUNT+1)*6]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+3]})"
+			if [ ! -z $JSON_SEND ]; then
+				JSON_RESULT+='["'${BLOCK_SIZES[DISK_COUNT]}'",'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}','${DISK_RESULTS_RAW[DISK_COUNT*6+4]}','${DISK_RESULTS_RAW[DISK_COUNT*6+2]}
+				JSON_RESULT+=','${DISK_RESULTS_RAW[DISK_COUNT*6+5]}','${DISK_RESULTS_RAW[DISK_COUNT*6]}','${DISK_RESULTS_RAW[DISK_COUNT*6+3]}'],'
+				JSON_RESULT+='["'${BLOCK_SIZES[DISK_COUNT+1]}'",'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+1]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+4]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}
+				JSON_RESULT+=','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}'],'
+			fi
 			DISK_COUNT=$(expr $DISK_COUNT + 2)
 		done
+		[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	fi
 fi
 
@@ -641,6 +674,9 @@ function launch_iperf {
 			[[ -z $IPERF_RECVRESULT_VAL || "$IPERF_RECVRESULT_VAL" == *"0.00"* ]] && IPERF_RECVRESULT_VAL="busy" && IPERF_RECVRESULT_UNIT=""
 			# print the speed results for the iperf location currently being evaluated
 			printf "%-15s | %-25s | %-15s | %-15s\n" "${IPERF_LOCS[i*5+2]}" "${IPERF_LOCS[i*5+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT"
+			if [ ! -z $JSON_SEND ]; then
+				JSON_RESULT+='["'$MODE'","'${IPERF_LOCS[i*5+2]}'","'${IPERF_LOCS[i*5+3]}'","'$IPERF_SENDRESULT_VAL' '$IPERF_SENDRESULT_UNIT'","'$IPERF_RECVRESULT_VAL' '$IPERF_RECVRESULT_UNIT'"],'
+			fi
 		fi
 	done
 }
@@ -704,10 +740,12 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 	
 	if [ -z "$IPERF_DL_FAIL" ]; then
+		[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"iperf":['
 		# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
 		[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4"
 		# check if the host has IPv6 connectivity, if so, run iperf3 IPv6 tests
 		[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
+		[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	else
 		echo -e "\niperf3 binary download failed. Skipping iperf network tests..."
 	fi
@@ -809,6 +847,10 @@ function launch_geekbench {
 		printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
 		printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
 
+		if [ ! -z $JSON_SEND ]; then
+			JSON_RESULT+='['$VERSION','$GEEKBENCH_SCORES_SINGLE','$GEEKBENCH_SCORES_MULTI',"'$GEEKBENCH_URL'"],'
+		fi
+
 		# write the geekbench claim URL to a file so the user can add the results to their profile (if desired)
 		[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" >> geekbench_claim.url 2> /dev/null
 	fi
@@ -816,6 +858,7 @@ function launch_geekbench {
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
+	[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"geekbench":['
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
@@ -823,11 +866,23 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_5 == *True* ]]; then
 		launch_geekbench 5
 	fi
+	[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 fi
 
 # finished all tests, clean up all YABS files and exit
 echo -e
 rm -rf $YABS_PATH
+
+# send json results
+if [ ! -z $JSON_SEND ]; then
+	JSON_RESULT+='}'
+
+	if [[ ! -z $LOCAL_CURL ]]; then
+		curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' $JSON_SEND
+	else
+		wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' $JSON_SEND
+	fi
+fi
 
 # reset locale settings
 unset LC_ALL

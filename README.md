@@ -41,10 +41,21 @@ curl -sL yabs.sh | bash -s -- -{bfdighr49}
 * `-r` this option reduces the number of iperf locations (Online.net/Clouvider LON+NYC) to lessen bandwidth usage
 * `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
 * `-9` this option runs the Geekbench 4 test in addition to the Geekbench 5 test
+* `-j <url>` this option sends a JSON representation of the results to the designated URL (see section below)
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).
 
 **Geekbench License Key**: A Geekbench license key can be utilized during the Geekbench test to unlock all features. Simply put the email and key for the license in a file called _geekbench.license_. `echo "email@domain.com ABCDE-12345-FGHIJ-57890" > geekbench.license`
+
+### Submitting JSON Results
+
+Results from running this script can be sent to your benchmark results website of choice in JSON format. Invoke the `-j` flag and pass the URL to where the results should be submitted to:
+
+```
+curl -sL yabs.sh | bash -s -- -j "https://example.com/yabs/post"
+```
+
+A list of websites supporting acceptance of YABS JSON results will be posted here (when available). Example JSON output: [example.json](bin/example.json).
 
 ## Tests Conducted
 
