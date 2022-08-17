@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2022-08-15"
+YABS_VERSION="v2022-08-17"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -22,6 +22,7 @@ echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
 echo -e
 date
+TIME_START=$(date '+%Y%m%d-%H%M%S')
 
 # override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
 if locale -a | grep ^C$ > /dev/null ; then
@@ -57,11 +58,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON_SEND JSON_RESULT
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT
 GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdighr49j:' flag; do
+while getopts 'bfdighr49jws:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -72,7 +73,9 @@ while getopts 'bfdighr49j:' flag; do
 		r) REDUCE_NET="True" ;;
 		4) GEEKBENCH_4="True" && unset GEEKBENCH_5 ;;
 		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" ;;
-		j) JSON_SEND=${OPTARG} ;; 
+		j) JSON+="j" ;; 
+		w) JSON+="w" ;;
+		s) JSON+="s" && JSON_SEND=${OPTARG} ;; 
 		*) exit 1 ;;
 	esac
 done
@@ -98,9 +101,9 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e
 	echo -e "Usage: ./yabs.sh [-flags]"
 	echo -e "       curl -sL yabs.sh | bash"
-	echo -e "       curl -sL yabs.sh | bash -s -- -{bfdighr49j}"
+	echo -e "       curl -sL yabs.sh | bash -s -- -flags"
 	echo -e "       wget -qO- yabs.sh | bash"
-	echo -e "       wget -qO- yabs.sh | bash -s -- -{bfdighr49j}"
+	echo -e "       wget -qO- yabs.sh | bash -s -- -flags"
 	echo -e
 	echo -e "Flags:"
 	echo -e "       -b : prefer pre-compiled binaries from repo over local packages"
@@ -114,7 +117,9 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "            to lessen bandwidth usage"
 	echo -e "       -4 : use geekbench 4 instead of geekbench 5"
 	echo -e "       -9 : use both geekbench 4 AND geekbench 5"
-	echo -e "       -j <url> : send jsonified YABS results to URL"
+	echo -e "       -j : print jsonified YABS results at conclusion of test"
+	echo -e "       -w : write jsonified YABS results to disk"
+	echo -e "       -s <url> : send jsonified YABS results to URL"
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
@@ -141,9 +146,11 @@ if [ ! -z "$PRINT_HELP" ]; then
 	[[ ! -z $IPV6_CHECK ]] && echo -e "       IPv6 connected" ||
 		echo -e "       IPv6 not connected"
 	echo -e
-	echo -e "Sending JSON Results:"
-	[[ ! -z $JSON_SEND ]] && echo -e "       TRUE ($JSON_SEND)" ||
-		echo -e "       FALSE"
+	echo -e "JSON Options:"
+	[[ -z $JSON ]] && echo -e "       none"
+	[[ $JSON = *j* ]] && echo -e "       printing json to screen after test"
+	[[ $JSON = *w* ]] && echo -e "       writing json to file after test"
+	[[ $JSON = *s* ]] && echo -e "       sharing json YABS results to $JSON_SEND" 
 	echo -e
 	echo -e "Exiting..."
 
@@ -232,15 +239,15 @@ echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
 
-if [ ! -z $JSON_SEND ]; then
+if [ ! -z $JSON ]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
 	IPV4=$([ ! -z $IPV4_CHECK ] && echo "true" || echo "false")
 	IPV6=$([ ! -z $IPV6_CHECK ] && echo "true" || echo "false")
 	AES=$([[ "$CPU_AES" = *Enabled* ]] && echo "true" || echo "false")
 	VIRT=$([[ "$CPU_VIRT" = *Enabled* ]] && echo "true" || echo "false")
-	JSON_RESULT='{"version":"'$YABS_VERSION'","arch":"'$ARCH'","ipv4":'$IPV4',"ipv6":'$IPV6',"uptime":'$UPTIME_S',"cpu":{"model":"'$CPU_PROC'"'
-	JSON_RESULT+=',"cores":'$CPU_CORES',"freq":"'$CPU_FREQ'"},"aes":'$AES',"virt":'$VIRT',"ram":'$TOTAL_RAM_RAW',"swap":'$TOTAL_SWAP_RAW','
-	JSON_RESULT+='"disk":'$TOTAL_DISK_RAW',"distro":"'$DISTRO'","kernel":"'$KERNEL'"'
+	JSON_RESULT='{"version":"'$YABS_VERSION'","time":"'$TIME_START'","os":{"arch":"'$ARCH'","distro":"'$DISTRO'","kernel":"'$KERNEL'",'
+	JSON_RESULT+='"uptime":'$UPTIME_S'},"net":{"ipv4":'$IPV4',"ipv6":'$IPV6'},"cpu":{"model":"'$CPU_PROC'","cores":'$CPU_CORES','
+	JSON_RESULT+='"freq":"'$CPU_FREQ'","aes":'$AES',"virt":'$VIRT'},"mem":{"ram":'$TOTAL_RAM_RAW',"swap":'$TOTAL_SWAP_RAW',"disk":'$TOTAL_DISK_RAW'}'
 fi
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
@@ -542,7 +549,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed successfully, print results
-		[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"fio":['
+		[[ ! -z $JSON ]] && JSON_RESULT+=',"fio":['
 		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
 		DISK_COUNT=0
 
@@ -557,15 +564,17 @@ elif [ -z "$SKIP_FIO" ]; then
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "${DISK_RESULTS[DISK_COUNT*6+2]}" "(${DISK_RESULTS[DISK_COUNT*6+5]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+2]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+5]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "${DISK_RESULTS[DISK_COUNT*6]}" "(${DISK_RESULTS[DISK_COUNT*6+3]})" "${DISK_RESULTS[(DISK_COUNT+1)*6]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+3]})"
-			if [ ! -z $JSON_SEND ]; then
-				JSON_RESULT+='["'${BLOCK_SIZES[DISK_COUNT]}'",'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}','${DISK_RESULTS_RAW[DISK_COUNT*6+4]}','${DISK_RESULTS_RAW[DISK_COUNT*6+2]}
-				JSON_RESULT+=','${DISK_RESULTS_RAW[DISK_COUNT*6+5]}','${DISK_RESULTS_RAW[DISK_COUNT*6]}','${DISK_RESULTS_RAW[DISK_COUNT*6+3]}'],'
-				JSON_RESULT+='["'${BLOCK_SIZES[DISK_COUNT+1]}'",'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+1]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+4]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}
-				JSON_RESULT+=','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}','${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}'],'
+			if [ ! -z $JSON ]; then
+				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT]}'","speed_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}',"iops_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+4]}
+				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+2]}',"iops_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6]}
+				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6+3]}'},'
+				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT+1]}'","speed_r":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+1]}',"iops_r":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+4]}
+				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}',"iops_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}
+				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}'},'
 			fi
 			DISK_COUNT=$(expr $DISK_COUNT + 2)
 		done
-		[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+		[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	fi
 fi
 
@@ -674,8 +683,9 @@ function launch_iperf {
 			[[ -z $IPERF_RECVRESULT_VAL || "$IPERF_RECVRESULT_VAL" == *"0.00"* ]] && IPERF_RECVRESULT_VAL="busy" && IPERF_RECVRESULT_UNIT=""
 			# print the speed results for the iperf location currently being evaluated
 			printf "%-15s | %-25s | %-15s | %-15s\n" "${IPERF_LOCS[i*5+2]}" "${IPERF_LOCS[i*5+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT"
-			if [ ! -z $JSON_SEND ]; then
-				JSON_RESULT+='["'$MODE'","'${IPERF_LOCS[i*5+2]}'","'${IPERF_LOCS[i*5+3]}'","'$IPERF_SENDRESULT_VAL' '$IPERF_SENDRESULT_UNIT'","'$IPERF_RECVRESULT_VAL' '$IPERF_RECVRESULT_UNIT'"],'
+			if [ ! -z $JSON ]; then
+				JSON_RESULT+='{"mode":"'$MODE'","provider":"'${IPERF_LOCS[i*5+2]}'","loc":"'${IPERF_LOCS[i*5+3]}
+				JSON_RESULT+='","send":"'$IPERF_SENDRESULT_VAL' '$IPERF_SENDRESULT_UNIT'","recv":"'$IPERF_RECVRESULT_VAL' '$IPERF_RECVRESULT_UNIT'"},'
 			fi
 		fi
 	done
@@ -740,12 +750,12 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 	
 	if [ -z "$IPERF_DL_FAIL" ]; then
-		[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"iperf":['
+		[[ ! -z $JSON ]] && JSON_RESULT+=',"iperf":['
 		# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
 		[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4"
 		# check if the host has IPv6 connectivity, if so, run iperf3 IPv6 tests
 		[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
-		[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+		[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	else
 		echo -e "\niperf3 binary download failed. Skipping iperf network tests..."
 	fi
@@ -847,8 +857,9 @@ function launch_geekbench {
 		printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
 		printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
 
-		if [ ! -z $JSON_SEND ]; then
-			JSON_RESULT+='['$VERSION','$GEEKBENCH_SCORES_SINGLE','$GEEKBENCH_SCORES_MULTI',"'$GEEKBENCH_URL'"],'
+		if [ ! -z $JSON ]; then
+			JSON_RESULT+='{"version":'$VERSION',"single":'$GEEKBENCH_SCORES_SINGLE',"multi":'$GEEKBENCH_SCORES_MULTI
+			JSON_RESULT+=',"url":"'$GEEKBENCH_URL'"},'
 		fi
 
 		# write the geekbench claim URL to a file so the user can add the results to their profile (if desired)
@@ -858,7 +869,7 @@ function launch_geekbench {
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
-	[[ ! -z $JSON_SEND ]] && JSON_RESULT+=',"geekbench":['
+	[[ ! -z $JSON ]] && JSON_RESULT+=',"geekbench":['
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
@@ -866,21 +877,38 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_5 == *True* ]]; then
 		launch_geekbench 5
 	fi
-	[[ ! -z $JSON_SEND ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+	[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 fi
 
 # finished all tests, clean up all YABS files and exit
 echo -e
 rm -rf $YABS_PATH
 
-# send json results
-if [ ! -z $JSON_SEND ]; then
+if [[ ! -z $JSON ]]; then
 	JSON_RESULT+='}'
 
-	if [[ ! -z $LOCAL_CURL ]]; then
-		curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' $JSON_SEND
-	else
-		wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' $JSON_SEND
+	# write json results to file
+	if [[ $JSON = *w* ]]; then
+		echo $JSON_RESULT > yabs_$TIME_START.json
+	fi
+
+	# send json results
+	if [[ $JSON = *s* ]]; then
+		IFS=',' read -r -a JSON_SITES <<< "$JSON_SEND"
+		for JSON_SITE in "${JSON_SITES[@]}"
+		do
+			if [[ ! -z $LOCAL_CURL ]]; then
+				curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' $JSON_SITE
+			else
+				wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' $JSON_SITE
+			fi
+		done
+	fi
+
+	# print json result to screen
+	if [[ $JSON = *j* ]]; then
+		echo -e
+		echo $JSON_RESULT
 	fi
 fi
 

@@ -30,7 +30,7 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
 ```
-curl -sL yabs.sh | bash -s -- -{bfdighr49}
+curl -sL yabs.sh | bash -s -- -flags
 ```
 
 * `-b` this option forces use of pre-compiled binaries from repo over local packages
@@ -41,7 +41,9 @@ curl -sL yabs.sh | bash -s -- -{bfdighr49}
 * `-r` this option reduces the number of iperf locations (Online.net/Clouvider LON+NYC) to lessen bandwidth usage
 * `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
 * `-9` this option runs the Geekbench 4 test in addition to the Geekbench 5 test
-* `-j <url>` this option sends a JSON representation of the results to the designated URL (see section below)
+* `-j` this option prints a JSON representation of the results to the screen
+* `-w` this option writes the JSON results to a file
+* `-s <url>` this option sends a JSON representation of the results to the designated URL(s) (see section below)
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).
 
@@ -49,11 +51,13 @@ Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the d
 
 ### Submitting JSON Results
 
-Results from running this script can be sent to your benchmark results website of choice in JSON format. Invoke the `-j` flag and pass the URL to where the results should be submitted to:
+Results from running this script can be sent to your benchmark results website of choice in JSON format. Invoke the `-s` flag and pass the URL to where the results should be submitted to:
 
 ```
-curl -sL yabs.sh | bash -s -- -j "https://example.com/yabs/post"
+curl -sL yabs.sh | bash -s -- -s "https://example.com/yabs/post"
 ```
+
+JSON results can be sent to multiple endpoints by entering each site joined by a comma (e.g. "https://example.com/yabs/post,http://example.com/yabs2/post").
 
 A list of websites supporting acceptance of YABS JSON results will be posted here (when available). Example JSON output: [example.json](bin/example.json).
 
