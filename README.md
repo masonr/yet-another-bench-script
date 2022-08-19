@@ -42,7 +42,7 @@ curl -sL yabs.sh | bash -s -- -flags
 * `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
 * `-9` this option runs the Geekbench 4 test in addition to the Geekbench 5 test
 * `-j` this option prints a JSON representation of the results to the screen
-* `-w` this option writes the JSON results to a file
+* `-w <filename>` this option writes the JSON results to a file using the file name provided
 * `-s <url>` this option sends a JSON representation of the results to the designated URL(s) (see section below)
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).

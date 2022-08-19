@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2022-08-17"
+YABS_VERSION="v2022-08-19"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -58,11 +58,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
 GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdighr49jws:' flag; do
+while getopts 'bfdighr49jw:s:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -74,7 +74,7 @@ while getopts 'bfdighr49jws:' flag; do
 		4) GEEKBENCH_4="True" && unset GEEKBENCH_5 ;;
 		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" ;;
 		j) JSON+="j" ;; 
-		w) JSON+="w" ;;
+		w) JSON+="w" && JSON_FILE=${OPTARG} ;;
 		s) JSON+="s" && JSON_SEND=${OPTARG} ;; 
 		*) exit 1 ;;
 	esac
@@ -118,7 +118,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "       -4 : use geekbench 4 instead of geekbench 5"
 	echo -e "       -9 : use both geekbench 4 AND geekbench 5"
 	echo -e "       -j : print jsonified YABS results at conclusion of test"
-	echo -e "       -w : write jsonified YABS results to disk"
+	echo -e "       -w <filename> : write jsonified YABS results to disk using file name provided"
 	echo -e "       -s <url> : send jsonified YABS results to URL"
 	echo -e
 	echo -e "Detected Arch: $ARCH"
@@ -149,7 +149,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "JSON Options:"
 	[[ -z $JSON ]] && echo -e "       none"
 	[[ $JSON = *j* ]] && echo -e "       printing json to screen after test"
-	[[ $JSON = *w* ]] && echo -e "       writing json to file after test"
+	[[ $JSON = *w* ]] && echo -e "       writing json to file ($JSON_FILE) after test"
 	[[ $JSON = *s* ]] && echo -e "       sharing json YABS results to $JSON_SEND" 
 	echo -e
 	echo -e "Exiting..."
@@ -889,7 +889,7 @@ if [[ ! -z $JSON ]]; then
 
 	# write json results to file
 	if [[ $JSON = *w* ]]; then
-		echo $JSON_RESULT > yabs_$TIME_START.json
+		echo $JSON_RESULT > $JSON_FILE
 	fi
 
 	# send json results
