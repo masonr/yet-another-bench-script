@@ -25,8 +25,8 @@ fi
 
 # download, compile, and install libaio as static library
 cd ~
-curl -L http://ftp.de.debian.org/debian/pool/main/liba/libaio/libaio_0.3.112.orig.tar.xz -o "libaio.tar.xz"
-tar xf libaio.tar.xz
+curl -L http://ftp.de.debian.org/debian/pool/main/liba/libaio/libaio_0.3.113.orig.tar.gz -o "libaio.tar.gz"
+tar xf libaio.tar.gz
 cd libaio-*/src
 ENABLE_SHARED=0 make prefix=/hbb_exe install
 
@@ -35,7 +35,7 @@ source /hbb_exe/activate
 
 # download and compile fio
 cd ~
-curl -L https://github.com/axboe/fio/archive/fio-3.28.tar.gz -o "fio.tar.gz"
+curl -L https://github.com/axboe/fio/archive/fio-3.31.tar.gz -o "fio.tar.gz"
 tar xf fio.tar.gz
 cd fio-fio*
 ./configure --disable-native
@@ -48,7 +48,7 @@ cp fio /io/fio_$ARCH
 
 # download and compile iperf
 cd ~
-curl -L https://github.com/esnet/iperf/archive/3.10.1.tar.gz -o "iperf.tar.gz"
+curl -L https://github.com/esnet/iperf/archive/3.11.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
 ./configure --disable-shared --disable-profiling
