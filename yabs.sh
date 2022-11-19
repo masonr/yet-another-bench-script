@@ -725,8 +725,8 @@ if [ -z "$SKIP_IPERF" ]; then
 	#   5. network modes supported by the iperf server (IPv4 = IPv4-only, IPv4|IPv6 = IPv4 + IPv6, etc.)
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-		"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
-		"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
+		"ping.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv4" \
+		"ping6.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv6" \
 		"speedtest-nl-oum.hybula.net" "5201-5206" "Hybula" "The Netherlands (40G)" "IPv4|IPv6" \
 		"speedtest.uztelecom.uz" "5200-5207" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
 		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
