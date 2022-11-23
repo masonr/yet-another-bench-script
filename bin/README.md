@@ -6,18 +6,18 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 | Binary Name | Version | Compile Date | Architecture | OS |
 |:-:|:-:|:-:|:-:|:-:|
-| fio_x64 | 3.31 | 19-AUG-2022 | x86_64 | 64-bit |
+| fio_x64 | 3.33 | 23-NOV-2022 | x86_64 | 64-bit |
 | fio_x86 | 3.30* |  19-AUG-2022 | x86 | 32-bit |
-| fio_aarch64 | 3.31 | 19-AUG-2022 | ARM | 64-bit |
-| fio_arm | 3.31 | 19-AUG-2022 | ARM | 32-bit |
-| iperf_x64 | 3.11 | 19-AUG-2022 | x86_64 | 64-bit |
-| iperf_x86 | 3.11 |  19-AUG-2022 | x86 | 32-bit |
-| iperf_aarch64 | 3.11 | 19-AUG-2022 | ARM | 64-bit |
-| iperf_arm | 3.11 | 19-AUG-2022 | ARM | 32-bit |
+| fio_aarch64 | 3.33 | 23-NOV-2022 | ARM | 64-bit |
+| fio_arm | 3.30* | 19-AUG-2022 | ARM | 32-bit |
+| iperf_x64 | 3.12 | 23-NOV-2022 | x86_64 | 64-bit |
+| iperf_x86 | 3.12 |  23-NOV-2022 | x86 | 32-bit |
+| iperf_aarch64 | 3.12 | 23-NOV-2022 | ARM | 64-bit |
+| iperf_arm | 3.12 | 23-NOV-2022 | ARM | 32-bit |
 
 Note: ARM compatibility is considered experimental. Static binaries for ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
-\* fio v3.31 is failing to build in a 32-bit environment
+\* fio v3.31+ is failing to build in a 32-bit environment
 
 ### Compile Notes
 

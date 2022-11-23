@@ -744,8 +744,8 @@ if [ -z "$SKIP_IPERF" ]; then
 	if [ ! -z "$REDUCE_NET" ]; then
 		IPERF_LOCS=( \
 			"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-			"ping.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv4" \
-			"ping6.online.net" "5200-5209" "Online.net" "Paris, FR (10G)" "IPv6" \
+			"ping.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv4" \
+			"ping6.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv6" \
 			"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		)
 	fi

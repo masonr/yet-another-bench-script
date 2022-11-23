@@ -26,7 +26,7 @@ source /hbb_exe/activate
 
 # download and compile fio
 cd ~
-curl -L https://github.com/axboe/fio/archive/fio-3.31.tar.gz -o "fio.tar.gz"
+curl -L https://github.com/axboe/fio/archive/fio-3.33.tar.gz -o "fio.tar.gz"
 tar xf fio.tar.gz
 cd fio-fio*
 CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-native --build-static
@@ -39,7 +39,7 @@ cp fio /io/fio_$ARCH
 
 # download and compile iperf
 cd ~
-curl -L https://github.com/esnet/iperf/archive/3.11.tar.gz -o "iperf.tar.gz"
+curl -L https://github.com/esnet/iperf/archive/3.12.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
 CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host ${HOST} --with-openssl=no --enable-static-bin
