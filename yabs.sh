@@ -882,7 +882,8 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_5 == *True* ]]; then
 		launch_geekbench 5
 	fi
-	[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+	[[ ! -z $JSON ]] && [[ $(echo -n $JSON_RESULT | tail -c 1) == ',' ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1}
+	[[ ! -z $JSON ]] && JSON_RESULT+=']'
 fi
 
 # finished all tests, clean up all YABS files and exit
