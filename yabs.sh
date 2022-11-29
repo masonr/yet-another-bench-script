@@ -251,7 +251,7 @@ if [ ! -z $JSON ]; then
 fi
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
-DATE=`date -Iseconds | sed -e "s/:/_/g"`
+DATE=$(date -Iseconds | sed -e "s/:/_/g")
 YABS_PATH=./$DATE
 touch $DATE.test 2> /dev/null
 # test if the user has write permissions in the current directory and exit if not
@@ -425,7 +425,7 @@ function dd_test {
 }
 
 # check if disk performance is being tested and the host has required space (2G)
-AVAIL_SPACE=`df -k . | awk 'NR==2{print $4}'`
+AVAIL_SPACE=$(df -k . | awk 'NR==2{print $4}')
 if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 && "$ARCH" != "aarch64" && "$ARCH" != "arm" ]]; then # 2GB = 2097152KB
 	echo -e "\nLess than 2GB of space available. Skipping disk test..."
 elif [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 524288 && ("$ARCH" = "aarch64" || "$ARCH" = "arm") ]]; then # 512MB = 524288KB
@@ -600,7 +600,7 @@ function iperf_test {
 	do
 		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 3)..."
 		# select a random iperf port from the range provided
-		PORT=`shuf -i $PORTS -n 1`
+		PORT=$(shuf -i $PORTS -n 1)
 		# run the iperf test sending data from the host to the iperf server; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
@@ -628,7 +628,7 @@ function iperf_test {
 	do
 		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 3)..."
 		# select a random iperf port from the range provided
-		PORT=`shuf -i $PORTS -n 1`
+		PORT=$(shuf -i $PORTS -n 1)
 		# run the iperf test receiving data from the iperf server to the host; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
@@ -790,7 +790,7 @@ function launch_geekbench {
 		if [[ "$ARCH" == *"x86"* ]]; then
 			# check if geekbench file exists
 			if test -f "geekbench.license"; then
-				$GEEKBENCH_PATH/geekbench_x86_32 --unlock `cat geekbench.license` > /dev/null 2>&1
+				$GEEKBENCH_PATH/geekbench_x86_32 --unlock $(cat geekbench.license) > /dev/null 2>&1
 			fi
 
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
@@ -798,7 +798,7 @@ function launch_geekbench {
 		else
 			# check if geekbench file exists
 			if test -f "geekbench.license"; then
-				$GEEKBENCH_PATH/geekbench4 --unlock `cat geekbench.license` > /dev/null 2>&1
+				$GEEKBENCH_PATH/geekbench4 --unlock $(cat geekbench.license) > /dev/null 2>&1
 			fi
 			
 			# run the Geekbench 4 test and grep the test results URL given at the end of the test
@@ -823,7 +823,7 @@ function launch_geekbench {
 
 			# check if geekbench file exists
 			if test -f "geekbench.license"; then
-				$GEEKBENCH_PATH/geekbench5 --unlock `cat geekbench.license` > /dev/null 2>&1
+				$GEEKBENCH_PATH/geekbench5 --unlock $(cat geekbench.license) > /dev/null 2>&1
 			fi
 
 			GEEKBENCH_TEST=$($GEEKBENCH_PATH/geekbench5 --upload 2>/dev/null | grep "https://browser")
