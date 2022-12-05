@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Nov 2022
-#
+# Initial Oct 2019; Last update Dec 2022
+
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
 #
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2022-11-22"
+YABS_VERSION="v2022-12-04"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -83,6 +83,9 @@ done
 # check for local fio/iperf installs
 command -v fio >/dev/null 2>&1 && LOCAL_FIO=true || unset LOCAL_FIO
 command -v iperf3 >/dev/null 2>&1 && LOCAL_IPERF=true || unset LOCAL_IPERF
+
+# check for ping
+command -v ping >/dev/null 2>&1 && LOCAL_PING=true || unset LOCAL_PING
 
 # check for curl/wget
 command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
@@ -647,7 +650,7 @@ function iperf_test {
 	done
 	
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	LATENCY_RUN="$(ping -c1 $URL | grep -Po 'time=.*' | sed s/'time='//)"
+	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL | grep -Po 'time=.*' | sed s/'time='//)" || LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
 	IPERF_SENDRESULT="$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver)"
