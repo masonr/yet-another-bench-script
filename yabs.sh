@@ -23,6 +23,7 @@ echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e
 date
 TIME_START=$(date '+%Y%m%d-%H%M%S')
+YABS_START_TIME=$(date +%s)
 
 # override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
 if locale -a | grep ^C$ > /dev/null ; then
@@ -892,6 +893,29 @@ fi
 # finished all tests, clean up all YABS files and exit
 echo -e
 rm -rf $YABS_PATH
+
+YABS_END_TIME=$(date +%s)
+
+# calculate_time_taken
+# Purpose: This method is designed to find the time taken for the completion of a YABS run.
+# Parameters:
+#          1. YABS_END_TIME - time when GB has completed and all files are removed
+#		   2. YABS_START_TIME - time when YABS is started
+function calculate_time_taken() {
+	end_time=$1
+	start_time=$2
+
+	time_taken=$(( ${end_time} - ${start_time} ))
+    if [ ${time_taken} -gt 60 ]; then
+        min=$(expr $time_taken / 60)
+        sec=$(expr $time_taken % 60)
+        echo "YABS completed in ${min} min ${sec} sec"
+    else
+        echo "YABS completed in ${time_taken} sec"
+    fi
+}
+
+calculate_time_taken $YABS_END_TIME $YABS_START_TIME
 
 if [[ ! -z $JSON ]]; then
 	JSON_RESULT+='}'
