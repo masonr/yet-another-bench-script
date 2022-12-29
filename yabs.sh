@@ -822,7 +822,7 @@ function launch_geekbench {
 			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
 				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.4-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			else
-				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.5-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.6-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			fi
 
 			# check if geekbench file exists
