@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Dec 2022
+# Initial Oct 2019; Last update Jan 2023
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2022-12-29"
+YABS_VERSION="v2023-01-21"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -242,6 +242,65 @@ DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
+
+# Function to get information from IP Address using ip-api.com free API
+function ip_info() {
+    local net_type="$(wget -qO- http://ip6.me/api/ | cut -d, -f1)"
+    local net_ip="$(wget -qO- http://ip6.me/api/ | cut -d, -f2)"
+
+    local response=$(wget -qO- http://ip-api.com/json/$net_ip)
+
+    local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
+    local country=${country//\"}
+
+    local region=$(echo "$response" | grep -Po '"regionName": *\K"[^"]*"')
+    local region=${region//\"}
+
+    local region_code=$(echo "$response" | grep -Po '"region": *\K"[^"]*"')
+    local region_code=${region_code//\"}
+
+    local city=$(echo "$response" | grep -Po '"city": *\K"[^"]*"')
+    local city=${city//\"}
+
+    local isp=$(echo "$response" | grep -Po '"isp": *\K"[^"]*"')
+    local isp=${isp//\"}
+
+    local org=$(echo "$response" | grep -Po '"org": *\K"[^"]*"')
+    local org=${org//\"}
+
+    local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
+    local as=${as//\"}
+    
+
+    if [[ -n "$net_type" ]]; then
+        echo "Protocol   : $net_type"
+    fi
+	if [[ -z "$net_type" ]]; then
+        echo "Network    : Unknown"
+    fi
+    if [[ -n "$isp" && -n "$as" ]]; then
+        echo "ISP        : $isp"
+        echo "ASN        : $as"
+    fi
+    if [[ -n "$org" ]]; then
+        echo "Host       : $org"
+    fi
+    if [[ -n "$city" && -n "$region" ]]; then
+        echo "Location   : $city, $region ($region_code)"
+    fi
+    if [[ -n "$country" ]]; then
+        echo "Country    : $country"
+    fi
+    if [[ -z "$org" ]]; then
+        echo "Host       : No ISP detected"
+    fi    
+}
+
+echo -e 
+echo -e "Basic Network Information:"
+echo -e "---------------------------------"
+ip_info
+
 
 if [ ! -z $JSON ]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
