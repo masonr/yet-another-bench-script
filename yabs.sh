@@ -82,11 +82,11 @@ check_virt() {
         sys_product=""
         sys_ver=""
     fi
-    if grep -qa docker /proc/1/cgroup; then
+    if grep -qa docker /proc/1/cgroup 2>/dev/null; then
         VIRT="Docker"
-    elif grep -qa lxc /proc/1/cgroup; then
+    elif grep -qa lxc /proc/1/cgroup 2>/dev/null; then
         VIRT="LXC"
-    elif grep -qa container=lxc /proc/1/environ; then
+    elif grep -qa container=lxc /proc/1/environ 2>/dev/null; then
         VIRT="LXC"
     elif [[ -f /proc/user_beancounters ]]; then
         VIRT="OpenVZ"
@@ -123,7 +123,7 @@ check_virt() {
             fi
         fi
     else
-        VIRT="Dedicated"
+        VIRT="Dedicated/Unknown"
     fi
 }
 
