@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2023-01-21"
+YABS_VERSION="v2023-02-03"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -57,75 +57,6 @@ else
 	echo -e "Architecture not supported by YABS."
 	exit 1
 fi
-
-# Functions to identify virtualization type of host system
-_exists() {
-    local cmd="$1"
-    if eval type type > /dev/null 2>&1; then
-        eval type "$cmd" > /dev/null 2>&1
-    elif command > /dev/null 2>&1; then
-        command -v "$cmd" > /dev/null 2>&1
-    else
-        which "$cmd" > /dev/null 2>&1
-    fi
-    local rt=$?
-    return ${rt}
-}
-check_virt() {
-    _exists "dmesg" && virtualx="$(dmesg 2>/dev/null)"
-    if _exists "dmidecode"; then
-        sys_manu="$(dmidecode -s system-manufacturer 2>/dev/null)"
-        sys_product="$(dmidecode -s system-product-name 2>/dev/null)"
-        sys_ver="$(dmidecode -s system-version 2>/dev/null)"
-    else
-        sys_manu=""
-        sys_product=""
-        sys_ver=""
-    fi
-    if grep -qa docker /proc/1/cgroup 2>/dev/null; then
-        VIRT="Docker"
-    elif grep -qa lxc /proc/1/cgroup 2>/dev/null; then
-        VIRT="LXC"
-    elif grep -qa container=lxc /proc/1/environ 2>/dev/null; then
-        VIRT="LXC"
-    elif [[ -f /proc/user_beancounters ]]; then
-        VIRT="OpenVZ"
-    elif [[ "${virtualx}" == *kvm-clock* ]]; then
-        VIRT="KVM"
-    elif [[ "${sys_product}" == *KVM* ]]; then
-        VIRT="KVM"
-    elif [[ "${cname}" == *KVM* ]]; then
-        VIRT="KVM"
-    elif [[ "${cname}" == *QEMU* ]]; then
-        VIRT="KVM"
-    elif [[ "${virtualx}" == *"VMware Virtual Platform"* ]]; then
-        VIRT="VMware"
-    elif [[ "${sys_product}" == *"VMware Virtual Platform"* ]]; then
-        VIRT="VMware"
-    elif [[ "${virtualx}" == *"Parallels Software International"* ]]; then
-        VIRT="Parallels"
-    elif [[ "${virtualx}" == *VirtualBox* ]]; then
-        VIRT="VirtualBox"
-    elif [[ -e /proc/xen ]]; then
-        if grep -q "control_d" "/proc/xen/capabilities" 2>/dev/null; then
-            VIRT="Xen-Dom0"
-        else
-            VIRT="Xen-DomU"
-        fi
-    elif [ -f "/sys/hypervisor/type" ] && grep -q "xen" "/sys/hypervisor/type"; then
-        VIRT="Xen"
-    elif [[ "${sys_manu}" == *"Microsoft Corporation"* ]]; then
-        if [[ "${sys_product}" == *"Virtual Machine"* ]]; then
-            if [[ "${sys_ver}" == *"7.0"* || "${sys_ver}" == *"Hyper-V" ]]; then
-                VIRT="Hyper-V"
-            else
-                VIRT="Microsoft Virtual Machine"
-            fi
-        fi
-    else
-        VIRT="Dedicated/Unknown"
-    fi
-}
 
 # flags to skip certain performance tests
 unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
@@ -311,7 +242,8 @@ DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
-check_virt
+VIRT=$(systemd-detect-virt)
+VIRT=${VIRT^^} || VIRT="UNKNOWN"
 echo -e "VM Type    : $VIRT"
 
 # Function to get information from IP Address using ip-api.com free API
@@ -347,7 +279,7 @@ function ip_info() {
         echo "Protocol   : $net_type"
     fi
 	if [[ -z "$net_type" ]]; then
-        echo "Network    : Unknown"
+        echo "Protocol    : Unknown"
     fi
     if [[ -n "$isp" && -n "$as" ]]; then
         echo "ISP        : $isp"
@@ -361,10 +293,7 @@ function ip_info() {
     fi
     if [[ -n "$country" ]]; then
         echo "Country    : $country"
-    fi
-    if [[ -z "$org" ]]; then
-        echo "Host       : No ISP detected"
-    fi    
+    fi 
 }
 
 echo -e 
