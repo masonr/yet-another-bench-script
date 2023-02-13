@@ -820,9 +820,9 @@ function launch_geekbench {
 			echo -en "\nRunning GB5 benchmark test... *cue elevator music*"
 			# download the latest Geekbench 5 tarball and extract to geekbench temp directory
 			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
-				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.4-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				$DL_CMD https://cdn.geekbench.com/Geekbench-5.5.1-LinuxARMPreview.tar.gz  | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			else
-				$DL_CMD https://cdn.geekbench.com/Geekbench-5.4.6-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+				$DL_CMD https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
 			fi
 
 			# check if geekbench file exists
