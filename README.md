@@ -41,6 +41,7 @@ curl -sL yabs.sh | bash -s -- -flags
 * `-f`/`-d` this option disables the fio (disk performance) test
 * `-i` this option disables the iperf (network performance) test
 * `-g` this option disables the Geekbench (system performance) test
+* `-n` this option skips the network information lookup and print out
 * `-h` this option prints the help message with usage, flags detected, and local package (fio/iperf) status
 * `-r` this option reduces the number of iperf locations (Online.net/Clouvider LON+NYC) to lessen bandwidth usage
 * `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead

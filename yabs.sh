@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jan 2023
+# Initial Oct 2019; Last update Feb 2023
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 #
-YABS_VERSION="v2023-02-03"
+YABS_VERSION="v2023-02-26"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -59,17 +59,18 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
 GEEKBENCH_5="True" # gb5 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdighr49jw:s:' flag; do
+while getopts 'bfdignhr49jw:s:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
 		d) SKIP_FIO="True" ;;
 		i) SKIP_IPERF="True" ;;
 		g) SKIP_GEEKBENCH="True" ;;
+		n) SKIP_NET="True" ;;
 		h) PRINT_HELP="True" ;;
 		r) REDUCE_NET="True" ;;
 		4) GEEKBENCH_4="True" && unset GEEKBENCH_5 ;;
@@ -114,6 +115,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "       -f/d : skips the fio disk benchmark test"
 	echo -e "       -i : skips the iperf network test"
 	echo -e "       -g : skips the geekbench performance test"
+	echo -e "       -n : skips the network information lookup and print out"
 	echo -e "       -h : prints this lovely message, shows any flags you passed,"
 	echo -e "            shows if fio/iperf3 local packages have been detected,"
 	echo -e "            then exits"
@@ -132,6 +134,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	[[ ! -z $SKIP_FIO ]] && echo -e "       -f/d, skipping fio disk benchmark test"
 	[[ ! -z $SKIP_IPERF ]] && echo -e "       -i, skipping iperf network test"
 	[[ ! -z $SKIP_GEEKBENCH ]] && echo -e "       -g, skipping geekbench test"
+	[[ ! -z $SKIP_NET ]] && echo -e "       -n, skipping network info lookup and print out"
 	[[ ! -z $REDUCE_NET ]] && echo -e "       -r, using reduced (3) iperf3 locations"
 	[[ ! -z $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
 	[[ ! -z $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
@@ -248,59 +251,63 @@ echo -e "VM Type    : $VIRT"
 
 # Function to get information from IP Address using ip-api.com free API
 function ip_info() {
-    local net_type="$(wget -qO- http://ip6.me/api/ | cut -d, -f1)"
-    local net_ip="$(wget -qO- http://ip6.me/api/ | cut -d, -f2)"
+	# check for curl vs wget
+	[[ ! -z $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
 
-    local response=$(wget -qO- http://ip-api.com/json/$net_ip)
+	local ip6me_resp="$($DL_CMD http://ip6.me/api/)"
+	local net_type="$(echo $ip6me_resp | cut -d, -f1)"
+	local net_ip="$(echo $ip6me_resp | cut -d, -f2)"
 
-    local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
-    local country=${country//\"}
+	local response=$($DL_CMD http://ip-api.com/json/$net_ip)
 
-    local region=$(echo "$response" | grep -Po '"regionName": *\K"[^"]*"')
-    local region=${region//\"}
+	local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
+	local country=${country//\"}
 
-    local region_code=$(echo "$response" | grep -Po '"region": *\K"[^"]*"')
-    local region_code=${region_code//\"}
+	local region=$(echo "$response" | grep -Po '"regionName": *\K"[^"]*"')
+	local region=${region//\"}
 
-    local city=$(echo "$response" | grep -Po '"city": *\K"[^"]*"')
-    local city=${city//\"}
+	local region_code=$(echo "$response" | grep -Po '"region": *\K"[^"]*"')
+	local region_code=${region_code//\"}
 
-    local isp=$(echo "$response" | grep -Po '"isp": *\K"[^"]*"')
-    local isp=${isp//\"}
+	local city=$(echo "$response" | grep -Po '"city": *\K"[^"]*"')
+	local city=${city//\"}
 
-    local org=$(echo "$response" | grep -Po '"org": *\K"[^"]*"')
-    local org=${org//\"}
+	local isp=$(echo "$response" | grep -Po '"isp": *\K"[^"]*"')
+	local isp=${isp//\"}
 
-    local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
-    local as=${as//\"}
+	local org=$(echo "$response" | grep -Po '"org": *\K"[^"]*"')
+	local org=${org//\"}
+
+	local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
+	local as=${as//\"}
     
-
-    if [[ -n "$net_type" ]]; then
-        echo "Protocol   : $net_type"
-    fi
+	if [[ -n "$net_type" ]]; then
+		echo "Protocol   : $net_type"
+	fi
 	if [[ -z "$net_type" ]]; then
-        echo "Protocol    : Unknown"
-    fi
-    if [[ -n "$isp" && -n "$as" ]]; then
-        echo "ISP        : $isp"
-        echo "ASN        : $as"
-    fi
-    if [[ -n "$org" ]]; then
-        echo "Host       : $org"
-    fi
-    if [[ -n "$city" && -n "$region" ]]; then
-        echo "Location   : $city, $region ($region_code)"
-    fi
-    if [[ -n "$country" ]]; then
-        echo "Country    : $country"
-    fi 
+		echo "Protocol    : Unknown"
+	fi
+	if [[ -n "$isp" && -n "$as" ]]; then
+		echo "ISP        : $isp"
+		echo "ASN        : $as"
+	fi
+	if [[ -n "$org" ]]; then
+		echo "Host       : $org"
+	fi
+	if [[ -n "$city" && -n "$region" ]]; then
+		echo "Location   : $city, $region ($region_code)"
+	fi
+	if [[ -n "$country" ]]; then
+		echo "Country    : $country"
+	fi 
 }
 
-echo -e 
-echo -e "Basic Network Information:"
-echo -e "---------------------------------"
-ip_info
-
+if [ -z $SKIP_NET ]; then
+	echo -e 
+	echo -e "Basic Network Information:"
+	echo -e "---------------------------------"
+	ip_info
+fi
 
 if [ ! -z $JSON ]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
