@@ -10,10 +10,10 @@ This directory contains all of the binaries required to run the benchmarking tes
 | fio_x86 | 3.30* |  19-AUG-2022 | x86 | 32-bit |
 | fio_aarch64 | 3.33 | 23-NOV-2022 | ARM | 64-bit |
 | fio_arm | 3.30* | 19-AUG-2022 | ARM | 32-bit |
-| iperf_x64 | 3.12 | 23-NOV-2022 | x86_64 | 64-bit |
-| iperf_x86 | 3.12 |  23-NOV-2022 | x86 | 32-bit |
-| iperf_aarch64 | 3.12 | 23-NOV-2022 | ARM | 64-bit |
-| iperf_arm | 3.12 | 23-NOV-2022 | ARM | 32-bit |
+| iperf_x64 | 3.13 | 26-FEB-2023 | x86_64 | 64-bit |
+| iperf_x86 | 3.13 |  26-FEB-2023 | x86 | 32-bit |
+| iperf_aarch64 | 3.13 | 26-FEB-2023 | ARM | 64-bit |
+| iperf_arm | 3.13 | 26-FEB-2023 | ARM | 32-bit |
 
 Note: ARM compatibility is considered experimental. Static binaries for ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
