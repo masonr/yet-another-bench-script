@@ -29,7 +29,7 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
 
-### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4, etc.)
+### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
 
 By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
@@ -43,9 +43,11 @@ curl -sL yabs.sh | bash -s -- -flags
 * `-g` this option disables the Geekbench (system performance) test
 * `-n` this option skips the network information lookup and print out
 * `-h` this option prints the help message with usage, flags detected, and local package (fio/iperf) status
-* `-r` this option reduces the number of iperf locations (Online.net/Clouvider LON+NYC) to lessen bandwidth usage
-* `-4` this option overrides the Geekbench 5 performance test and runs a Geekbench 4 test instead
-* `-9` this option runs the Geekbench 4 test in addition to the Geekbench 5 test
+* `-r` this option reduces the number of iperf locations (Scaleway/Clouvider LON+NYC) to lessen bandwidth usage
+* `-4` this option runs a Geekbench 4 test and disables the Geekbench 6 test
+* `-5` this option runs a Geekbench 5 test and disables the Geekbench 6 test
+* `-9` this option runs both the Geekbench 4 and 5 tests instead of the Geekbench 6 test
+* `-6` this option re-enables the Geekbench 6 test if any of the following were used: -4, -5, or -9 (-6 flag must be last to not be overridden)
 * `-j` this option prints a JSON representation of the results to the screen
 * `-w <filename>` this option writes the JSON results to a file using the file name provided
 * `-s <url>` this option sends a JSON representation of the results to the designated URL(s) (see section below)
@@ -70,7 +72,7 @@ A list of websites supporting acceptance of YABS JSON results will be posted her
 
 * **[fio](https://github.com/axboe/fio)** - the most comprehensive I/O testing software available, fio grants the ability to evaluate disk performance in a variety of methods with a variety of options. Four random read and write fio disk tests are conducted as part of this script with 4k, 64k, 512k, and 1m block sizes. The tests are designed to evaluate disk throughput in near-real world (using random) scenarios with a 50/50 split (50% reads and 50% writes per test).
 * **[iperf3](https://github.com/esnet/iperf)** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 5 tries, the speed test for that location/direction is skipped.
-* **[Geekbench](https://www.geekbench.com/)** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench result to your Geekbench profile is written to a file in the directory that this script is executed from. By default, Geekbench 5 is the only Geekbench test performed, however, Geekbench 4 can also be toggled on by passing the appropriate flag.
+* **[Geekbench](https://www.geekbench.com/)** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench result to your Geekbench profile is written to a file in the directory that this script is executed from. By default, Geekbench 6 is the only Geekbench test performed, however, Geekbench 4 and/or 5 can also be toggled on by passing the appropriate flag.
 
 ### Security Notice
 
