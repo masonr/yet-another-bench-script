@@ -9,6 +9,11 @@ This script isn't an attempt to be a golden standard. It's just yet another benc
 
 View YABS usage stats [here](https://yabs.rowe.sh).
 
+### **What's New With YABS?**
+* [27 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/06eaa2ab3b32355bec8278c51c4be93b3662a96d) - Newly released [Geekbench 6](https://www.geekbench.com/) is added as the default Geekbench test.
+* [26 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/f075baf59c3057983fff0a30ea0c746b5ea88d91) - Network information added to YABS output using [ip-api](https://ip-api.com/).
+* [15 Aug 2022](https://github.com/masonr/yet-another-bench-script/commit/ae24e70fbf7a4848e81a70cf829ec44e060e63d5) - Added JSON output/upload support to export or auto-upload of YABS results for sharing.
+
 ## How to Run
 
 ```
@@ -37,20 +42,22 @@ By default, the script runs all three tests described in the next section below.
 curl -sL yabs.sh | bash -s -- -flags
 ```
 
-* `-b` this option forces use of pre-compiled binaries from repo over local packages
-* `-f`/`-d` this option disables the fio (disk performance) test
-* `-i` this option disables the iperf (network performance) test
-* `-g` this option disables the Geekbench (system performance) test
-* `-n` this option skips the network information lookup and print out
-* `-h` this option prints the help message with usage, flags detected, and local package (fio/iperf) status
-* `-r` this option reduces the number of iperf locations (Scaleway/Clouvider LON+NYC) to lessen bandwidth usage
-* `-4` this option runs a Geekbench 4 test and disables the Geekbench 6 test
-* `-5` this option runs a Geekbench 5 test and disables the Geekbench 6 test
-* `-9` this option runs both the Geekbench 4 and 5 tests instead of the Geekbench 6 test
-* `-6` this option re-enables the Geekbench 6 test if any of the following were used: -4, -5, or -9 (-6 flag must be last to not be overridden)
-* `-j` this option prints a JSON representation of the results to the screen
-* `-w <filename>` this option writes the JSON results to a file using the file name provided
-* `-s <url>` this option sends a JSON representation of the results to the designated URL(s) (see section below)
+| Flag | Description |
+| ---- | ----------- |
+| -b | Forces use of pre-compiled binaries from repo over local packages |
+| -f/-d | Disables the fio (disk performance) test |
+| -i | Disables the iperf (network performance) test |
+| -g | Disables the Geekbench (system performance) test |
+| -n | Skips the network information lookup and print out |
+| -h | Prints the help message with usage, flags detected, and local package (fio/iperf) status |
+| -r | Reduces the number of iperf locations (Scaleway/Clouvider LON+NYC) to lessen bandwidth usage |
+| -4 | Runs a Geekbench 4 test and disables the Geekbench 6 test |
+| -5 | Runs a Geekbench 5 test and disables the Geekbench 6 test |
+| -9 | Runs both the Geekbench 4 and 5 tests instead of the Geekbench 6 test |
+| -6 | Re-enables the Geekbench 6 test if any of the following were used: -4, -5, or -9 (-6 flag must be last to not be overridden) |
+| -j | Prints a JSON representation of the results to the screen |
+| -w \<filename\> | Writes the JSON results to a file using the file name provided |
+| -s \<url\> | Sends a JSON representation of the results to the designated URL(s) (see section below) |
 
 Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the disk and system performance tests (effectively only testing network performance).
 
@@ -83,82 +90,104 @@ This script relies on external binaries in order to complete the performance tes
 ```
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 #              Yet-Another-Bench-Script              #
-#                     v2020-09-21                    #
+#                     v2023-02-27                    #
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Mon 21 Sep 2020 12:31:13 AM EDT
+Mon 27 Feb 2023 11:03:22 PM EST
 
 Basic System Information:
 ---------------------------------
+Uptime     : 288 days, 4 hours, 57 minutes
 Processor  : Intel(R) Xeon(R) E-2276G CPU @ 3.80GHz
-CPU cores  : 12 @ 800.087 MHz
+CPU cores  : 12 @ 4430.782 MHz
 AES-NI     : ✔ Enabled
 VM-x/AMD-V : ✔ Enabled
-RAM        : 15Gi
-Swap       : 14Gi
-Disk       : 865G
+RAM        : 15.5 GiB
+Swap       : 14.9 GiB
+Disk       : 864.5 GiB
+Distro     : Ubuntu 20.04.5 LTS
+Kernel     : 5.4.0-110-generic
+VM Type    : NONE
+
+Basic Network Information:
+---------------------------------
+Protocol   : IPv4
+ISP        : Clouvider Limited
+ASN        : AS62240 Clouvider
+Host       : Clouvider HB
+Location   : New York, New York (NY)
+Country    : United States
 
 fio Disk Speed Tests (Mixed R/W 50/50):
 ---------------------------------
 Block Size | 4k            (IOPS) | 64k           (IOPS)
   ------   | ---            ----  | ----           ----
-Read       | 445.04 MB/s (111.2k) | 475.05 MB/s   (7.4k)
-Write      | 446.22 MB/s (111.5k) | 477.55 MB/s   (7.4k)
-Total      | 891.26 MB/s (222.8k) | 952.60 MB/s  (14.8k)
+Read       | 416.79 MB/s (104.1k) | 415.00 MB/s   (6.4k)
+Write      | 417.89 MB/s (104.4k) | 417.19 MB/s   (6.5k)
+Total      | 834.68 MB/s (208.6k) | 832.20 MB/s  (13.0k)
            |                      |
 Block Size | 512k          (IOPS) | 1m            (IOPS)
   ------   | ---            ----  | ----           ----
-Read       | 474.42 MB/s    (926) | 472.32 MB/s    (461)
-Write      | 499.63 MB/s    (975) | 503.77 MB/s    (491)
-Total      | 974.05 MB/s   (1.9k) | 976.10 MB/s    (952)
+Read       | 403.89 MB/s    (788) | 421.15 MB/s    (411)
+Write      | 425.35 MB/s    (830) | 449.20 MB/s    (438)
+Total      | 829.24 MB/s   (1.6k) | 870.36 MB/s    (849)
 
 iperf3 Network Speed Tests (IPv4):
 ---------------------------------
-Provider        | Location (Link)           | Send Speed      | Recv Speed
-                |                           |                 |
-Clouvider       | London, UK (10G)          | 1.19 Gbits/sec  | 2.39 Gbits/sec
-Online.net      | Paris, FR (10G)           | 2.35 Gbits/sec  | 2.04 Gbits/sec
-WorldStream     | The Netherlands (10G)     | 2.17 Gbits/sec  | 1.29 Gbits/sec
-Wifx            | Zurich, CH (10G)          | 1.28 Gbits/sec  | 522 Mbits/sec
-Biznet          | Jakarta, Indonesia (1G)   | 19.4 Mbits/sec  | 41.8 Mbits/sec
-Clouvider       | NYC, NY, US (10G)         | 9.40 Gbits/sec  | 9.41 Gbits/sec
-Velocity Online | Tallahassee, FL, US (10G) | 2.39 Gbits/sec  | 2.94 Gbits/sec
-Clouvider       | Los Angeles, CA, US (10G) | 2.40 Gbits/sec  | 2.89 Gbits/sec
-Iveloz Telecom  | Sao Paulo, BR (2G)        | 136 Mbits/sec   | 192 Mbits/sec
+Provider        | Location (Link)           | Send Speed      | Recv Speed      | Ping
+-----           | -----                     | ----            | ----            | ----
+Clouvider       | London, UK (10G)          | 1.80 Gbits/sec  | 2.40 Gbits/sec  | 76.8 ms
+Scaleway        | Paris, FR (10G)           | 2.61 Gbits/sec  | 2.39 Gbits/sec  | 75.5 ms
+NovoServe       | North Holland, NL (40G)   | 2.33 Gbits/sec  | 2.14 Gbits/sec  | 78.4 ms
+Uztelecom       | Tashkent, UZ (10G)        | 1.21 Gbits/sec  | 1.09 Gbits/sec  | 158 ms
+Clouvider       | NYC, NY, US (10G)         | 8.94 Gbits/sec  | 7.88 Gbits/sec  | 0.109 ms
+Clouvider       | Dallas, TX, US (10G)      | 4.99 Gbits/sec  | 5.54 Gbits/sec  | 34.0 ms
+Clouvider       | Los Angeles, CA, US (10G) | 2.80 Gbits/sec  | 2.69 Gbits/sec  | 55.9 ms
 
 iperf3 Network Speed Tests (IPv6):
 ---------------------------------
-Provider        | Location (Link)           | Send Speed      | Recv Speed
-                |                           |                 |
-Clouvider       | London, UK (10G)          | 803 Mbits/sec   | 2.09 Gbits/sec
-Online.net      | Paris, FR (10G)           | 2.32 Gbits/sec  | 2.20 Gbits/sec
-WorldStream     | The Netherlands (10G)     | 1.95 Gbits/sec  | 1.49 Gbits/sec
-Wifx            | Zurich, CH (10G)          | 168 Mbits/sec   | 579 Mbits/sec
-Clouvider       | NYC, NY, US (10G)         | 9.28 Gbits/sec  | 9.28 Gbits/sec
-Clouvider       | Los Angeles, CA, US (10G) | 2.80 Gbits/sec  | 2.90 Gbits/sec
+Provider        | Location (Link)           | Send Speed      | Recv Speed      | Ping
+-----           | -----                     | ----            | ----            | ----
+Clouvider       | London, UK (10G)          | 2.25 Gbits/sec  | 2.40 Gbits/sec  | 76.7 ms
+Scaleway        | Paris, FR (10G)           | busy            | 2.38 Gbits/sec  | 75.5 ms
+NovoServe       | North Holland, NL (40G)   | 2.24 Gbits/sec  | 2.29 Gbits/sec  | 78.4 ms
+Uztelecom       | Tashkent, UZ (10G)        | 1.16 Gbits/sec  | 1.12 Gbits/sec  | 158 ms
+Clouvider       | NYC, NY, US (10G)         | 9.16 Gbits/sec  | 8.27 Gbits/sec  | 0.077 ms
+Clouvider       | Dallas, TX, US (10G)      | 4.52 Gbits/sec  | 5.57 Gbits/sec  | 33.9 ms
+Clouvider       | Los Angeles, CA, US (10G) | 2.53 Gbits/sec  | 2.78 Gbits/sec  | 56.0 ms
 
 Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 6035
-Multi Core      | 24473
-Full Test       | https://browser.geekbench.com/v4/cpu/15770150
+Single Core     | 5976
+Multi Core      | 22084
+Full Test       | https://browser.geekbench.com/v4/cpu/16721228
 
 Geekbench 5 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 1348
-Multi Core      | 5857
-Full Test       | https://browser.geekbench.com/v5/cpu/3844555
+Single Core     | 1077
+Multi Core      | 4773
+Full Test       | https://browser.geekbench.com/v5/cpu/20772711
+
+Geekbench 6 Benchmark Test:
+---------------------------------
+Test            | Value
+                |
+Single Core     | 1524
+Multi Core      | 4847
+Full Test       | https://browser.geekbench.com/v6/cpu/343254
+
+YABS completed in 16 min 34 sec
 
 ```
 
 ## Acknowledgements
 
-This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of the [HostedTalk](https://hostedtalk.net), [LowEndSpirit](https://talk.lowendspirit.com), and [LowEndTalk](https://www.lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
+This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of the [HostedTalk](https://hostedtalk.net), [LowEndSpirit](https://lowendspirit.com), and [LowEndTalk](https://lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
 
 ## License
 ```
