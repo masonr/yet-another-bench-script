@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Feb 2023
+# Initial Oct 2019; Last update Mar 2023
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -250,7 +250,7 @@ DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
-VIRT=$(systemd-detect-virt)
+VIRT=$(systemd-detect-virt 2>/dev/null)
 VIRT=${VIRT^^} || VIRT="UNKNOWN"
 echo -e "VM Type    : $VIRT"
 
@@ -264,6 +264,11 @@ function ip_info() {
 	local net_ip="$(echo $ip6me_resp | cut -d, -f2)"
 
 	local response=$($DL_CMD http://ip-api.com/json/$net_ip)
+
+	# if no response, skip output
+	if [[ -z $response ]]; then
+		return
+	fi
 
 	local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
 	local country=${country//\"}
@@ -285,6 +290,10 @@ function ip_info() {
 
 	local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
 	local as=${as//\"}
+	
+	echo
+	echo "Basic Network Information:"
+	echo "---------------------------------"
 
 	if [[ -n "$net_type" ]]; then
 		echo "Protocol   : $net_type"
@@ -308,9 +317,6 @@ function ip_info() {
 }
 
 if [ -z $SKIP_NET ]; then
-	echo -e 
-	echo -e "Basic Network Information:"
-	echo -e "---------------------------------"
 	ip_info
 fi
 
