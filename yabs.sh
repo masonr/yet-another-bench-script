@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-02-27"
+YABS_VERSION="v2023-03-24"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -26,7 +26,7 @@ TIME_START=$(date '+%Y%m%d-%H%M%S')
 YABS_START_TIME=$(date +%s)
 
 # override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
-if locale -a | grep ^C$ > /dev/null ; then
+if locale -a 2>/dev/null | grep ^C$ > /dev/null; then
 	# locale "C" installed
 	export LC_ALL=C
 else
