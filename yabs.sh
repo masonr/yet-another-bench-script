@@ -730,7 +730,8 @@ function iperf_test {
 	done
 	
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL | grep -Po 'time=.*' | sed s/'time='//)" || LATENCY_RUN="--"
+	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL 2>/dev/null | grep -Po 'time=.*' | sed s/'time='//)" 
+	[[ -z $LATENCY_RUN ]] && LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
 	IPERF_SENDRESULT="$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver)"
