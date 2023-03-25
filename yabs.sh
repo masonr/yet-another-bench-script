@@ -253,6 +253,14 @@ echo -e "Kernel     : $KERNEL"
 VIRT=$(systemd-detect-virt 2>/dev/null)
 VIRT=${VIRT^^} || VIRT="UNKNOWN"
 echo -e "VM Type    : $VIRT"
+if [[ ! -z $IPV4_CHECK && ! -z $IPV6_CHECK ]]; then
+	ONLINE="IPv4 & IPv6" 
+elif [[ ! -z $IPV4_CHECK ]]; then
+	ONLINE="IPv4"
+elif [[ ! -z $IPV6_CHECK ]]; then
+       	ONLINE="IPv6"
+fi
+echo -e "Net Online : $ONLINE"
 
 # Function to get information from IP Address using ip-api.com free API
 function ip_info() {
@@ -271,36 +279,30 @@ function ip_info() {
 	fi
 
 	local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
-	local country=${country//\"}
+	country=${country//\"}
 
 	local region=$(echo "$response" | grep -Po '"regionName": *\K"[^"]*"')
-	local region=${region//\"}
+	region=${region//\"}
 
 	local region_code=$(echo "$response" | grep -Po '"region": *\K"[^"]*"')
-	local region_code=${region_code//\"}
+	region_code=${region_code//\"}
 
 	local city=$(echo "$response" | grep -Po '"city": *\K"[^"]*"')
-	local city=${city//\"}
+	city=${city//\"}
 
 	local isp=$(echo "$response" | grep -Po '"isp": *\K"[^"]*"')
-	local isp=${isp//\"}
+	isp=${isp//\"}
 
 	local org=$(echo "$response" | grep -Po '"org": *\K"[^"]*"')
-	local org=${org//\"}
+	org=${org//\"}
 
 	local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
-	local as=${as//\"}
+	as=${as//\"}
 	
 	echo
-	echo "Basic Network Information:"
+	echo "$net_type Network Information:"
 	echo "---------------------------------"
 
-	if [[ -n "$net_type" ]]; then
-		echo "Protocol   : $net_type"
-	fi
-	if [[ -z "$net_type" ]]; then
-		echo "Protocol    : Unknown"
-	fi
 	if [[ -n "$isp" && -n "$as" ]]; then
 		echo "ISP        : $isp"
 		echo "ASN        : $as"
