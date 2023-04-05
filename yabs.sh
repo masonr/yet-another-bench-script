@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Feb 2023
+# Initial Oct 2019; Last update Mar 2023
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-02-27"
+YABS_VERSION="v2023-03-24"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -26,7 +26,7 @@ TIME_START=$(date '+%Y%m%d-%H%M%S')
 YABS_START_TIME=$(date +%s)
 
 # override locale to eliminate parsing errors (i.e. using commas as delimiters rather than periods)
-if locale -a | grep ^C$ > /dev/null ; then
+if locale -a 2>/dev/null | grep ^C$ > /dev/null; then
 	# locale "C" installed
 	export LC_ALL=C
 else
@@ -250,9 +250,17 @@ DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
 KERNEL=$(uname -r)
 echo -e "Kernel     : $KERNEL"
-VIRT=$(systemd-detect-virt)
+VIRT=$(systemd-detect-virt 2>/dev/null)
 VIRT=${VIRT^^} || VIRT="UNKNOWN"
 echo -e "VM Type    : $VIRT"
+if [[ ! -z $IPV4_CHECK && ! -z $IPV6_CHECK ]]; then
+	ONLINE="IPv4 & IPv6" 
+elif [[ ! -z $IPV4_CHECK ]]; then
+	ONLINE="IPv4"
+elif [[ ! -z $IPV6_CHECK ]]; then
+       	ONLINE="IPv6"
+fi
+echo -e "Net Online : $ONLINE"
 
 # Function to get information from IP Address using ip-api.com free API
 function ip_info() {
@@ -265,33 +273,36 @@ function ip_info() {
 
 	local response=$($DL_CMD http://ip-api.com/json/$net_ip)
 
-	local country=$(echo "$response" | grep -Po '"country": *\K"[^"]*"')
-	local country=${country//\"}
-
-	local region=$(echo "$response" | grep -Po '"regionName": *\K"[^"]*"')
-	local region=${region//\"}
-
-	local region_code=$(echo "$response" | grep -Po '"region": *\K"[^"]*"')
-	local region_code=${region_code//\"}
-
-	local city=$(echo "$response" | grep -Po '"city": *\K"[^"]*"')
-	local city=${city//\"}
-
-	local isp=$(echo "$response" | grep -Po '"isp": *\K"[^"]*"')
-	local isp=${isp//\"}
-
-	local org=$(echo "$response" | grep -Po '"org": *\K"[^"]*"')
-	local org=${org//\"}
-
-	local as=$(echo "$response" | grep -Po '"as": *\K"[^"]*"')
-	local as=${as//\"}
-
-	if [[ -n "$net_type" ]]; then
-		echo "Protocol   : $net_type"
+	# if no response, skip output
+	if [[ -z $response ]]; then
+		return
 	fi
-	if [[ -z "$net_type" ]]; then
-		echo "Protocol    : Unknown"
-	fi
+
+	local country=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^country/ {print $2}' | head -1)
+	country=${country//\"}
+
+	local region=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^regionName/ {print $2}')
+	region=${region//\"}
+
+	local region_code=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^region/ {print $2}' | head -1)
+	region_code=${region_code//\"}
+
+	local city=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^city/ {print $2}')
+	city=${city//\"}
+
+	local isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}')
+	isp=${isp//\"}
+
+	local org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}')
+	org=${org//\"}
+
+	local as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}')
+	as=${as//\"}
+	
+	echo
+	echo "$net_type Network Information:"
+	echo "---------------------------------"
+
 	if [[ -n "$isp" && -n "$as" ]]; then
 		echo "ISP        : $isp"
 		echo "ASN        : $as"
@@ -308,9 +319,6 @@ function ip_info() {
 }
 
 if [ -z $SKIP_NET ]; then
-	echo -e 
-	echo -e "Basic Network Information:"
-	echo -e "---------------------------------"
 	ip_info
 fi
 
@@ -722,7 +730,8 @@ function iperf_test {
 	done
 	
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL | grep -Po 'time=.*' | sed s/'time='//)" || LATENCY_RUN="--"
+	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
+	[[ -z $LATENCY_RUN ]] && LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
 	IPERF_SENDRESULT="$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver)"
