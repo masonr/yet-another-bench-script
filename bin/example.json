@@ -1,11 +1,12 @@
 {
-	"version": "v2023-02-27",
-	"time": "20230227-230322",
+	"version": "v2023-04-23",
+	"time": "20230423-134114",
 	"os": {
 		"arch": "x64",
-		"distro": "Ubuntu 20.04.5 LTS",
+		"distro": "Ubuntu 20.04.6 LTS",
 		"kernel": "5.4.0-110-generic",
-		"uptime": 24901047.67
+		"uptime": 29615719.72,
+		"vm": "NONE"
 	},
 	"net": {
 		"ipv4": true,
@@ -14,161 +15,127 @@
 	"cpu": {
 		"model": "Intel(R) Xeon(R) E-2276G CPU @ 3.80GHz",
 		"cores": 12,
-		"freq": "4430.782 MHz",
+		"freq": "4693.667 MHz",
 		"aes": true,
 		"virt": true
 	},
 	"mem": {
 		"ram": 16246580,
+		"ram_units": "KiB",
 		"swap": 15625212,
-		"disk": 906519496
+		"swap_units": "KiB",
+		"disk": 906519496,
+		"disk_units": "KB"
+	},
+	"ip_info": {
+		"protocol": "IPv6",
+		"isp": "Clouvider Limited",
+		"asn": "AS62240 Clouvider",
+		"org": "USA Network",
+		"city": "New York",
+		"region": "New York",
+		"region_code": "NY",
+		"country": "United States"
 	},
 	"fio": [{
 		"bs": "4k",
-		"speed_r": 416793,
-		"iops_r": 104198,
-		"speed_w": 417893,
-		"iops_w": 104473,
-		"speed_rw": 834686,
-		"iops_rw": 208671
+		"speed_r": 405417,
+		"iops_r": 101354,
+		"speed_w": 406487,
+		"iops_w": 101621,
+		"speed_rw": 811904,
+		"iops_rw": 202975,
+		"speed_units": "KBps"
 	}, {
 		"bs": "64k",
-		"speed_r": 415009,
-		"iops_r": 6484,
-		"speed_w": 417193,
-		"iops_w": 6518,
-		"speed_rw": 832202,
-		"iops_rw": 13002
+		"speed_r": 407967,
+		"iops_r": 6374,
+		"speed_w": 410114,
+		"iops_w": 6408,
+		"speed_rw": 818081,
+		"iops_rw": 12782,
+		"speed_units": "KBps"
 	}, {
 		"bs": "512k",
-		"speed_r": 403890,
-		"iops_r": 788,
-		"speed_w": 425350,
-		"iops_w": 830,
-		"speed_rw": 829240,
-		"iops_rw": 1618
+		"speed_r": 380212,
+		"iops_r": 742,
+		"speed_w": 400413,
+		"iops_w": 782,
+		"speed_rw": 780625,
+		"iops_rw": 1524,
+		"speed_units": "KBps"
 	}, {
 		"bs": "1m",
-		"speed_r": 421159,
-		"iops_r": 411,
-		"speed_w": 449208,
-		"iops_w": 438,
-		"speed_rw": 870367,
-		"iops_rw": 849
+		"speed_r": 394550,
+		"iops_r": 385,
+		"speed_w": 420827,
+		"iops_w": 410,
+		"speed_rw": 815377,
+		"iops_rw": 795,
+		"speed_units": "KBps"
 	}],
 	"iperf": [{
 		"mode": "IPv4",
 		"provider": "Clouvider",
 		"loc": "London, UK (10G)",
-		"send": "1.80 Gbits/sec",
-		"recv": "2.40 Gbits/sec",
-		"latency": "76.8 ms"
+		"send": "1.61 Gbits/sec",
+		"recv": "2.39 Gbits/sec",
+		"latency": "77.5 ms"
 	}, {
 		"mode": "IPv4",
 		"provider": "Scaleway",
 		"loc": "Paris, FR (10G)",
-		"send": "2.61 Gbits/sec",
-		"recv": "2.39 Gbits/sec",
-		"latency": "75.5 ms"
-	}, {
-		"mode": "IPv4",
-		"provider": "NovoServe",
-		"loc": "North Holland, NL (40G)",
-		"send": "2.33 Gbits/sec",
-		"recv": "2.14 Gbits/sec",
-		"latency": "78.4 ms"
-	}, {
-		"mode": "IPv4",
-		"provider": "Uztelecom",
-		"loc": "Tashkent, UZ (10G)",
-		"send": "1.21 Gbits/sec",
-		"recv": "1.09 Gbits/sec",
-		"latency": "158 ms"
+		"send": "busy ",
+		"recv": "2.25 Gbits/sec",
+		"latency": "83.3 ms"
 	}, {
 		"mode": "IPv4",
 		"provider": "Clouvider",
 		"loc": "NYC, NY, US (10G)",
-		"send": "8.94 Gbits/sec",
-		"recv": "7.88 Gbits/sec",
-		"latency": "0.109 ms"
-	}, {
-		"mode": "IPv4",
-		"provider": "Clouvider",
-		"loc": "Dallas, TX, US (10G)",
-		"send": "4.99 Gbits/sec",
-		"recv": "5.54 Gbits/sec",
-		"latency": "34.0 ms"
-	}, {
-		"mode": "IPv4",
-		"provider": "Clouvider",
-		"loc": "Los Angeles, CA, US (10G)",
-		"send": "2.80 Gbits/sec",
-		"recv": "2.69 Gbits/sec",
-		"latency": "55.9 ms"
+		"send": "9.10 Gbits/sec",
+		"recv": "8.85 Gbits/sec",
+		"latency": "1.21 ms"
 	}, {
 		"mode": "IPv6",
 		"provider": "Clouvider",
 		"loc": "London, UK (10G)",
-		"send": "2.25 Gbits/sec",
-		"recv": "2.40 Gbits/sec",
+		"send": "2.00 Gbits/sec",
+		"recv": "21.1 Mbits/sec",
 		"latency": "76.7 ms"
 	}, {
 		"mode": "IPv6",
 		"provider": "Scaleway",
 		"loc": "Paris, FR (10G)",
-		"send": "busy ",
-		"recv": "2.38 Gbits/sec",
-		"latency": "75.5 ms"
-	}, {
-		"mode": "IPv6",
-		"provider": "NovoServe",
-		"loc": "North Holland, NL (40G)",
-		"send": "2.24 Gbits/sec",
-		"recv": "2.29 Gbits/sec",
-		"latency": "78.4 ms"
-	}, {
-		"mode": "IPv6",
-		"provider": "Uztelecom",
-		"loc": "Tashkent, UZ (10G)",
-		"send": "1.16 Gbits/sec",
-		"recv": "1.12 Gbits/sec",
-		"latency": "158 ms"
+		"send": "2.66 Gbits/sec",
+		"recv": "1.56 Gbits/sec",
+		"latency": "75.9 ms"
 	}, {
 		"mode": "IPv6",
 		"provider": "Clouvider",
 		"loc": "NYC, NY, US (10G)",
-		"send": "9.16 Gbits/sec",
-		"recv": "8.27 Gbits/sec",
-		"latency": "0.077 ms"
-	}, {
-		"mode": "IPv6",
-		"provider": "Clouvider",
-		"loc": "Dallas, TX, US (10G)",
-		"send": "4.52 Gbits/sec",
-		"recv": "5.57 Gbits/sec",
-		"latency": "33.9 ms"
-	}, {
-		"mode": "IPv6",
-		"provider": "Clouvider",
-		"loc": "Los Angeles, CA, US (10G)",
-		"send": "2.53 Gbits/sec",
-		"recv": "2.78 Gbits/sec",
-		"latency": "56.0 ms"
+		"send": "3.42 Gbits/sec",
+		"recv": "7.80 Gbits/sec",
+		"latency": "1.15 ms"
 	}],
 	"geekbench": [{
 		"version": 4,
-		"single": 5976,
-		"multi": 22084,
-		"url": "https://browser.geekbench.com/v4/cpu/16721228"
+		"single": 5949,
+		"multi": 23425,
+		"url": "https://browser.geekbench.com/v4/cpu/16746501"
 	}, {
 		"version": 5,
-		"single": 1077,
-		"multi": 4773,
-		"url": "https://browser.geekbench.com/v5/cpu/20772711"
+		"single": 1317,
+		"multi": 5529,
+		"url": "https://browser.geekbench.com/v5/cpu/21102444"
 	}, {
 		"version": 6,
-		"single": 1524,
-		"multi": 4847,
-		"url": "https://browser.geekbench.com/v6/cpu/343254"
-	}]
+		"single": 1549,
+		"multi": 5278,
+		"url": "https://browser.geekbench.com/v6/cpu/1021916"
+	}],
+	"runtime": {
+		"start": 1682271674,
+		"end": 1682272443,
+		"elapsed": 769
+	}
 }

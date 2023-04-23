@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Mar 2023
+# Initial Oct 2019; Last update Apr 2023
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-03-24"
+YABS_VERSION="v2023-04-23"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -253,14 +253,9 @@ echo -e "Kernel     : $KERNEL"
 VIRT=$(systemd-detect-virt 2>/dev/null)
 VIRT=${VIRT^^} || VIRT="UNKNOWN"
 echo -e "VM Type    : $VIRT"
-if [[ ! -z $IPV4_CHECK && ! -z $IPV6_CHECK ]]; then
-	ONLINE="IPv4 & IPv6" 
-elif [[ ! -z $IPV4_CHECK ]]; then
-	ONLINE="IPv4"
-elif [[ ! -z $IPV6_CHECK ]]; then
-       	ONLINE="IPv6"
-fi
-echo -e "Net Online : $ONLINE"
+[[ -z "$IPV4_CHECK" ]] && ONLINE="\xE2\x9D\x8C Offline / " || ONLINE="\xE2\x9C\x94 Online / "
+[[ -z "$IPV6_CHECK" ]] && ONLINE+="\xE2\x9D\x8C Offline" || ONLINE+="\xE2\x9C\x94 Online"
+echo -e "IPv4/IPv6  : $ONLINE"
 
 # Function to get information from IP Address using ip-api.com free API
 function ip_info() {
@@ -316,21 +311,23 @@ function ip_info() {
 	if [[ -n "$country" ]]; then
 		echo "Country    : $country"
 	fi 
-}
 
-if [ -z $SKIP_NET ]; then
-	ip_info
-fi
+	[[ ! -z $JSON ]] && JSON_RESULT+=',"ip_info":{"protocol":"'$net_type'","isp":"'$isp'","asn":"'$as'","org":"'$org'","city":"'$city'","region":"'$region'","region_code":"'$region_code'","country":"'$country'"}'
+}
 
 if [ ! -z $JSON ]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
 	IPV4=$([ ! -z $IPV4_CHECK ] && echo "true" || echo "false")
 	IPV6=$([ ! -z $IPV6_CHECK ] && echo "true" || echo "false")
 	AES=$([[ "$CPU_AES" = *Enabled* ]] && echo "true" || echo "false")
-	VIRT=$([[ "$CPU_VIRT" = *Enabled* ]] && echo "true" || echo "false")
+	CPU_VIRT_BOOL=$([[ "$CPU_VIRT" = *Enabled* ]] && echo "true" || echo "false")
 	JSON_RESULT='{"version":"'$YABS_VERSION'","time":"'$TIME_START'","os":{"arch":"'$ARCH'","distro":"'$DISTRO'","kernel":"'$KERNEL'",'
-	JSON_RESULT+='"uptime":'$UPTIME_S'},"net":{"ipv4":'$IPV4',"ipv6":'$IPV6'},"cpu":{"model":"'$CPU_PROC'","cores":'$CPU_CORES','
-	JSON_RESULT+='"freq":"'$CPU_FREQ'","aes":'$AES',"virt":'$VIRT'},"mem":{"ram":'$TOTAL_RAM_RAW',"swap":'$TOTAL_SWAP_RAW',"disk":'$TOTAL_DISK_RAW'}'
+	JSON_RESULT+='"uptime":'$UPTIME_S',"vm":"'$VIRT'"},"net":{"ipv4":'$IPV4',"ipv6":'$IPV6'},"cpu":{"model":"'$CPU_PROC'","cores":'$CPU_CORES','
+	JSON_RESULT+='"freq":"'$CPU_FREQ'","aes":'$AES',"virt":'$CPU_VIRT_BOOL'},"mem":{"ram":'$TOTAL_RAM_RAW',"ram_units":"KiB","swap":'$TOTAL_SWAP_RAW',"swap_units":"KiB","disk":'$TOTAL_DISK_RAW',"disk_units":"KB"}'
+fi
+
+if [ -z $SKIP_NET ]; then
+	ip_info
 fi
 
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
@@ -650,10 +647,10 @@ elif [ -z "$SKIP_FIO" ]; then
 			if [ ! -z $JSON ]; then
 				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT]}'","speed_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}',"iops_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+4]}
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+2]}',"iops_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6]}
-				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6+3]}'},'
+				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6+3]}',"speed_units":"KBps"},'
 				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT+1]}'","speed_r":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+1]}',"iops_r":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+4]}
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}',"iops_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}
-				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}'},'
+				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}',"speed_units":"KBps"},'
 			fi
 			DISK_COUNT=$(expr $DISK_COUNT + 2)
 		done
@@ -886,8 +883,8 @@ function launch_geekbench {
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
 				GB_CMD="geekbench5"
 			else # Geekbench v6
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.0.1-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.0.1-Linux.tar.gz"
+				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.0.2-LinuxARMPreview.tar.gz" \
+					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.0.2-Linux.tar.gz"
 				GB_CMD="geekbench6"
 			fi
 			GB_RUN="True"
@@ -994,6 +991,7 @@ function calculate_time_taken() {
 	else
 		echo "YABS completed in ${time_taken} sec"
 	fi
+	[[ ! -z $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
 }
 
 calculate_time_taken $YABS_END_TIME $YABS_START_TIME
