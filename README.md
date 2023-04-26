@@ -1,11 +1,11 @@
 # Yet-Another-Bench-Script
 
-Here's an attempt to create _yet another_ damn Linux server *bench*marking _script_.
+Presenting an attempt to create _yet another_ Linux server *bench*marking _script_...
 
 ![](https://user-images.githubusercontent.com/8313125/106475387-e1f6da00-6473-11eb-918c-c785ebeef8b9.jpg)
 Logo design by [Dian Pratama](https://github.com/dianp)
 
-This script isn't an attempt to be a golden standard. It's just yet another bench script to add to your arsenal. Included are several tests that I think are most beneficial for the end-user. If there's features that you would like to see added, feel free to submit an issue describing your feature request or fork the project!
+This script throws together and automates the execution of the best benchmarking tools of the biz. Included are several tests to check the performance of critical areas of a server: disk performance with [fio](https://github.com/axboe/fio), network performance with [iperf3](https://github.com/esnet/iperf), and CPU/memory performance with [Geekbench](https://www.geekbench.com/). The script is designed to not require any external dependencies to be installed nor elevated privileges to run. If there are any features that you would like to see added, feel free to submit an issue describing your feature request or fork the project and submit a PR!
 
 View YABS usage stats [here](https://yabs.rowe.sh).
 
@@ -26,7 +26,7 @@ or
 wget -qO- yabs.sh | bash
 ```
 
-This script has been tested on the following Linux distributions: CentOS 6+, Debian 8+, Fedora 30, and Ubuntu 16.04+. It is designed to not require any external dependencies to be installed nor elevated privileges to run.
+This script has been tested on the following Linux distributions: CentOS 6+, Debian 8+, Fedora 30, and Ubuntu 16.04+.
 
 **Local fio/iperf3 Packages**: If the tested system has fio and/or iperf3 already installed, the local package will take precedence over the precompiled binary.
 
@@ -35,8 +35,6 @@ This script has been tested on the following Linux distributions: CentOS 6+, Deb
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
 
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
-
-By default, the script runs all three tests described in the next section below. In the event that you wish to skip one or more of the tests, use the commands below:
 
 ```
 curl -sL yabs.sh | bash -s -- -flags
@@ -73,7 +71,15 @@ curl -sL yabs.sh | bash -s -- -s "https://example.com/yabs/post"
 
 JSON results can be sent to multiple endpoints by entering each site joined by a comma (e.g. "https://example.com/yabs/post,http://example.com/yabs2/post").
 
-A list of websites supporting acceptance of YABS JSON results will be posted here (when available). Example JSON output: [example.json](bin/example.json).
+Sites supporting submission of YABS JSON results:
+
+| Website | Example Command |
+| --- | --- |
+| [YABSdb](https://yabsdb.com/) | `curl -sL yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
+| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -5 -6 -s https://www.vpsbenchmarks.com/yabs/upload` |
+| [s0c Online](https://s0c.org/) | `curl -sL yabs.sh \| bash -s -- -s https://s0c.org/api/yabs -9` |
+
+Example JSON output: [example.json](bin/example.json).
 
 ## Tests Conducted
 
@@ -90,32 +96,32 @@ This script relies on external binaries in order to complete the performance tes
 ```
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 #              Yet-Another-Bench-Script              #
-#                     v2023-02-27                    #
+#                     v2023-04-23                    #
 # https://github.com/masonr/yet-another-bench-script #
 # ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #
 
-Mon 27 Feb 2023 11:03:22 PM EST
+Sun 23 Apr 2023 01:41:14 PM EDT
 
 Basic System Information:
 ---------------------------------
-Uptime     : 288 days, 4 hours, 57 minutes
+Uptime     : 342 days, 18 hours, 35 minutes
 Processor  : Intel(R) Xeon(R) E-2276G CPU @ 3.80GHz
-CPU cores  : 12 @ 4430.782 MHz
+CPU cores  : 12 @ 4693.667 MHz
 AES-NI     : ✔ Enabled
 VM-x/AMD-V : ✔ Enabled
 RAM        : 15.5 GiB
 Swap       : 14.9 GiB
 Disk       : 864.5 GiB
-Distro     : Ubuntu 20.04.5 LTS
+Distro     : Ubuntu 20.04.6 LTS
 Kernel     : 5.4.0-110-generic
 VM Type    : NONE
+IPv4/IPv6  : ✔ Online / ✔ Online
 
-Basic Network Information:
+IPv6 Network Information:
 ---------------------------------
-Protocol   : IPv4
 ISP        : Clouvider Limited
 ASN        : AS62240 Clouvider
-Host       : Clouvider HB
+Host       : USA Network
 Location   : New York, New York (NY)
 Country    : United States
 
@@ -123,65 +129,57 @@ fio Disk Speed Tests (Mixed R/W 50/50):
 ---------------------------------
 Block Size | 4k            (IOPS) | 64k           (IOPS)
   ------   | ---            ----  | ----           ----
-Read       | 416.79 MB/s (104.1k) | 415.00 MB/s   (6.4k)
-Write      | 417.89 MB/s (104.4k) | 417.19 MB/s   (6.5k)
-Total      | 834.68 MB/s (208.6k) | 832.20 MB/s  (13.0k)
+Read       | 405.41 MB/s (101.3k) | 407.96 MB/s   (6.3k)
+Write      | 406.48 MB/s (101.6k) | 410.11 MB/s   (6.4k)
+Total      | 811.90 MB/s (202.9k) | 818.08 MB/s  (12.7k)
            |                      |
 Block Size | 512k          (IOPS) | 1m            (IOPS)
   ------   | ---            ----  | ----           ----
-Read       | 403.89 MB/s    (788) | 421.15 MB/s    (411)
-Write      | 425.35 MB/s    (830) | 449.20 MB/s    (438)
-Total      | 829.24 MB/s   (1.6k) | 870.36 MB/s    (849)
+Read       | 380.21 MB/s    (742) | 394.55 MB/s    (385)
+Write      | 400.41 MB/s    (782) | 420.82 MB/s    (410)
+Total      | 780.62 MB/s   (1.5k) | 815.37 MB/s    (795)
 
 iperf3 Network Speed Tests (IPv4):
 ---------------------------------
 Provider        | Location (Link)           | Send Speed      | Recv Speed      | Ping
 -----           | -----                     | ----            | ----            | ----
-Clouvider       | London, UK (10G)          | 1.80 Gbits/sec  | 2.40 Gbits/sec  | 76.8 ms
-Scaleway        | Paris, FR (10G)           | 2.61 Gbits/sec  | 2.39 Gbits/sec  | 75.5 ms
-NovoServe       | North Holland, NL (40G)   | 2.33 Gbits/sec  | 2.14 Gbits/sec  | 78.4 ms
-Uztelecom       | Tashkent, UZ (10G)        | 1.21 Gbits/sec  | 1.09 Gbits/sec  | 158 ms
-Clouvider       | NYC, NY, US (10G)         | 8.94 Gbits/sec  | 7.88 Gbits/sec  | 0.109 ms
-Clouvider       | Dallas, TX, US (10G)      | 4.99 Gbits/sec  | 5.54 Gbits/sec  | 34.0 ms
-Clouvider       | Los Angeles, CA, US (10G) | 2.80 Gbits/sec  | 2.69 Gbits/sec  | 55.9 ms
+Clouvider       | London, UK (10G)          | 1.61 Gbits/sec  | 2.39 Gbits/sec  | 77.5 ms
+Scaleway        | Paris, FR (10G)           | busy            | 2.25 Gbits/sec  | 83.3 ms
+Clouvider       | NYC, NY, US (10G)         | 9.10 Gbits/sec  | 8.85 Gbits/sec  | 1.21 ms
 
 iperf3 Network Speed Tests (IPv6):
 ---------------------------------
 Provider        | Location (Link)           | Send Speed      | Recv Speed      | Ping
 -----           | -----                     | ----            | ----            | ----
-Clouvider       | London, UK (10G)          | 2.25 Gbits/sec  | 2.40 Gbits/sec  | 76.7 ms
-Scaleway        | Paris, FR (10G)           | busy            | 2.38 Gbits/sec  | 75.5 ms
-NovoServe       | North Holland, NL (40G)   | 2.24 Gbits/sec  | 2.29 Gbits/sec  | 78.4 ms
-Uztelecom       | Tashkent, UZ (10G)        | 1.16 Gbits/sec  | 1.12 Gbits/sec  | 158 ms
-Clouvider       | NYC, NY, US (10G)         | 9.16 Gbits/sec  | 8.27 Gbits/sec  | 0.077 ms
-Clouvider       | Dallas, TX, US (10G)      | 4.52 Gbits/sec  | 5.57 Gbits/sec  | 33.9 ms
-Clouvider       | Los Angeles, CA, US (10G) | 2.53 Gbits/sec  | 2.78 Gbits/sec  | 56.0 ms
+Clouvider       | London, UK (10G)          | 2.00 Gbits/sec  | 21.1 Mbits/sec  | 76.7 ms
+Scaleway        | Paris, FR (10G)           | 2.66 Gbits/sec  | 1.56 Gbits/sec  | 75.9 ms
+Clouvider       | NYC, NY, US (10G)         | 3.42 Gbits/sec  | 7.80 Gbits/sec  | 1.15 ms
 
 Geekbench 4 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 5976
-Multi Core      | 22084
-Full Test       | https://browser.geekbench.com/v4/cpu/16721228
+Single Core     | 5949
+Multi Core      | 23425
+Full Test       | https://browser.geekbench.com/v4/cpu/16746501
 
 Geekbench 5 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 1077
-Multi Core      | 4773
-Full Test       | https://browser.geekbench.com/v5/cpu/20772711
+Single Core     | 1317
+Multi Core      | 5529
+Full Test       | https://browser.geekbench.com/v5/cpu/21102444
 
 Geekbench 6 Benchmark Test:
 ---------------------------------
 Test            | Value
                 |
-Single Core     | 1524
-Multi Core      | 4847
-Full Test       | https://browser.geekbench.com/v6/cpu/343254
+Single Core     | 1549
+Multi Core      | 5278
+Full Test       | https://browser.geekbench.com/v6/cpu/1021916
 
-YABS completed in 16 min 34 sec
+YABS completed in 12 min 49 sec
 
 ```
 
