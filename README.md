@@ -76,7 +76,7 @@ Sites supporting submission of YABS JSON results:
 | Website | Example Command |
 | --- | --- |
 | [YABSdb](https://yabsdb.com/) | `curl -sL yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
-| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -5 -6 -s https://www.vpsbenchmarks.com/yabs/upload` |
+| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
 | [s0c Online](https://s0c.org/) | `curl -sL yabs.sh \| bash -s -- -s https://s0c.org/api/yabs -9` |
 
 Example JSON output: [example.json](bin/example.json).
