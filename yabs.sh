@@ -894,8 +894,13 @@ function launch_geekbench {
 	if [[ $GB_RUN == *True* ]]; then # run GB test
 		echo -en "\nRunning GB$VERSION benchmark test... *cue elevator music*"
 
-		# download the desired Geekbench tarball and extract to geekbench temp directory
-		$DL_CMD $GB_URL | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		# check for local geekbench installed
+		if command -v "$GB_CMD" &>/dev/null; then
+			GEEKBENCH_PATH=$(dirname "$(command -v "$GB_CMD")")
+		else
+			# download the desired Geekbench tarball and extract to geekbench temp directory
+			$DL_CMD $GB_URL | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		fi
 
 		# unlock if license file detected
 		test -f "geekbench.license" && $GEEKBENCH_PATH/$GB_CMD --unlock $(cat geekbench.license) > /dev/null 2>&1
