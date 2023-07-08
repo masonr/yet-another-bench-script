@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-04-23"
+YABS_VERSION="v2023-07-08"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -298,10 +298,16 @@ function ip_info() {
 	echo "$net_type Network Information:"
 	echo "---------------------------------"
 
-	if [[ -n "$isp" && -n "$as" ]]; then
-		echo "ISP        : $isp"
-		echo "ASN        : $as"
-	fi
+	if [[ -n "$isp" ]]; then
+        echo "ISP        : $isp"
+    else
+        echo "ISP        : Unknown"
+    fi
+	if [[ -n "$as" ]]; then
+        echo "ASN        : $as"
+    else
+        echo "ASN        : Unknown"
+    fi
 	if [[ -n "$org" ]]; then
 		echo "Host       : $org"
 	fi
