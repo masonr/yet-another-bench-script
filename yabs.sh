@@ -299,15 +299,15 @@ function ip_info() {
 	echo "---------------------------------"
 
 	if [[ -n "$isp" ]]; then
-        echo "ISP        : $isp"
-    else
-        echo "ISP        : Unknown"
-    fi
+		echo "ISP        : $isp"
+	else
+		echo "ISP        : Unknown"
+	fi
 	if [[ -n "$as" ]]; then
-        echo "ASN        : $as"
-    else
-        echo "ASN        : Unknown"
-    fi
+		echo "ASN        : $as"
+	else
+		echo "ASN        : Unknown"
+	fi
 	if [[ -n "$org" ]]; then
 		echo "Host       : $org"
 	fi
