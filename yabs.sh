@@ -823,7 +823,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		"speedtest.uztelecom.uz" "5200-5207" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
 		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "New York City, US (10G)" "IPv4|IPv6" \
 		"speedtest.lax11.us.leaseweb.net" "5201-5210" "Leaseweb" "Los Angeles, US (10G)" "IPv4|IPv6" \
-		"speedtest.mtl2.ca.leaseweb.net "5201-5210" "Leaseweb" "Montreal, CA (10G)" "IPv4|IPv6"
+		"speedtest.mtl2.ca.leaseweb.net" "5201-5210" "Leaseweb" "Montreal, CA (10G)" "IPv4|IPv6"
 	)
 
 	# if the "REDUCE_NET" flag is activated, then do a shorter iperf test with only three locations
