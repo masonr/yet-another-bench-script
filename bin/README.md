@@ -6,14 +6,14 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 | Binary Name | Version | Compile Date | Architecture | OS |
 |:-:|:-:|:-:|:-:|:-:|
-| fio_x64 | 3.35 | 12-JUL-2023 | x86_64 | 64-bit |
-| fio_x86 | 3.35 |  12-JUL-2022 | x86 | 32-bit |
-| fio_aarch64 | 3.35 | 12-JUL-2023 | ARM | 64-bit |
-| fio_arm | 3.35 | 12-JUL-2023 | ARM | 32-bit |
-| iperf_x64 | 3.14 | 12-JUL-2023 | x86_64 | 64-bit |
-| iperf_x86 | 3.14 |  12-JUL-2023 | x86 | 32-bit |
-| iperf_aarch64 | 3.14 | 12-JUL-2023 | ARM | 64-bit |
-| iperf_arm | 3.14 | 12-JUL-2023 | ARM | 32-bit |
+| fio_x64 | 3.36 | 20-OCT-2023 | x86_64 | 64-bit |
+| fio_x86 | 3.36 |  20-OCT-2023 | i686 | 32-bit |
+| fio_aarch64 | 3.36 | 20-OCT-2023 | ARM (aarch64) | 64-bit |
+| fio_arm | 3.36 | 20-OCT-2023 | ARM  | 32-bit |
+| iperf_x64 | 3.15 | 20-OCT-2023 | x86_64 | 64-bit |
+| iperf_x86 | 3.15 |  20-OCT-2023 | i686 | 32-bit |
+| iperf_aarch64 | 3.15 | 20-OCT-2023 | ARM (aarch64) | 64-bit |
+| iperf_arm | 3.15 | 20-OCT-2023 | ARM | 32-bit |
 
 Note: ARM compatibility is considered experimental. Static binaries for 32-bit and ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
@@ -37,7 +37,7 @@ Compilation of ARM-compatible binaries requires additional environment variables
 **Compiling 32-bit binaries**:
 
 ```sh
-docker run -t -i --rm -v `pwd`:/io --env ARCH=i686 --env CROSS=i686-linux-musl --env HOST=i686-linux-musl phusion/holy-build-box-64:latest bash /io/cross-compile.sh
+docker run -t -i --rm -v `pwd`:/io --env ARCH=x86 --env CROSS=i686-linux-musl --env HOST=i686-linux-musl phusion/holy-build-box-64:latest bash /io/cross-compile.sh
 ```
 
 **Compiling ARM 64-bit binaries**:
