@@ -1,89 +1,141 @@
 {
-	"version": "v2022-08-17",
-	"time": "20220817-035033",
+	"version": "v2023-04-23",
+	"time": "20230423-134114",
 	"os": {
 		"arch": "x64",
-		"distro": "Ubuntu 20.04.4 LTS",
-		"kernel": "5.4.0-120-generic",
-		"uptime": 4089127.72
+		"distro": "Ubuntu 20.04.6 LTS",
+		"kernel": "5.4.0-110-generic",
+		"uptime": 29615719.72,
+		"vm": "NONE"
 	},
 	"net": {
 		"ipv4": true,
-		"ipv6": false
+		"ipv6": true
 	},
 	"cpu": {
-		"model": "Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz",
+		"model": "Intel(R) Xeon(R) E-2276G CPU @ 3.80GHz",
 		"cores": 12,
-		"freq": "4000.089 MHz",
+		"freq": "4693.667 MHz",
 		"aes": true,
 		"virt": true
 	},
 	"mem": {
-		"ram": 32720272,
-		"swap": 41904120,
-		"disk": 47170290544
+		"ram": 16246580,
+		"ram_units": "KiB",
+		"swap": 15625212,
+		"swap_units": "KiB",
+		"disk": 906519496,
+		"disk_units": "KB"
+	},
+	"ip_info": {
+		"protocol": "IPv6",
+		"isp": "Clouvider Limited",
+		"asn": "AS62240 Clouvider",
+		"org": "USA Network",
+		"city": "New York",
+		"region": "New York",
+		"region_code": "NY",
+		"country": "United States"
 	},
 	"fio": [{
 		"bs": "4k",
-		"speed_r": 165590,
-		"iops_r": 41397,
-		"speed_w": 166027,
-		"iops_w": 41506,
-		"speed_rw": 331617,
-		"iops_rw": 82903
+		"speed_r": 405417,
+		"iops_r": 101354,
+		"speed_w": 406487,
+		"iops_w": 101621,
+		"speed_rw": 811904,
+		"iops_rw": 202975,
+		"speed_units": "KBps"
 	}, {
 		"bs": "64k",
-		"speed_r": 198505,
-		"iops_r": 3101,
-		"speed_w": 199549,
-		"iops_w": 3117,
-		"speed_rw": 398054,
-		"iops_rw": 6218
+		"speed_r": 407967,
+		"iops_r": 6374,
+		"speed_w": 410114,
+		"iops_w": 6408,
+		"speed_rw": 818081,
+		"iops_rw": 12782,
+		"speed_units": "KBps"
 	}, {
 		"bs": "512k",
-		"speed_r": 227239,
-		"iops_r": 443,
-		"speed_w": 239313,
-		"iops_w": 467,
-		"speed_rw": 466552,
-		"iops_rw": 910
+		"speed_r": 380212,
+		"iops_r": 742,
+		"speed_w": 400413,
+		"iops_w": 782,
+		"speed_rw": 780625,
+		"iops_rw": 1524,
+		"speed_units": "KBps"
 	}, {
 		"bs": "1m",
-		"speed_r": 238296,
-		"iops_r": 232,
-		"speed_w": 254166,
-		"iops_w": 248,
-		"speed_rw": 492462,
-		"iops_rw": 480
+		"speed_r": 394550,
+		"iops_r": 385,
+		"speed_w": 420827,
+		"iops_w": 410,
+		"speed_rw": 815377,
+		"iops_rw": 795,
+		"speed_units": "KBps"
 	}],
 	"iperf": [{
 		"mode": "IPv4",
 		"provider": "Clouvider",
 		"loc": "London, UK (10G)",
-		"send": "122 Mbits/sec",
-		"recv": "58.5 Mbits/sec"
+		"send": "1.61 Gbits/sec",
+		"recv": "2.39 Gbits/sec",
+		"latency": "77.5 ms"
 	}, {
 		"mode": "IPv4",
-		"provider": "Online.net",
+		"provider": "Scaleway",
 		"loc": "Paris, FR (10G)",
-		"send": "111 Mbits/sec",
-		"recv": "busy "
+		"send": "busy ",
+		"recv": "2.25 Gbits/sec",
+		"latency": "83.3 ms"
 	}, {
 		"mode": "IPv4",
 		"provider": "Clouvider",
 		"loc": "NYC, NY, US (10G)",
-		"send": "129 Mbits/sec",
-		"recv": "107 Mbits/sec"
+		"send": "9.10 Gbits/sec",
+		"recv": "8.85 Gbits/sec",
+		"latency": "1.21 ms"
+	}, {
+		"mode": "IPv6",
+		"provider": "Clouvider",
+		"loc": "London, UK (10G)",
+		"send": "2.00 Gbits/sec",
+		"recv": "21.1 Mbits/sec",
+		"latency": "76.7 ms"
+	}, {
+		"mode": "IPv6",
+		"provider": "Scaleway",
+		"loc": "Paris, FR (10G)",
+		"send": "2.66 Gbits/sec",
+		"recv": "1.56 Gbits/sec",
+		"latency": "75.9 ms"
+	}, {
+		"mode": "IPv6",
+		"provider": "Clouvider",
+		"loc": "NYC, NY, US (10G)",
+		"send": "3.42 Gbits/sec",
+		"recv": "7.80 Gbits/sec",
+		"latency": "1.15 ms"
 	}],
 	"geekbench": [{
 		"version": 4,
-		"single": 5443,
-		"multi": 24535,
-		"url": "https://browser.geekbench.com/v4/cpu/16603522"
+		"single": 5949,
+		"multi": 23425,
+		"url": "https://browser.geekbench.com/v4/cpu/16746501"
 	}, {
 		"version": 5,
-		"single": 1157,
-		"multi": 5908,
-		"url": "https://browser.geekbench.com/v5/cpu/16679843"
-	}]
+		"single": 1317,
+		"multi": 5529,
+		"url": "https://browser.geekbench.com/v5/cpu/21102444"
+	}, {
+		"version": 6,
+		"single": 1549,
+		"multi": 5278,
+		"url": "https://browser.geekbench.com/v6/cpu/1021916"
+	}],
+	"runtime": {
+		"start": 1682271674,
+		"end": 1682272443,
+		"elapsed": 769
+	}
 }
