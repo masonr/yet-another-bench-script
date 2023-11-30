@@ -533,14 +533,14 @@ elif [ -z "$SKIP_FIO" ]; then
 		free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
 
 		if [[ $size_b == 'T' ]]; then
-			free_space=$(bc <<< "$free_space*1024")
+			free_space=$((free_space * 1024))
 			size_b='G'
 		fi
 
 		if [[ $(df -Th | grep -w $long) == *"zfs"* ]];then
 
 			if [[ $size_b == 'G' ]]; then
-				if [[ $(echo "$free_space < $mul_spa" | bc) -ne 0 ]];then
+				if ((free_space < mul_spa)); then
 					warning=1
 				fi
 			else
