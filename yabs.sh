@@ -529,7 +529,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			fi
 		done
 
-		size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c 2 | head -c 1)
+		size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c -2 | head -c 1)
 		free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
 
 		if [[ $size_b == 'T' ]]; then
