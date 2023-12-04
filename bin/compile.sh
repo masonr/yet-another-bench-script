@@ -44,7 +44,7 @@ make
 # verify no external shared library links
 libcheck fio
 # copy fio binary to mounted dir
-cp fio /io/fio_$ARCH
+cp fio "/io/fio_$ARCH"
 
 # download and compile iperf
 cd ~
@@ -57,4 +57,4 @@ make
 # verify no external shared library links
 libcheck src/iperf3
 # copy iperf binary to mounted dir
-cp src/iperf3 /io/iperf3_$ARCH
+cp src/iperf3 "/io/iperf3_$ARCH"
