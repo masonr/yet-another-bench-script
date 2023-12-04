@@ -326,15 +326,15 @@ fi
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
 DATE=$(date -Iseconds | sed -e "s/:/_/g")
 YABS_PATH=./$DATE
-touch $DATE.test 2> /dev/null
+touch "$DATE.test" 2> /dev/null
 # test if the user has write permissions in the current directory and exit if not
 if [ ! -f "$DATE.test" ]; then
 	echo -e
 	echo -e "You do not have write permission in this directory. Switch to an owned directory and re-run the script.\nExiting..."
 	exit 1
 fi
-rm $DATE.test
-mkdir -p $YABS_PATH
+rm "$DATE.test"
+mkdir -p "$YABS_PATH"
 
 # trap CTRL+C signals to exit script cleanly
 trap catch_abort INT
@@ -344,7 +344,7 @@ trap catch_abort INT
 #          yabs-related files.
 function catch_abort() {
 	echo -e "\n** Aborting YABS. Cleaning up files...\n"
-	rm -rf $YABS_PATH
+	rm -rf "$YABS_PATH"
 	unset LC_ALL
 	exit 0
 }
@@ -430,7 +430,7 @@ function disk_test {
 
 	# run a quick test to generate the fio test file to be used by the actual tests
 	echo -en "Generating fio test file..."
-	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=64k --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=1 --gtod_reduce=1 --filename=$DISK_PATH/test.fio --direct=1 --minimal &> /dev/null
+	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=64k --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=1 --gtod_reduce=1 --filename="$DISK_PATH/test.fio" --direct=1 --minimal &> /dev/null
 	echo -en "\r\033[0K"
 
 	# get array of block sizes to evaluate
@@ -439,7 +439,7 @@ function disk_test {
 	for BS in "${BLOCK_SIZES[@]}"; do
 		# run rand read/write mixed fio test with block size = $BS
 		echo -en "Running fio random mixed R+W disk test with $BS block size..."
-		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
+		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
 		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
 		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
 		DISK_IOPS=$(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }')
@@ -477,14 +477,14 @@ function dd_test {
 	while [ $I -lt 3 ]
 	do
 		# write test using dd, "direct" flag is used to test direct I/O for data being stored to disk
-		DISK_WRITE_TEST=$(dd if=/dev/zero of=$DISK_PATH/$DATE.test bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
+		DISK_WRITE_TEST=$(dd if=/dev/zero of="$DISK_PATH/$DATE.test" bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_WRITE_TEST | cut -d " " -f 1)
 		[[ "$DISK_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_WRITE_TEST_RES+=( "$DISK_WRITE_TEST" )
 		DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
 		# read test using dd using the 1G file written during the write test
-		DISK_READ_TEST=$(dd if=$DISK_PATH/$DATE.test of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
+		DISK_READ_TEST=$(dd if="$DISK_PATH/$DATE.test" of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_READ_TEST | cut -d " " -f 1)
 		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
@@ -515,7 +515,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
 		do
 			if [[ "${PWD##$pathls}" != "${PWD}" ]]; then
-				poss+=($pathls)
+				poss+=("$pathls")
 			fi
 		done
 
@@ -558,16 +558,16 @@ elif [ -z "$SKIP_FIO" ]; then
 
 	# create temp directory to store disk write/read test files
 	DISK_PATH=$YABS_PATH/disk
-	mkdir -p $DISK_PATH
+	mkdir -p "$DISK_PATH"
 
 	if [[ -z "$PREFER_BIN" && ! -z "$LOCAL_FIO" ]]; then # local fio has been detected, use instead of pre-compiled binary
 		FIO_CMD=fio
 	else
 		# download fio binary
 		if [[ ! -z $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o "$DISK_PATH/fio"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O $DISK_PATH/fio
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O "$DISK_PATH/fio"
 		fi
 
 		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
@@ -575,7 +575,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			echo -e "Fio binary download failed. Running dd test as fallback...."
 			DD_FALLBACK=True
 		else
-			chmod +x $DISK_PATH/fio
+			chmod +x "$DISK_PATH/fio"
 			FIO_CMD=$DISK_PATH/fio
 		fi
 	fi
@@ -678,7 +678,7 @@ function iperf_test {
 		# run the iperf test sending data from the host to the iperf server; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_SEND="$(timeout 15 $IPERF_CMD $FLAGS -c $URL -p $PORT -P 8 2> /dev/null)"
+		IPERF_RUN_SEND="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_SEND" == *"receiver"* && "$IPERF_RUN_SEND" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
@@ -706,7 +706,7 @@ function iperf_test {
 		# run the iperf test receiving data from the iperf server to the host; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c $URL -p $PORT -P 8 -R 2> /dev/null)"
+		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 -R 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_RECV" == *"receiver"* && "$IPERF_RUN_RECV" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
@@ -779,19 +779,19 @@ if [ -z "$SKIP_IPERF" ]; then
 	else
 		# create a temp directory to house the required iperf binary and library
 		IPERF_PATH=$YABS_PATH/iperf
-		mkdir -p $IPERF_PATH
+		mkdir -p "$IPERF_PATH"
 
 		# download iperf3 binary
 		if [[ ! -z $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o "$IPERF_PATH/iperf3"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O $IPERF_PATH/iperf3
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O "$IPERF_PATH/iperf3"
 		fi
 
 		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
 			IPERF_DL_FAIL=True
 		else
-			chmod +x $IPERF_PATH/iperf3
+			chmod +x "$IPERF_PATH/iperf3"
 			IPERF_CMD=$IPERF_PATH/iperf3
 		fi
 	fi
@@ -850,7 +850,7 @@ function launch_geekbench {
 
 	# create a temp directory to house all geekbench files
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
-	mkdir -p $GEEKBENCH_PATH
+	mkdir -p "$GEEKBENCH_PATH"
 
 	GB_URL=""
 	GB_CMD=""
@@ -893,14 +893,14 @@ function launch_geekbench {
 			GEEKBENCH_PATH=$(dirname "$(command -v "$GB_CMD")")
 		else
 			# download the desired Geekbench tarball and extract to geekbench temp directory
-			$DL_CMD $GB_URL | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+			$DL_CMD $GB_URL | tar xz --strip-components=1 -C "$GEEKBENCH_PATH" &>/dev/null
 		fi
 
 		# unlock if license file detected
-		test -f "geekbench.license" && $GEEKBENCH_PATH/$GB_CMD --unlock $(cat geekbench.license) > /dev/null 2>&1
+		test -f "geekbench.license" && "$GEEKBENCH_PATH/$GB_CMD" --unlock $(cat geekbench.license) > /dev/null 2>&1
 
 		# run the Geekbench test and grep the test results URL given at the end of the test
-		GEEKBENCH_TEST=$($GEEKBENCH_PATH/$GB_CMD --upload 2>/dev/null | grep "https://browser")
+		GEEKBENCH_TEST=$("$GEEKBENCH_PATH/$GB_CMD" --upload 2>/dev/null | grep "https://browser")
 
 		# ensure the test ran successfully
 		if [ -z "$GEEKBENCH_TEST" ]; then
@@ -969,7 +969,7 @@ fi
 
 # finished all tests, clean up all YABS files and exit
 echo -e
-rm -rf $YABS_PATH
+rm -rf "$YABS_PATH"
 
 YABS_END_TIME=$(date +%s)
 
@@ -1000,7 +1000,7 @@ if [[ ! -z $JSON ]]; then
 
 	# write json results to file
 	if [[ $JSON = *w* ]]; then
-		echo $JSON_RESULT > $JSON_FILE
+		echo $JSON_RESULT > "$JSON_FILE"
 	fi
 
 	# send json results

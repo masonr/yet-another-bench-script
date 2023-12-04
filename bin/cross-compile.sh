@@ -12,7 +12,7 @@ yum install -y xz
 # download musl cross compilation toolchain
 cd ~
 curl -L "https://musl.cc/${CROSS}-cross.tgz" -o "${CROSS}-cross.tgz"
-tar xf ${CROSS}-cross.tgz
+tar xf "${CROSS}-cross.tgz"
 
 # download, compile, and install libaio as static library
 cd ~
@@ -35,17 +35,17 @@ make
 # verify no external shared library links
 libcheck fio
 # copy fio binary to mounted dir
-cp fio /io/fio_$ARCH
+cp fio "/io/fio_$ARCH"
 
 # download and compile iperf
 cd ~
 curl -L https://github.com/esnet/iperf/archive/3.15.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
-CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host ${HOST} --with-openssl=no --enable-static-bin
+CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host "${HOST}" --with-openssl=no --enable-static-bin
 make
 
 # verify no external shared library links
 libcheck src/iperf3
 # copy iperf binary to mounted dir
-cp src/iperf3 /io/iperf3_$ARCH
+cp src/iperf3 "/io/iperf3_$ARCH"
