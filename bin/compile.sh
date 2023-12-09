@@ -48,7 +48,7 @@ cp fio "/io/fio_$ARCH"
 
 # download and compile iperf
 cd ~
-curl -L https://github.com/esnet/iperf/archive/3.15.tar.gz -o "iperf.tar.gz"
+curl -L https://github.com/esnet/iperf/archive/3.16.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf*
 ./configure --disable-shared --disable-profiling
