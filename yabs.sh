@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Nov 2023
+# Initial Oct 2019; Last update Jan 2024
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-11-30"
+YABS_VERSION="v2024-01-01"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -533,7 +533,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
 
 		if [[ $size_b == 'T' ]]; then
-			free_space=$((free_space * 1024))
+			free_space=$(awk "BEGIN {print int($free_space * 1024)}")
 			size_b='G'
 		fi
 
