@@ -214,13 +214,15 @@ echo -e "Basic System Information:"
 echo -e "---------------------------------"
 UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
 echo -e "Uptime     : $UPTIME"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+# check for local lscpu installs
+command -v lscpu >/dev/null 2>&1 && LOCAL_LSCPU=true || unset LOCAL_LSCPU
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
 	CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "Processor  : $CPU_PROC"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
 	CPU_CORES=$(lscpu | grep "^[[:blank:]]*CPU(s):" | sed 's/CPU(s): *//g')
 	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
 	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
