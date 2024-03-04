@@ -904,6 +904,10 @@ function launch_geekbench {
 
 		# ensure the test ran successfully
 		if [ -z "$GEEKBENCH_TEST" ]; then
+			# detect if CentOS 7 and print a more helpful error message
+			if grep -q "CentOS Linux 7" /etc/os-release; then
+				echo -e "\r\033[0K CentOS 7 and Geekbench have known issues relating to glibc (see issue #71 for details)"
+			fi
 			if [[ -z "$IPV4_CHECK" ]]; then
 				# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
 				echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
