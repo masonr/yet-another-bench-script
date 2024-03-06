@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2024-03-04"
+YABS_VERSION="v2024-03-05"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -807,7 +807,7 @@ if [ -z "$SKIP_IPERF" ]; then
 	#   5. network modes supported by the iperf server (IPv4 = IPv4-only, IPv4|IPv6 = IPv4 + IPv6, etc.)
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-		# AMS placeholder
+		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (10G)" "IPv4|IPv6" \
 		"spd-fisrv.hostkey.com" "5200-5209" "HOSTKEY" "Helsinki, FI (10G)" "IPv4" \
 		# AFR placeholder
 		"speedtest.uztelecom.uz" "5200-5209" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
