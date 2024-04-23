@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Mar 2024
+# Initial Oct 2019; Last update Apr 2024
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2024-03-05"
+YABS_VERSION="v2024-04-22"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -807,7 +807,7 @@ if [ -z "$SKIP_IPERF" ]; then
 	#   5. network modes supported by the iperf server (IPv4 = IPv4-only, IPv4|IPv6 = IPv4 + IPv6, etc.)
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (10G)" "IPv4|IPv6" \
+		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (100G)" "IPv4|IPv6" \
 		"speedtest.extra.telia.fi" "5201-5208" "Telia" "Helsinki, FI (10G)" "IPv4" \
 		# AFR placeholder
 		"speedtest.uztelecom.uz" "5200-5209" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
@@ -879,8 +879,8 @@ function launch_geekbench {
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
 				GB_CMD="geekbench5"
 			else # Geekbench v6
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.2.2-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.2.2-Linux.tar.gz"
+				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-LinuxARMPreview.tar.gz" \
+					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-Linux.tar.gz"
 				GB_CMD="geekbench6"
 			fi
 			GB_RUN="True"

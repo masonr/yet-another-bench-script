@@ -6,10 +6,10 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 | Binary Name | Version | Compile Date | Architecture | OS | SHA-256 Hash<br>(VirusTotal Scan) |
 |:-:|:-:|:-:|:-:|:-:|:-:|
-| fio_x64 | 3.36 | 20-OCT-2023 | x86_64 | 64-bit | [5d345d0](https://www.virustotal.com/gui/file/5d345d0eac6da12753c5296d86393cec046d1a7e5794594aa62127a19001ce30) |
-| fio_x86 | 3.36 |  20-OCT-2023 | i686 | 32-bit | [82aa945](https://www.virustotal.com/gui/file/82aa94592e3498c8a84e6563e070d61a40f7ac385a846c752e6f22f941c10d20) |
-| fio_aarch64 | 3.36 | 20-OCT-2023 | ARM (aarch64) | 64-bit | [52d02cb](https://www.virustotal.com/gui/file/52d02cb20959ac488b2369a6fdaad421211619c309deb1d7a795279242a30b22) |
-| fio_arm | 3.36 | 20-OCT-2023 | ARM  | 32-bit | [b84c3de](https://www.virustotal.com/gui/file/b84c3de74eec4073b7770569937ddbcaef3dc5c33c0e03401694ff277494e745) |
+| fio_x64 | 3.37 | 22-APR-2024 | x86_64 | 64-bit | [54e5552](https://www.virustotal.com/gui/file/54e5552f714e4583c8f81419e3a3b432f3730780531ac39dca43df5174df6e06) |
+| fio_x86 | 3.37 |  22-APR-2024 | i686 | 32-bit | [dce3615](https://www.virustotal.com/gui/file/dce3615fe7ff360447b9148f533422b4ca64e67579735e412c844bc718cf7f8c) |
+| fio_aarch64 | 3.37 | 22-APR-2024 | ARM (aarch64) | 64-bit | [3c1bf69](https://www.virustotal.com/gui/file/3c1bf6944d61cf0f900980b2eefca6e90919b6c8a79cedbd175fe9a2c3d9c285) |
+| fio_arm | 3.37 | 22-APR-2024 | ARM  | 32-bit | [9917be5](https://www.virustotal.com/gui/file/9917be59238204bcaf1ccd5e08ab8e2a6bec6e5162ba8a4cf62ab8bb506ac9c1) |
 | iperf_x64 | 3.16 | 08-DEC-2023 | x86_64 | 64-bit | [587ec9f](https://www.virustotal.com/gui/file/587ec9ff96ab7320d14c84be64c5c8d92e5145f68361b93d66cd612227c9c513) |
 | iperf_x86 | 3.16 |  08-DEC-2023 | i686 | 32-bit | [6ba0814](https://www.virustotal.com/gui/file/6ba08140e60ada3399935c2c3a998563fd2ab9936ac75f5b8e925b7ae20b5228) |
 | iperf_aarch64 | 3.16 | 08-DEC-2023 | ARM (aarch64) | 64-bit | [69a3760](https://www.virustotal.com/gui/file/69a3760f7cb2b6a2beaeff8349fa104d0b2669f2a2a2c999f8d1f55ccc8b4f16) |
