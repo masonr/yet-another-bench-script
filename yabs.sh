@@ -42,9 +42,9 @@ done
 # Check for curl/wget
 if check_command "curl"; then
     LOCAL_CURL=true
-    echo -e "curl                : \xE2\x9C\x94  installed"
+    echo -e "curl                 : \xE2\x9C\x94  installed"
 elif check_command "wget"; then
-    echo -e "wget                : \xE2\x9C\x94  installed"
+    echo -e "wget                 : \xE2\x9C\x94  installed"
 else
     echo -e "curl/wget            : \xE2\x9D\x8C not installed"
     echo -e "\nError: Neither 'curl' nor 'wget' command found. Please install one of those to continue."
