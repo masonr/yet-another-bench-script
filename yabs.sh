@@ -20,13 +20,18 @@ echo -e '#                     '$YABS_VERSION'                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
+# Define a function to check command availability before using it
+function check_command() {
+    command -v "$1" &>/dev/null
+}
+
 # Check for required commands and add warnings if not available
 REQUIRED_COMMANDS=("locale" "uname" "getconf" "awk" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt")
 
 echo -e "\nChecking available commands"
 echo -e "---------------------------------"
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
-    if command -v "$cmd" &>/dev/null; then
+    if check_command "$cmd"; then
         printf "%-20s : \xE2\x9C\x94  installed\n" "$cmd"
     else
         printf "%-20s : \xE2\x9D\x8C not installed\n" "$cmd"
@@ -34,10 +39,18 @@ for cmd in "${REQUIRED_COMMANDS[@]}"; do
     fi
 done
 
-# Define a function to check command availability before using it
-function check_command() {
-    command -v "$1" &>/dev/null
-}
+# Check for curl/wget
+if check_command "curl"; then
+    LOCAL_CURL=true
+    echo -e "curl                : \xE2\x9C\x94  installed"
+elif check_command "wget"; then
+    echo -e "wget                : \xE2\x9C\x94  installed"
+else
+    echo -e "curl/wget            : \xE2\x9D\x8C not installed"
+    echo -e "\nError: Neither 'curl' nor 'wget' command found. Please install one of those to continue."
+    echo -e
+    exit 1
+fi
 
 echo -e
 if check_command "date"; then
