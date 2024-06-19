@@ -1052,14 +1052,61 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	fi
 fi
 
+# finished all tests, clean up all YABS files and exit
 echo -e
-echo -e "YABS completed in $(( $(date +%s) - YABS_START_TIME )) seconds."
-[[ -n $JSON ]] && JSON_RESULT+='}}'
-[[ $JSON = *w* ]] && echo "$JSON_RESULT" > "$JSON_FILE"
-[[ $JSON = *s* ]] && echo "$JSON_RESULT" | curl -s -H "Content-Type: application/json" -X POST -d @- "$JSON_SEND"
-
-# remove the yabs temp directory that was created for the disk test files, iperf binary, etc.
 rm -rf "$YABS_PATH"
-# reset locale to its original state
+
+YABS_END_TIME=$(date +%s)
+
+# calculate_time_taken
+# Purpose: This method is designed to find the time taken for the completion of a YABS run.
+# Parameters:
+#          1. YABS_END_TIME - time when GB has completed and all files are removed
+#          2. YABS_START_TIME - time when YABS is started
+function calculate_time_taken() {
+	end_time=$1
+	start_time=$2
+
+	time_taken=$(( end_time - start_time ))
+	if [ ${time_taken} -gt 60 ]; then
+    min=$((time_taken / 60))
+    sec=$((time_taken % 60))
+		echo "YABS completed in ${min} min ${sec} sec"
+	else
+		echo "YABS completed in ${time_taken} sec"
+	fi
+	[[ -n $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
+}
+
+calculate_time_taken "$YABS_END_TIME" "$YABS_START_TIME"
+
+if [[ -n $JSON ]]; then
+	JSON_RESULT+='}'
+
+	# write json results to file
+	if [[ $JSON = *w* ]]; then
+		echo "$JSON_RESULT" > "$JSON_FILE"
+	fi
+
+	# send json results
+	if [[ $JSON = *s* ]]; then
+		IFS=',' read -r -a JSON_SITES <<< "$JSON_SEND"
+		for JSON_SITE in "${JSON_SITES[@]}"
+		do
+			if [[ -n $LOCAL_CURL ]]; then
+				curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' "$JSON_SITE"
+			else
+				wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' "$JSON_SITE"
+			fi
+		done
+	fi
+
+	# print json result to screen
+	if [[ $JSON = *j* ]]; then
+		echo -e
+		echo "$JSON_RESULT"
+	fi
+fi
+
+# reset locale settings
 unset LC_ALL
-exit 0
