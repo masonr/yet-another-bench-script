@@ -316,7 +316,7 @@ else
 fi
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
 if check_command "df"; then
-    TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
+    TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap -t overlay --total 2>/dev/null | grep total | awk '{ print $2 }')
     TOTAL_DISK=$(format_size "$TOTAL_DISK_RAW")
     echo -e "Disk       : $TOTAL_DISK"
 else
