@@ -26,7 +26,7 @@ function check_command() {
 }
 
 # Check for required commands and add warnings if not available
-REQUIRED_COMMANDS=("locale" "uname" "getconf" "awk" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt")
+REQUIRED_COMMANDS=("locale" "uname" "getconf" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt")
 
 echo -e "\nChecking available commands"
 echo -e "---------------------------------"
@@ -48,6 +48,16 @@ elif check_command "wget"; then
 else
     echo -e "curl/wget            : \xE2\x9D\x8C not installed"
     echo -e "\nError: Neither 'curl' nor 'wget' command found. Please install one of those to continue."
+    echo -e
+    exit 1
+fi
+
+# Check for AWK
+if check_command "awk"; then
+    echo -e "awk                  : \xE2\x9C\x94  installed"
+else
+    echo -e "awk                  : \xE2\x9D\x8C not installed"
+    echo -e "\nError: 'awk' command found. Please install one of those to continue, script heavily relies on it."
     echo -e
     exit 1
 fi
