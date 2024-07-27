@@ -20,7 +20,34 @@ echo -e '#                     '$YABS_VERSION'                    #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
-# Define a function to check command availability before using it
+# flags to skip certain performance tests
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP PRINT_COMMANDS_CHECK REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
+GEEKBENCH_6="True" # gb6 test enabled by default
+
+# get any arguments that were passed to the script and set the associated skip flags (if applicable)
+while getopts 'bfdignhcr4596jw:s:' flag; do
+	case "${flag}" in
+		b) PREFER_BIN="True" ;;
+		f) SKIP_FIO="True" ;;
+		d) SKIP_FIO="True" ;;
+		i) SKIP_IPERF="True" ;;
+		g) SKIP_GEEKBENCH="True" ;;
+		n) SKIP_NET="True" ;;
+		h) PRINT_HELP="True" ;;
+    c) PRINT_COMMANDS_CHECK="True" ;;
+		r) REDUCE_NET="True" ;;
+		4) GEEKBENCH_4="True" && unset GEEKBENCH_6 ;;
+		5) GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
+		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
+		6) GEEKBENCH_6="True" ;;
+		j) JSON+="j" ;;
+		w) JSON+="w" && JSON_FILE=${OPTARG} ;;
+		s) JSON+="s" && JSON_SEND=${OPTARG} ;;
+		*) exit 1 ;;
+	esac
+done
+
+# Function to check command availability before using it
 function check_command() {
     command -v "$1" &>/dev/null
 }
@@ -28,33 +55,43 @@ function check_command() {
 # Check for required commands and add warnings if not available
 REQUIRED_COMMANDS=("locale" "uname" "getconf" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt")
 
-echo -e "\nChecking available commands"
-echo -e "---------------------------------"
+if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+  echo -e "\nChecking available commands"
+  echo -e "---------------------------------"
+fi
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
     if check_command "$cmd"; then
-        printf "%-20s : \xE2\x9C\x94  installed\n" "$cmd"
+        if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+          printf "%-20s : \xE2\x9C\x94  installed\n" "$cmd"
+        fi
     else
         printf "%-20s : \xE2\x9D\x8C not installed\n" "$cmd"
         MISSING_CMDS+=("$cmd")
     fi
 done
 
-# Check for curl/wget
+# Check for curl/wget (mandatory!)
 if check_command "curl"; then
     LOCAL_CURL=true
-    echo -e "curl                 : \xE2\x9C\x94  installed"
+    if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+      echo -e "curl                 : \xE2\x9C\x94  installed"
+    fi
 elif check_command "wget"; then
-    echo -e "wget                 : \xE2\x9C\x94  installed"
+    if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+      echo -e "wget                 : \xE2\x9C\x94  installed"
+    fi
 else
     echo -e "curl/wget            : \xE2\x9D\x8C not installed"
-    echo -e "\nError: Neither 'curl' nor 'wget' command found. Please install one of those to continue."
+    echo -e "\nError: Neither 'curl' nor 'wget' command found. Please install one of those to continue, it is needed to download precompiled binaries."
     echo -e
     exit 1
 fi
 
-# Check for AWK
+# Check for AWK (mandatory!)
 if check_command "awk"; then
-    echo -e "awk                  : \xE2\x9C\x94  installed"
+    if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+      echo -e "awk                  : \xE2\x9C\x94  installed"
+    fi
 else
     echo -e "awk                  : \xE2\x9D\x8C not installed"
     echo -e "\nError: 'awk' command found. Please install one of those to continue, script heavily relies on it."
@@ -111,32 +148,6 @@ else
     exit 1
 fi
 
-# flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
-GEEKBENCH_6="True" # gb6 test enabled by default
-
-# get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdignhr4596jw:s:' flag; do
-	case "${flag}" in
-		b) PREFER_BIN="True" ;;
-		f) SKIP_FIO="True" ;;
-		d) SKIP_FIO="True" ;;
-		i) SKIP_IPERF="True" ;;
-		g) SKIP_GEEKBENCH="True" ;;
-		n) SKIP_NET="True" ;;
-		h) PRINT_HELP="True" ;;
-		r) REDUCE_NET="True" ;;
-		4) GEEKBENCH_4="True" && unset GEEKBENCH_6 ;;
-		5) GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
-		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
-		6) GEEKBENCH_6="True" ;;
-		j) JSON+="j" ;;
-		w) JSON+="w" && JSON_FILE=${OPTARG} ;;
-		s) JSON+="s" && JSON_SEND=${OPTARG} ;;
-		*) exit 1 ;;
-	esac
-done
-
 # check for local fio/iperf installs
 if command -v fio >/dev/null 2>&1; then
     LOCAL_FIO=true
@@ -190,6 +201,11 @@ if [[ -n "$PRINT_HELP" ]]; then
 	echo -e "       -h : prints this lovely message, shows any flags you passed,"
 	echo -e "            shows if fio/iperf3 local packages have been detected,"
 	echo -e "            then exits"
+	echo -e "       -c : prints which commands are checked before proceeding with"
+	echo -e "            system checks. It checks for the following:"
+	echo -e "            locale, uname, getconf, sed, grep, cut, shuf, timeout, date,"
+	echo -e "            trap, df, free, systemd-detect-virt."
+	echo -e "            Mandatory ones are awk and curl/wget."
 	echo -e "       -r : reduce number of iperf3 network locations (to only three)"
 	echo -e "            to lessen bandwidth usage"
 	echo -e "       -4 : use geekbench 4 instead of geekbench 6"
@@ -999,7 +1015,7 @@ function launch_geekbench {
 				GB_CMD="geekbench5"
 			else # Geekbench v6
 				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-Linux.tar.gz"
+					|| GB_URL="http://france.mysh.dev:8000/Geekbench-6.3.0-Linux.tar.gz"
 				GB_CMD="geekbench6"
 			fi
 			GB_RUN="True"
