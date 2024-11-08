@@ -808,6 +808,7 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (100G)" "IPv4|IPv6" \
+  		"speedtest1-qupra-ams-nl.ebgp.fi" "5201-5210" "Astroman Dev" "Amsterdam, NL (10G)" "IPv4|IPv6" \
 		#"speedtest.extra.telia.fi" "5201-5208" "Telia" "Helsinki, FI (10G)" "IPv4" \
 		# AFR placeholder
 		"speedtest.uztelecom.uz" "5200-5209" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
