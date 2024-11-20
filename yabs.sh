@@ -94,7 +94,7 @@ if check_command "awk"; then
     fi
 else
     echo -e "awk                  : \xE2\x9D\x8C not installed"
-    echo -e "\nError: 'awk' command found. Please install one of those to continue, script heavily relies on it."
+    echo -e "\nError: 'awk' command found. Please install 'awk', script heavily relies on it."
     echo -e
     exit 1
 fi
