@@ -94,7 +94,7 @@ if check_command "awk"; then
     fi
 else
     echo -e "awk                  : \xE2\x9D\x8C not installed"
-    echo -e "\nError: 'awk' command found. Please install 'awk', script heavily relies on it."
+    echo -e "\nError: 'awk' command found. Please install 'awk', YABS heavily relies on it."
     echo -e
     exit 1
 fi
@@ -106,7 +106,7 @@ if check_command "tar"; then
     fi
 else
     echo -e "tar                  : \xE2\x9D\x8C not installed"
-    echo -e "\nError: 'tar' command not found. Please install it to continue, we need it to open Geekbench.tar.gz."
+    echo -e "\nError: 'tar' command not found. Please install it to continue, YABS needs it to be able to open Geekbench.tar.gz."
     echo -e
     exit 1
 fi
