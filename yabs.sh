@@ -53,7 +53,7 @@ function check_command() {
 }
 
 # Check for required commands and add warnings if not available
-REQUIRED_COMMANDS=("locale" "uname" "getconf" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt")
+REQUIRED_COMMANDS=("locale" "uname" "getconf" "sed" "grep" "cut" "shuf" "timeout" "date" "trap" "df" "free" "systemd-detect-virt" "tar")
 
 if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
   echo -e "\nChecking available commands"
@@ -95,6 +95,18 @@ if check_command "awk"; then
 else
     echo -e "awk                  : \xE2\x9D\x8C not installed"
     echo -e "\nError: 'awk' command found. Please install one of those to continue, script heavily relies on it."
+    echo -e
+    exit 1
+fi
+
+# Check for TAR, needed to open downdloaded Geekbench archive (mandatory!)
+if check_command "tar"; then
+    if [[ -n "$PRINT_COMMANDS_CHECK" ]]; then
+      echo -e "tar                  : \xE2\x9C\x94  installed"
+    fi
+else
+    echo -e "tar                  : \xE2\x9D\x8C not installed"
+    echo -e "\nError: 'tar' command not found. Please install it to continue, we need it to open Geekbench.tar.gz."
     echo -e
     exit 1
 fi
