@@ -6,14 +6,14 @@ This directory contains all of the binaries required to run the benchmarking tes
 
 | Binary Name | Version | Compile Date | Architecture | OS | SHA-256 Hash<br>(VirusTotal Scan) |
 |:-:|:-:|:-:|:-:|:-:|:-:|
-| fio_x64 | 3.37 | 22-APR-2024 | x86_64 | 64-bit | [54e5552](https://www.virustotal.com/gui/file/54e5552f714e4583c8f81419e3a3b432f3730780531ac39dca43df5174df6e06) |
-| fio_x86 | 3.37 |  22-APR-2024 | i686 | 32-bit | [dce3615](https://www.virustotal.com/gui/file/dce3615fe7ff360447b9148f533422b4ca64e67579735e412c844bc718cf7f8c) |
-| fio_aarch64 | 3.37 | 22-APR-2024 | ARM (aarch64) | 64-bit | [3c1bf69](https://www.virustotal.com/gui/file/3c1bf6944d61cf0f900980b2eefca6e90919b6c8a79cedbd175fe9a2c3d9c285) |
-| fio_arm | 3.37 | 22-APR-2024 | ARM  | 32-bit | [9917be5](https://www.virustotal.com/gui/file/9917be59238204bcaf1ccd5e08ab8e2a6bec6e5162ba8a4cf62ab8bb506ac9c1) |
-| iperf_x64 | 3.17.1 | 02-JUN-2024 | x86_64 | 64-bit | [bd5f0b8](https://www.virustotal.com/gui/file/bd5f0b8f6961cb7d0cc3b306ecb3d1eb9e2ca6352ec0166d8bd31dfb050a78dd) |
-| iperf_x86 | 3.17.1 |  02-JUN-2024 | i686 | 32-bit | [2708340](https://www.virustotal.com/gui/file/270834037817dcc5b54d1ed040464293dab350ef52bc5ae84788c57dbba5395c) |
-| iperf_aarch64 | 3.17.1 | 02-JUN-2024 | ARM (aarch64) | 64-bit | [5b391dc](https://www.virustotal.com/gui/file/5b391dc8361d346a80b4589ebef21f0fc4751eac0328a6a71a5fbe2b5cc9e01a) |
-| iperf_arm | 3.15* | 20-OCT-2023 | ARM | 32-bit | [310e80f](https://www.virustotal.com/gui/file/310e80f442dda47fa0fe41225af85e8b91e75116dce5187f123380fd3c3c85a8) |
+| fio_x64 | 3.38 | 14-DEC-2024 | x86_64 | 64-bit | [b802ea1](https://www.virustotal.com/gui/file/b802ea1460f8a0ab6a9d8a48d5d23dec8f68228293b88c2e4567424e6d2a7a47) |
+| fio_x86 | 3.38 |  14-DEC-2024 | i686 | 32-bit | [8f06655](https://www.virustotal.com/gui/file/8f066550c35a8c6bbb53c80264ec0c1962128267562a785391fd3bb36ca489cb) |
+| fio_aarch64 | 3.38 | 23-NOV-2024 | ARM (aarch64) | 64-bit | [ed703a8](https://www.virustotal.com/gui/file/ed703a87951992696a0870dfb3094956ebe0f5ea304918dc05a921d32aacb760) |
+| fio_arm | 3.38 | 23-NOV-2024 | ARM  | 32-bit | [b52a809](https://www.virustotal.com/gui/file/b52a809f748587909c429edc14e54299249aedb19b5db72a60affc0de4b5c608) |
+| iperf3_x64 | 3.18 | 14-DEC-2024 | x86_64 | 64-bit | [ef787ab](https://www.virustotal.com/gui/file/ef787abbe4b09c7958ed592df52dfe3a2848cbdee5b76738c757d7c51c348053) |
+| iperf3_x86 | 3.18 |  14-DEC-2024 | i686 | 32-bit | [655eb51](https://www.virustotal.com/gui/file/655eb51abc36ddaa624c1d0e98c6930e8b1e9d91c85e5a3443624355656be9b9) |
+| iperf3_aarch64 | 3.18 | 14-DEC-2024 | ARM (aarch64) | 64-bit | [92e5821](https://www.virustotal.com/gui/file/92e5821cfbaa1f8faf123b4d6773dc0f6efef221b9308668a21ddabc04a1de20) |
+| iperf3_arm | 3.15* | 20-OCT-2023 | ARM | 32-bit | [310e80f](https://www.virustotal.com/gui/file/310e80f442dda47fa0fe41225af85e8b91e75116dce5187f123380fd3c3c85a8) |
 
 Note: ARM compatibility is considered experimental. Static binaries for 32-bit and ARM-based machines are cross-compiled within a Holy Build Box container using the [musl toolchain](https://musl.cc/).
 
