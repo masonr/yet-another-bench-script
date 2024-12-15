@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Apr 2023
+# Initial Oct 2019; Last update Jun 2024
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2023-04-23"
+YABS_VERSION="v2024-06-09"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -96,8 +96,8 @@ command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
 
 # test if the host has IPv4/IPv6 connectivity
 [[ ! -z $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
-IPV4_CHECK=$((ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -4 icanhazip.com 2> /dev/null)
-IPV6_CHECK=$((ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -6 icanhazip.com 2> /dev/null)
+IPV4_CHECK=$( (ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -4 icanhazip.com 2> /dev/null)
+IPV6_CHECK=$( (ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -6 icanhazip.com 2> /dev/null)
 if [[ -z "$IPV4_CHECK" && -z "$IPV6_CHECK" ]]; then
 	echo -e
 	echo -e "Warning: Both IPv4 AND IPv6 connectivity were not detected. Check for DNS issues..."
@@ -214,13 +214,15 @@ echo -e "Basic System Information:"
 echo -e "---------------------------------"
 UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
 echo -e "Uptime     : $UPTIME"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+# check for local lscpu installs
+command -v lscpu >/dev/null 2>&1 && LOCAL_LSCPU=true || unset LOCAL_LSCPU
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
 	CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "Processor  : $CPU_PROC"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
 	CPU_CORES=$(lscpu | grep "^[[:blank:]]*CPU(s):" | sed 's/CPU(s): *//g')
 	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
 	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
@@ -273,34 +275,27 @@ function ip_info() {
 		return
 	fi
 
-	local country=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^country/ {print $2}' | head -1)
-	country=${country//\"}
-
-	local region=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^regionName/ {print $2}')
-	region=${region//\"}
-
-	local region_code=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^region/ {print $2}' | head -1)
-	region_code=${region_code//\"}
-
-	local city=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^city/ {print $2}')
-	city=${city//\"}
-
-	local isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}')
-	isp=${isp//\"}
-
-	local org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}')
-	org=${org//\"}
-
-	local as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}')
-	as=${as//\"}
+	local country=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^country/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
+	local region=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^regionName/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	local region_code=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^region/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
+	local city=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^city/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	local isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	local org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	local as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
 	
 	echo
 	echo "$net_type Network Information:"
 	echo "---------------------------------"
 
-	if [[ -n "$isp" && -n "$as" ]]; then
+	if [[ -n "$isp" ]]; then
 		echo "ISP        : $isp"
+	else
+		echo "ISP        : Unknown"
+	fi
+	if [[ -n "$as" ]]; then
 		echo "ASN        : $as"
+	else
+		echo "ASN        : Unknown"
 	fi
 	if [[ -n "$org" ]]; then
 		echo "Host       : $org"
@@ -333,15 +328,15 @@ fi
 # create a directory in the same location that the script is being run to temporarily store YABS-related files
 DATE=$(date -Iseconds | sed -e "s/:/_/g")
 YABS_PATH=./$DATE
-touch $DATE.test 2> /dev/null
+touch "$DATE.test" 2> /dev/null
 # test if the user has write permissions in the current directory and exit if not
 if [ ! -f "$DATE.test" ]; then
 	echo -e
 	echo -e "You do not have write permission in this directory. Switch to an owned directory and re-run the script.\nExiting..."
 	exit 1
 fi
-rm $DATE.test
-mkdir -p $YABS_PATH
+rm "$DATE.test"
+mkdir -p "$YABS_PATH"
 
 # trap CTRL+C signals to exit script cleanly
 trap catch_abort INT
@@ -351,7 +346,7 @@ trap catch_abort INT
 #          yabs-related files.
 function catch_abort() {
 	echo -e "\n** Aborting YABS. Cleaning up files...\n"
-	rm -rf $YABS_PATH
+	rm -rf "$YABS_PATH"
 	unset LC_ALL
 	exit 0
 }
@@ -437,7 +432,7 @@ function disk_test {
 
 	# run a quick test to generate the fio test file to be used by the actual tests
 	echo -en "Generating fio test file..."
-	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=64k --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=1 --gtod_reduce=1 --filename=$DISK_PATH/test.fio --direct=1 --minimal &> /dev/null
+	$FIO_CMD --name=setup --ioengine=libaio --rw=read --bs=64k --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=1 --gtod_reduce=1 --filename="$DISK_PATH/test.fio" --direct=1 --minimal &> /dev/null
 	echo -en "\r\033[0K"
 
 	# get array of block sizes to evaluate
@@ -446,7 +441,7 @@ function disk_test {
 	for BS in "${BLOCK_SIZES[@]}"; do
 		# run rand read/write mixed fio test with block size = $BS
 		echo -en "Running fio random mixed R+W disk test with $BS block size..."
-		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename=$DISK_PATH/test.fio --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
+		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
 		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
 		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
 		DISK_IOPS=$(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }')
@@ -484,14 +479,14 @@ function dd_test {
 	while [ $I -lt 3 ]
 	do
 		# write test using dd, "direct" flag is used to test direct I/O for data being stored to disk
-		DISK_WRITE_TEST=$(dd if=/dev/zero of=$DISK_PATH/$DATE.test bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
+		DISK_WRITE_TEST=$(dd if=/dev/zero of="$DISK_PATH/$DATE.test" bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_WRITE_TEST | cut -d " " -f 1)
 		[[ "$DISK_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_WRITE_TEST_RES+=( "$DISK_WRITE_TEST" )
 		DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
 		# read test using dd using the 1G file written during the write test
-		DISK_READ_TEST=$(dd if=$DISK_PATH/$DATE.test of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
+		DISK_READ_TEST=$(dd if="$DISK_PATH/$DATE.test" of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
 		VAL=$(echo $DISK_READ_TEST | cut -d " " -f 1)
 		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
@@ -522,7 +517,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
 		do
 			if [[ "${PWD##$pathls}" != "${PWD}" ]]; then
-				poss+=($pathls)
+				poss+=("$pathls")
 			fi
 		done
 
@@ -536,18 +531,18 @@ elif [ -z "$SKIP_FIO" ]; then
 			fi
 		done
 
-		size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c 2 | head -c 1)
+		size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c -2 | head -c 1)
 		free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
 
 		if [[ $size_b == 'T' ]]; then
-			free_space=$(bc <<< "$free_space*1024")
+			free_space=$(awk "BEGIN {print int($free_space * 1024)}")
 			size_b='G'
 		fi
 
 		if [[ $(df -Th | grep -w $long) == *"zfs"* ]];then
 
 			if [[ $size_b == 'G' ]]; then
-				if [[ $(echo "$free_space < $mul_spa" | bc) -ne 0 ]];then
+				if ((free_space < mul_spa)); then
 					warning=1
 				fi
 			else
@@ -565,16 +560,16 @@ elif [ -z "$SKIP_FIO" ]; then
 
 	# create temp directory to store disk write/read test files
 	DISK_PATH=$YABS_PATH/disk
-	mkdir -p $DISK_PATH
+	mkdir -p "$DISK_PATH"
 
 	if [[ -z "$PREFER_BIN" && ! -z "$LOCAL_FIO" ]]; then # local fio has been detected, use instead of pre-compiled binary
 		FIO_CMD=fio
 	else
 		# download fio binary
 		if [[ ! -z $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o $DISK_PATH/fio
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o "$DISK_PATH/fio"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O $DISK_PATH/fio
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O "$DISK_PATH/fio"
 		fi
 
 		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
@@ -582,7 +577,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			echo -e "Fio binary download failed. Running dd test as fallback...."
 			DD_FALLBACK=True
 		else
-			chmod +x $DISK_PATH/fio
+			chmod +x "$DISK_PATH/fio"
 			FIO_CMD=$DISK_PATH/fio
 		fi
 	fi
@@ -629,12 +624,13 @@ elif [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed successfully, print results
-		[[ ! -z $JSON ]] && JSON_RESULT+=',"fio":['
+		CURRENT_PARTITION=$(df -P . 2>/dev/null | tail -1 | cut -d' ' -f 1)
+		[[ ! -z $JSON ]] && JSON_RESULT+=',"partition":"'$CURRENT_PARTITION'","fio":['
 		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
 		DISK_COUNT=0
 
 		# print disk speed test results
-		echo -e "fio Disk Speed Tests (Mixed R/W 50/50):"
+		echo -e "fio Disk Speed Tests (Mixed R/W 50/50) (Partition $CURRENT_PARTITION):"
 		echo -e "---------------------------------"
 
 		while [ $DISK_COUNT -lt $DISK_RESULTS_NUM ] ; do
@@ -684,7 +680,7 @@ function iperf_test {
 		# run the iperf test sending data from the host to the iperf server; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_SEND="$(timeout 15 $IPERF_CMD $FLAGS -c $URL -p $PORT -P 8 2> /dev/null)"
+		IPERF_RUN_SEND="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_SEND" == *"receiver"* && "$IPERF_RUN_SEND" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
@@ -712,7 +708,7 @@ function iperf_test {
 		# run the iperf test receiving data from the iperf server to the host; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c $URL -p $PORT -P 8 -R 2> /dev/null)"
+		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 -R 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_RECV" == *"receiver"* && "$IPERF_RUN_RECV" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
@@ -785,19 +781,19 @@ if [ -z "$SKIP_IPERF" ]; then
 	else
 		# create a temp directory to house the required iperf binary and library
 		IPERF_PATH=$YABS_PATH/iperf
-		mkdir -p $IPERF_PATH
+		mkdir -p "$IPERF_PATH"
 
 		# download iperf3 binary
 		if [[ ! -z $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o $IPERF_PATH/iperf3
+			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o "$IPERF_PATH/iperf3"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O $IPERF_PATH/iperf3
+			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O "$IPERF_PATH/iperf3"
 		fi
 
 		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
 			IPERF_DL_FAIL=True
 		else
-			chmod +x $IPERF_PATH/iperf3
+			chmod +x "$IPERF_PATH/iperf3"
 			IPERF_CMD=$IPERF_PATH/iperf3
 		fi
 	fi
@@ -811,13 +807,14 @@ if [ -z "$SKIP_IPERF" ]; then
 	#   5. network modes supported by the iperf server (IPv4 = IPv4-only, IPv4|IPv6 = IPv4 + IPv6, etc.)
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-		"ping.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv4" \
-		"ping6.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv6" \
-		"speedtest.novoserve.com" "5201-5206" "NovoServe" "North Holland, NL (40G)" "IPv4|IPv6" \
-		"speedtest.uztelecom.uz" "5200-5207" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
-		"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
-		"dal.speedtest.clouvider.net" "5200-5209" "Clouvider" "Dallas, TX, US (10G)" "IPv4|IPv6" \
+		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (100G)" "IPv4|IPv6" \
+		#"speedtest.extra.telia.fi" "5201-5208" "Telia" "Helsinki, FI (10G)" "IPv4" \
+		# AFR placeholder
+		"speedtest.uztelecom.uz" "5200-5209" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
+		"speedtest.sin1.sg.leaseweb.net" "5201-5210" "Leaseweb" "Singapore, SG (10G)" "IPv4|IPv6" \
 		"la.speedtest.clouvider.net" "5200-5209" "Clouvider" "Los Angeles, CA, US (10G)" "IPv4|IPv6" \
+		"speedtest.nyc1.us.leaseweb.net" "5201-5210" "Leaseweb" "NYC, NY, US (10G)" "IPv4|IPv6" \
+		"speedtest.sao1.edgoo.net" "9204-9240" "Edgoo" "Sao Paulo, BR (1G)" "IPv4|IPv6"
 	)
 
 	# if the "REDUCE_NET" flag is activated, then do a shorter iperf test with only three locations
@@ -825,9 +822,8 @@ if [ -z "$SKIP_IPERF" ]; then
 	if [ ! -z "$REDUCE_NET" ]; then
 		IPERF_LOCS=( \
 			"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
-			"ping.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv4" \
-			"ping6.online.net" "5200-5209" "Scaleway" "Paris, FR (10G)" "IPv6" \
-			"nyc.speedtest.clouvider.net" "5200-5209" "Clouvider" "NYC, NY, US (10G)" "IPv4|IPv6" \
+			"speedtest.sin1.sg.leaseweb.net" "5201-5210" "Leaseweb" "Singapore, SG (10G)" "IPv4|IPv6" \
+			"speedtest.nyc1.us.leaseweb.net" "5201-5210" "Leaseweb" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		)
 	fi
 	
@@ -856,7 +852,7 @@ function launch_geekbench {
 
 	# create a temp directory to house all geekbench files
 	GEEKBENCH_PATH=$YABS_PATH/geekbench_$VERSION
-	mkdir -p $GEEKBENCH_PATH
+	mkdir -p "$GEEKBENCH_PATH"
 
 	GB_URL=""
 	GB_CMD=""
@@ -883,8 +879,8 @@ function launch_geekbench {
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
 				GB_CMD="geekbench5"
 			else # Geekbench v6
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.0.3-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.0.3-Linux.tar.gz"
+				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-LinuxARMPreview.tar.gz" \
+					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-Linux.tar.gz"
 				GB_CMD="geekbench6"
 			fi
 			GB_RUN="True"
@@ -894,17 +890,26 @@ function launch_geekbench {
 	if [[ $GB_RUN == *True* ]]; then # run GB test
 		echo -en "\nRunning GB$VERSION benchmark test... *cue elevator music*"
 
-		# download the desired Geekbench tarball and extract to geekbench temp directory
-		$DL_CMD $GB_URL | tar xz --strip-components=1 -C $GEEKBENCH_PATH &>/dev/null
+		# check for local geekbench installed
+		if command -v "$GB_CMD" &>/dev/null; then
+			GEEKBENCH_PATH=$(dirname "$(command -v "$GB_CMD")")
+		else
+			# download the desired Geekbench tarball and extract to geekbench temp directory
+			$DL_CMD $GB_URL | tar xz --strip-components=1 -C "$GEEKBENCH_PATH" &>/dev/null
+		fi
 
 		# unlock if license file detected
-		test -f "geekbench.license" && $GEEKBENCH_PATH/$GB_CMD --unlock $(cat geekbench.license) > /dev/null 2>&1
+		test -f "geekbench.license" && "$GEEKBENCH_PATH/$GB_CMD" --unlock $(cat geekbench.license) > /dev/null 2>&1
 
 		# run the Geekbench test and grep the test results URL given at the end of the test
-		GEEKBENCH_TEST=$($GEEKBENCH_PATH/$GB_CMD --upload 2>/dev/null | grep "https://browser")
+		GEEKBENCH_TEST=$("$GEEKBENCH_PATH/$GB_CMD" --upload 2>/dev/null | grep "https://browser")
 
 		# ensure the test ran successfully
 		if [ -z "$GEEKBENCH_TEST" ]; then
+			# detect if CentOS 7 and print a more helpful error message
+			if grep -q "CentOS Linux 7" /etc/os-release; then
+				echo -e "\r\033[0K CentOS 7 and Geekbench have known issues relating to glibc (see issue #71 for details)"
+			fi
 			if [[ -z "$IPV4_CHECK" ]]; then
 				# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
 				echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
@@ -970,7 +975,7 @@ fi
 
 # finished all tests, clean up all YABS files and exit
 echo -e
-rm -rf $YABS_PATH
+rm -rf "$YABS_PATH"
 
 YABS_END_TIME=$(date +%s)
 
@@ -1001,7 +1006,7 @@ if [[ ! -z $JSON ]]; then
 
 	# write json results to file
 	if [[ $JSON = *w* ]]; then
-		echo $JSON_RESULT > $JSON_FILE
+		echo $JSON_RESULT > "$JSON_FILE"
 	fi
 
 	# send json results

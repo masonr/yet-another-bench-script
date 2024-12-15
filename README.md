@@ -5,9 +5,7 @@ Presenting an attempt to create _yet another_ Linux server *bench*marking _scrip
 ![](https://user-images.githubusercontent.com/8313125/106475387-e1f6da00-6473-11eb-918c-c785ebeef8b9.jpg)
 Logo design by [Dian Pratama](https://github.com/dianp)
 
-This script throws together and automates the execution of the best benchmarking tools of the biz. Included are several tests to check the performance of critical areas of a server: disk performance with [fio](https://github.com/axboe/fio), network performance with [iperf3](https://github.com/esnet/iperf), and CPU/memory performance with [Geekbench](https://www.geekbench.com/). The script is designed to not require any external dependencies to be installed nor elevated privileges to run. If there are any features that you would like to see added, feel free to submit an issue describing your feature request or fork the project and submit a PR!
-
-View YABS usage stats [here](https://yabs.rowe.sh).
+This script automates the execution of the best benchmarking tools in the industry. Included are several tests to check the performance of critical areas of a server: disk performance with [fio](https://github.com/axboe/fio), network performance with [iperf3](https://github.com/esnet/iperf), and CPU/memory performance with [Geekbench](https://www.geekbench.com/). The script is designed to not require any external dependencies to be installed nor elevated privileges to run. If there are any features that you would like to see added, feel free to submit an issue describing your feature request or fork the project and submit a PR!
 
 ### **What's New With YABS?**
 * [27 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/06eaa2ab3b32355bec8278c51c4be93b3662a96d) - Newly released [Geekbench 6](https://www.geekbench.com/) is added as the default Geekbench test.
@@ -17,7 +15,7 @@ View YABS usage stats [here](https://yabs.rowe.sh).
 ## How to Run
 
 ```
-curl -sL yabs.sh | bash
+curl -sL https://yabs.sh | bash
 ```
 
 or 
@@ -26,18 +24,18 @@ or
 wget -qO- yabs.sh | bash
 ```
 
-This script has been tested on the following Linux distributions: CentOS 6+, Debian 8+, Fedora 30, and Ubuntu 16.04+.
-
 **Local fio/iperf3 Packages**: If the tested system has fio and/or iperf3 already installed, the local package will take precedence over the precompiled binary.
 
 **Experimental ARM Compatibility**: Initial ARM compatibility has been introduced, however, is not considered entirely stable due to limited testing on distinct ARM devices. Report any errors or issues.
 
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
 
+**Windows Users**: This script can be run on Windows systems by using [Windows Subsystem for Linux v2 (WSL 2)](https://learn.microsoft.com/en-us/windows/wsl/about). WSLv1 will not run the script and binaries correctly.
+
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
 
 ```
-curl -sL yabs.sh | bash -s -- -flags
+curl -sL https://yabs.sh | bash -s -- -flags
 ```
 
 | Flag | Description |
@@ -66,7 +64,7 @@ Options can be grouped together to skip multiple tests, i.e. `-fg` to skip the d
 Results from running this script can be sent to your benchmark results website of choice in JSON format. Invoke the `-s` flag and pass the URL to where the results should be submitted to:
 
 ```
-curl -sL yabs.sh | bash -s -- -s "https://example.com/yabs/post"
+curl -sL https://yabs.sh | bash -s -- -s "https://example.com/yabs/post"
 ```
 
 JSON results can be sent to multiple endpoints by entering each site joined by a comma (e.g. "https://example.com/yabs/post,http://example.com/yabs2/post").
@@ -75,9 +73,8 @@ Sites supporting submission of YABS JSON results:
 
 | Website | Example Command |
 | --- | --- |
-| [YABSdb](https://yabsdb.com/) | `curl -sL yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
-| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
-| [s0c Online](https://s0c.org/) | `curl -sL yabs.sh \| bash -s -- -s https://s0c.org/api/yabs -9` |
+| [YABSdb](https://yabsdb.com/) | `curl -sL https://yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
+| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL https://yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
 
 Example JSON output: [example.json](bin/example.json).
 
@@ -185,7 +182,7 @@ YABS completed in 12 min 49 sec
 
 ## Acknowledgements
 
-This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of the [HostedTalk](https://hostedtalk.net), [LowEndSpirit](https://lowendspirit.com), and [LowEndTalk](https://lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
+This script was inspired by several great benchmarking scripts out there, including, but not limited to, [bench.sh](https://bench.sh/), [nench.sh](https://github.com/n-st/nench), [ServerBench](https://github.com/K4Y5/ServerBench), among others. Members of the [HostBalls](https://hostballs.com), [LowEndSpirit](https://lowendspirit.com), and [LowEndTalk](https://lowendtalk.com) hosting-related communities play a pivotal role in testing, evaluating, and shaping this script as it matures.
 
 ## License
 ```
