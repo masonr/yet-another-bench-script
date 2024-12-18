@@ -331,7 +331,7 @@ function ip_info() {
 	[[ -n $JSON ]] && JSON_RESULT+=',"ip_info":{"protocol":"'$net_type'","isp":"'$isp'","asn":"'$as'","org":"'$org'","city":"'$city'","region":"'$region'","region_code":"'$region_code'","country":"'$country'"}'
 }
 
-if [ -n $JSON ]; then
+if [[ -n $JSON ]]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
 	IPV4=$([ -n "$IPV4_CHECK" ] && echo "true" || echo "false")
 	IPV6=$([ -n "$IPV6_CHECK" ] && echo "true" || echo "false")
@@ -544,7 +544,7 @@ elif [ -z "$SKIP_FIO" ]; then
 
 		long=""
 		m=-1
-		for x in ${poss[@]}
+		for x in "${poss[@]}"
 		do
 			if [ ${#x} -gt $m ];then
 				m=${#x}
@@ -661,7 +661,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "${DISK_RESULTS[DISK_COUNT*6+2]}" "(${DISK_RESULTS[DISK_COUNT*6+5]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+2]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+5]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "${DISK_RESULTS[DISK_COUNT*6]}" "(${DISK_RESULTS[DISK_COUNT*6+3]})" "${DISK_RESULTS[(DISK_COUNT+1)*6]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+3]})"
-			if [ -n $JSON ]; then
+			if [[ -n $JSON ]]; then
 				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT]}'","speed_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}',"iops_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+4]}
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+2]}',"iops_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6]}
 				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6+3]}',"speed_units":"KBps"},'
@@ -786,7 +786,7 @@ function launch_iperf {
 			[[ -z $IPERF_RECVRESULT_VAL || "$IPERF_RECVRESULT_VAL" == *"0.00"* ]] && IPERF_RECVRESULT_VAL="busy" && IPERF_RECVRESULT_UNIT=""
 			# print the speed results for the iperf location currently being evaluated
 			printf "%-15s | %-25s | %-15s | %-15s | %-15s\n" "${IPERF_LOCS[i*5+2]}" "${IPERF_LOCS[i*5+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT" "$LATENCY_VAL"
-			if [ -n $JSON ]; then
+			if [[ -n $JSON ]]; then
 				JSON_RESULT+='{"mode":"'$MODE'","provider":"'${IPERF_LOCS[i*5+2]}'","loc":"'${IPERF_LOCS[i*5+3]}
 				JSON_RESULT+='","send":"'$IPERF_SENDRESULT_VAL' '$IPERF_SENDRESULT_UNIT'","recv":"'$IPERF_RECVRESULT_VAL' '$IPERF_RECVRESULT_UNIT'","latency":"'$LATENCY_VAL'"},'
 			fi
@@ -829,7 +829,7 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS=( \
 		"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 		"iperf-ams-nl.eranium.net" "5201-5210" "Eranium" "Amsterdam, NL (100G)" "IPv4|IPv6" \
-		#"speedtest.extra.telia.fi" "5201-5208" "Telia" "Helsinki, FI (10G)" "IPv4" \
+		#"speedtest.extra.telia.fi" "5201-5208" "Telia" "Helsinki, FI (10G)" "IPv4"
 		# AFR placeholder
 		"speedtest.uztelecom.uz" "5200-5209" "Uztelecom" "Tashkent, UZ (10G)" "IPv4|IPv6" \
 		"speedtest.sin1.sg.leaseweb.net" "5201-5210" "Leaseweb" "Singapore, SG (10G)" "IPv4|IPv6" \
@@ -965,7 +965,7 @@ function launch_geekbench {
 			printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
 			printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
 
-			if [ -n $JSON ]; then
+			if [[ -n $JSON ]]; then
 				JSON_RESULT+='{"version":'$VERSION',"single":'$GEEKBENCH_SCORES_SINGLE',"multi":'$GEEKBENCH_SCORES_MULTI
 				JSON_RESULT+=',"url":"'$GEEKBENCH_URL'"},'
 			fi
