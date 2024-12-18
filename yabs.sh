@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jun 2024
+# Initial Oct 2019; Last update Dec 2024
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2024-06-09"
+YABS_VERSION="v2024-12-17"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -85,17 +85,35 @@ while getopts 'bfdignhr4596jw:s:' flag; do
 done
 
 # check for local fio/iperf installs
-command -v fio >/dev/null 2>&1 && LOCAL_FIO=true || unset LOCAL_FIO
-command -v iperf3 >/dev/null 2>&1 && LOCAL_IPERF=true || unset LOCAL_IPERF
+if command -v fio >/dev/null 2>&1; then
+    LOCAL_FIO=true
+else
+    unset LOCAL_FIO
+fi
+
+if command -v iperf3 >/dev/null 2>&1; then
+    LOCAL_IPERF=true
+else
+    unset LOCAL_IPERF
+fi
 
 # check for ping
-command -v ping >/dev/null 2>&1 && LOCAL_PING=true || unset LOCAL_PING
+if command -v ping >/dev/null 2>&1; then
+    LOCAL_PING=true
+else
+    unset LOCAL_PING
+fi
 
 # check for curl/wget
-command -v curl >/dev/null 2>&1 && LOCAL_CURL=true || unset LOCAL_CURL
+if command -v curl >/dev/null 2>&1; then
+    LOCAL_CURL=true
+else
+    unset LOCAL_CURL
+fi
+
 
 # test if the host has IPv4/IPv6 connectivity
-[[ ! -z $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
+[[ -n $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
 IPV4_CHECK=$( (ping -4 -c 1 -W 4 ipv4.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -4 icanhazip.com 2> /dev/null)
 IPV6_CHECK=$( (ping -6 -c 1 -W 4 ipv6.google.com >/dev/null 2>&1 && echo true) || $IP_CHECK_CMD -6 icanhazip.com 2> /dev/null)
 if [[ -z "$IPV4_CHECK" && -z "$IPV6_CHECK" ]]; then
@@ -104,7 +122,7 @@ if [[ -z "$IPV4_CHECK" && -z "$IPV6_CHECK" ]]; then
 fi
 
 # print help and exit script, if help flag was passed
-if [ ! -z "$PRINT_HELP" ]; then
+if [ -n "$PRINT_HELP" ]; then
 	echo -e
 	echo -e "Usage: ./yabs.sh [-flags]"
 	echo -e "       curl -sL yabs.sh | bash"
@@ -126,7 +144,7 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "       -4 : use geekbench 4 instead of geekbench 6"
 	echo -e "       -5 : use geekbench 5 instead of geekbench 6"
 	echo -e "       -9 : use both geekbench 4 AND geekbench 5 instead of geekbench 6"
-	echo -e "       -6 : user geekbench 6 in addition to 4 and/or 5 (only needed if -4, -5, or -9 are set; -6 must come last)"
+	echo -e "       -6 : use geekbench 6 in addition to 4 and/or 5 (only needed if -4, -5, or -9 are set; -6 must come last)"
 	echo -e "       -j : print jsonified YABS results at conclusion of test"
 	echo -e "       -w <filename> : write jsonified YABS results to disk using file name provided"
 	echo -e "       -s <url> : send jsonified YABS results to URL"
@@ -134,15 +152,15 @@ if [ ! -z "$PRINT_HELP" ]; then
 	echo -e "Detected Arch: $ARCH"
 	echo -e
 	echo -e "Detected Flags:"
-	[[ ! -z $PREFER_BIN ]] && echo -e "       -b, force using precompiled binaries from repo"
-	[[ ! -z $SKIP_FIO ]] && echo -e "       -f/d, skipping fio disk benchmark test"
-	[[ ! -z $SKIP_IPERF ]] && echo -e "       -i, skipping iperf network test"
-	[[ ! -z $SKIP_GEEKBENCH ]] && echo -e "       -g, skipping geekbench test"
-	[[ ! -z $SKIP_NET ]] && echo -e "       -n, skipping network info lookup and print out"
-	[[ ! -z $REDUCE_NET ]] && echo -e "       -r, using reduced (3) iperf3 locations"
-	[[ ! -z $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
-	[[ ! -z $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
-	[[ ! -z $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
+	[[ -n $PREFER_BIN ]] && echo -e "       -b, force using precompiled binaries from repo"
+	[[ -n $SKIP_FIO ]] && echo -e "       -f/d, skipping fio disk benchmark test"
+	[[ -n $SKIP_IPERF ]] && echo -e "       -i, skipping iperf network test"
+	[[ -n $SKIP_GEEKBENCH ]] && echo -e "       -g, skipping geekbench test"
+	[[ -n $SKIP_NET ]] && echo -e "       -n, skipping network info lookup and print out"
+	[[ -n $REDUCE_NET ]] && echo -e "       -r, using reduced (3) iperf3 locations"
+	[[ -n $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
+	[[ -n $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
+	[[ -n $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
 	echo -e
 	echo -e "Local Binary Check:"
 	[[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary" ||
@@ -153,9 +171,9 @@ if [ ! -z "$PRINT_HELP" ]; then
 		echo -e "       iperf3 detected, but using precompiled binary instead"
 	echo -e
 	echo -e "Detected Connectivity:"
-	[[ ! -z $IPV4_CHECK ]] && echo -e "       IPv4 connected" ||
+	[[ -n $IPV4_CHECK ]] && echo -e "       IPv4 connected" ||
 		echo -e "       IPv4 not connected"
-	[[ ! -z $IPV6_CHECK ]] && echo -e "       IPv6 connected" ||
+	[[ -n $IPV6_CHECK ]] && echo -e "       IPv6 connected" ||
 		echo -e "       IPv6 not connected"
 	echo -e
 	echo -e "JSON Options:"
@@ -202,10 +220,10 @@ function format_size {
 	# divide the raw result to get the corresponding formatted result (based on determined unit)
 	RESULT=$(awk -v a="$RESULT" -v b="$DENOM" 'BEGIN { print a / b }')
 	# shorten the formatted result to two decimal places (i.e. x.x)
-	RESULT=$(echo $RESULT | awk -F. '{ printf "%0.1f",$1"."substr($2,1,2) }')
+	RESULT=$(echo "$RESULT" | awk -F. '{ printf "%0.1f",$1"."substr($2,1,2) }')
 	# concat formatted result value with units and return result
 	RESULT="$RESULT $UNIT"
-	echo $RESULT
+	echo "$RESULT"
 }
 
 # gather basic system information (inc. CPU, AES-NI/virt status, RAM + swap + disk size)
@@ -216,13 +234,13 @@ UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~
 echo -e "Uptime     : $UPTIME"
 # check for local lscpu installs
 command -v lscpu >/dev/null 2>&1 && LOCAL_LSCPU=true || unset LOCAL_LSCPU
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
 	CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "Processor  : $CPU_PROC"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ ! -z $LOCAL_LSCPU ]]; then
+if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
 	CPU_CORES=$(lscpu | grep "^[[:blank:]]*CPU(s):" | sed 's/CPU(s): *//g')
 	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
 	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
@@ -232,21 +250,21 @@ else
 	CPU_FREQ=$(awk -F: ' /cpu MHz/ {freq=$2} END {print freq " MHz"}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "CPU cores  : $CPU_CORES @ $CPU_FREQ"
-CPU_AES=$(cat /proc/cpuinfo | grep aes)
+CPU_AES=$(grep aes /proc/cpuinfo)
 [[ -z "$CPU_AES" ]] && CPU_AES="\xE2\x9D\x8C Disabled" || CPU_AES="\xE2\x9C\x94 Enabled"
 echo -e "AES-NI     : $CPU_AES"
-CPU_VIRT=$(cat /proc/cpuinfo | grep 'vmx\|svm')
+CPU_VIRT=$(grep 'vmx\|svm' /proc/cpuinfo)
 [[ -z "$CPU_VIRT" ]] && CPU_VIRT="\xE2\x9D\x8C Disabled" || CPU_VIRT="\xE2\x9C\x94 Enabled"
 echo -e "VM-x/AMD-V : $CPU_VIRT"
 TOTAL_RAM_RAW=$(free | awk 'NR==2 {print $2}')
-TOTAL_RAM=$(format_size $TOTAL_RAM_RAW)
+TOTAL_RAM=$(format_size "$TOTAL_RAM_RAW")
 echo -e "RAM        : $TOTAL_RAM"
 TOTAL_SWAP_RAW=$(free | grep Swap | awk '{ print $2 }')
-TOTAL_SWAP=$(format_size $TOTAL_SWAP_RAW)
+TOTAL_SWAP=$(format_size "$TOTAL_SWAP_RAW")
 echo -e "Swap       : $TOTAL_SWAP"
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
 TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
-TOTAL_DISK=$(format_size $TOTAL_DISK_RAW)
+TOTAL_DISK=$(format_size "$TOTAL_DISK_RAW")
 echo -e "Disk       : $TOTAL_DISK"
 DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
 echo -e "Distro     : $DISTRO"
@@ -262,26 +280,29 @@ echo -e "IPv4/IPv6  : $ONLINE"
 # Function to get information from IP Address using ip-api.com free API
 function ip_info() {
 	# check for curl vs wget
-	[[ ! -z $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
+	[[ -n $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
 
-	local ip6me_resp="$($DL_CMD http://ip6.me/api/)"
-	local net_type="$(echo $ip6me_resp | cut -d, -f1)"
-	local net_ip="$(echo $ip6me_resp | cut -d, -f2)"
+	# declare local vars
+	local ip6me_resp net_type net_ip response country region region_code city isp org as
+ 
+	ip6me_resp="$($DL_CMD http://ip6.me/api/)"
+	net_type="$(echo "$ip6me_resp" | cut -d, -f1)"
+	net_ip="$(echo "$ip6me_resp" | cut -d, -f2)"
 
-	local response=$($DL_CMD http://ip-api.com/json/$net_ip)
+	response=$($DL_CMD http://ip-api.com/json/"$net_ip")
 
 	# if no response, skip output
 	if [[ -z $response ]]; then
 		return
 	fi
 
-	local country=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^country/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
-	local region=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^regionName/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
-	local region_code=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^region/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
-	local city=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^city/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
-	local isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
-	local org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
-	local as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	country=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^country/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
+	region=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^regionName/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	region_code=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^region/ {print $2}' | head -1 | sed 's/^"\(.*\)"$/\1/')
+	city=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^city/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
+	as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
 	
 	echo
 	echo "$net_type Network Information:"
@@ -307,13 +328,13 @@ function ip_info() {
 		echo "Country    : $country"
 	fi 
 
-	[[ ! -z $JSON ]] && JSON_RESULT+=',"ip_info":{"protocol":"'$net_type'","isp":"'$isp'","asn":"'$as'","org":"'$org'","city":"'$city'","region":"'$region'","region_code":"'$region_code'","country":"'$country'"}'
+	[[ -n $JSON ]] && JSON_RESULT+=',"ip_info":{"protocol":"'$net_type'","isp":"'$isp'","asn":"'$as'","org":"'$org'","city":"'$city'","region":"'$region'","region_code":"'$region_code'","country":"'$country'"}'
 }
 
-if [ ! -z $JSON ]; then
+if [ -n $JSON ]; then
 	UPTIME_S=$(awk '{print $1}' /proc/uptime)
-	IPV4=$([ ! -z $IPV4_CHECK ] && echo "true" || echo "false")
-	IPV6=$([ ! -z $IPV6_CHECK ] && echo "true" || echo "false")
+	IPV4=$([ -n "$IPV4_CHECK" ] && echo "true" || echo "false")
+	IPV6=$([ -n "$IPV6_CHECK" ] && echo "true" || echo "false")
 	AES=$([[ "$CPU_AES" = *Enabled* ]] && echo "true" || echo "false")
 	CPU_VIRT_BOOL=$([[ "$CPU_VIRT" = *Enabled* ]] && echo "true" || echo "false")
 	JSON_RESULT='{"version":"'$YABS_VERSION'","time":"'$TIME_START'","os":{"arch":"'$ARCH'","distro":"'$DISTRO'","kernel":"'$KERNEL'",'
@@ -562,11 +583,11 @@ elif [ -z "$SKIP_FIO" ]; then
 	DISK_PATH=$YABS_PATH/disk
 	mkdir -p "$DISK_PATH"
 
-	if [[ -z "$PREFER_BIN" && ! -z "$LOCAL_FIO" ]]; then # local fio has been detected, use instead of pre-compiled binary
+	if [[ -z "$PREFER_BIN" && -n "$LOCAL_FIO" ]]; then # local fio has been detected, use instead of pre-compiled binary
 		FIO_CMD=fio
 	else
 		# download fio binary
-		if [[ ! -z $LOCAL_CURL ]]; then
+		if [[ -n $LOCAL_CURL ]]; then
 			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o "$DISK_PATH/fio"
 		else
 			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O "$DISK_PATH/fio"
@@ -594,7 +615,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		disk_test "${BLOCK_SIZES[@]}"
 	fi
 
-	if [[ ! -z "$DD_FALLBACK" || ${#DISK_RESULTS[@]} -eq 0 ]]; then # fio download failed or test was killed or returned an error, run dd test instead
+	if [[ -n "$DD_FALLBACK" || ${#DISK_RESULTS[@]} -eq 0 ]]; then # fio download failed or test was killed or returned an error, run dd test instead
 		if [ -z "$DD_FALLBACK" ]; then # print error notice if ended up here due to fio error
 			echo -e "fio disk speed tests failed. Run manually to determine cause.\nRunning dd test as fallback..."
 		fi
@@ -625,7 +646,7 @@ elif [ -z "$SKIP_FIO" ]; then
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed successfully, print results
 		CURRENT_PARTITION=$(df -P . 2>/dev/null | tail -1 | cut -d' ' -f 1)
-		[[ ! -z $JSON ]] && JSON_RESULT+=',"partition":"'$CURRENT_PARTITION'","fio":['
+		[[ -n $JSON ]] && JSON_RESULT+=',"partition":"'$CURRENT_PARTITION'","fio":['
 		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
 		DISK_COUNT=0
 
@@ -640,7 +661,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Write" "${DISK_RESULTS[DISK_COUNT*6+2]}" "(${DISK_RESULTS[DISK_COUNT*6+5]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+2]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+5]})"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Total" "${DISK_RESULTS[DISK_COUNT*6]}" "(${DISK_RESULTS[DISK_COUNT*6+3]})" "${DISK_RESULTS[(DISK_COUNT+1)*6]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+3]})"
-			if [ ! -z $JSON ]; then
+			if [ -n $JSON ]; then
 				JSON_RESULT+='{"bs":"'${BLOCK_SIZES[DISK_COUNT]}'","speed_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+1]}',"iops_r":'${DISK_RESULTS_RAW[DISK_COUNT*6+4]}
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+2]}',"iops_w":'${DISK_RESULTS_RAW[DISK_COUNT*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6]}
 				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[DISK_COUNT*6+3]}',"speed_units":"KBps"},'
@@ -650,7 +671,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			fi
 			DISK_COUNT=$(expr $DISK_COUNT + 2)
 		done
-		[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+		[[ -n $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	fi
 fi
 
@@ -723,7 +744,7 @@ function iperf_test {
 	done
 	
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	[[ ! -z $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
+	[[ -n $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
 	[[ -z $LATENCY_RUN ]] && LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
@@ -765,7 +786,7 @@ function launch_iperf {
 			[[ -z $IPERF_RECVRESULT_VAL || "$IPERF_RECVRESULT_VAL" == *"0.00"* ]] && IPERF_RECVRESULT_VAL="busy" && IPERF_RECVRESULT_UNIT=""
 			# print the speed results for the iperf location currently being evaluated
 			printf "%-15s | %-25s | %-15s | %-15s | %-15s\n" "${IPERF_LOCS[i*5+2]}" "${IPERF_LOCS[i*5+3]}" "$IPERF_SENDRESULT_VAL $IPERF_SENDRESULT_UNIT" "$IPERF_RECVRESULT_VAL $IPERF_RECVRESULT_UNIT" "$LATENCY_VAL"
-			if [ ! -z $JSON ]; then
+			if [ -n $JSON ]; then
 				JSON_RESULT+='{"mode":"'$MODE'","provider":"'${IPERF_LOCS[i*5+2]}'","loc":"'${IPERF_LOCS[i*5+3]}
 				JSON_RESULT+='","send":"'$IPERF_SENDRESULT_VAL' '$IPERF_SENDRESULT_UNIT'","recv":"'$IPERF_RECVRESULT_VAL' '$IPERF_RECVRESULT_UNIT'","latency":"'$LATENCY_VAL'"},'
 			fi
@@ -776,7 +797,7 @@ function launch_iperf {
 # if the skip iperf flag was set, skip the network performance test, otherwise test network performance
 if [ -z "$SKIP_IPERF" ]; then
 
-	if [[ -z "$PREFER_BIN" && ! -z "$LOCAL_IPERF" ]]; then # local iperf has been detected, use instead of pre-compiled binary
+	if [[ -z "$PREFER_BIN" && -n "$LOCAL_IPERF" ]]; then # local iperf has been detected, use instead of pre-compiled binary
 		IPERF_CMD=iperf3
 	else
 		# create a temp directory to house the required iperf binary and library
@@ -784,7 +805,7 @@ if [ -z "$SKIP_IPERF" ]; then
 		mkdir -p "$IPERF_PATH"
 
 		# download iperf3 binary
-		if [[ ! -z $LOCAL_CURL ]]; then
+		if [[ -n $LOCAL_CURL ]]; then
 			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o "$IPERF_PATH/iperf3"
 		else
 			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O "$IPERF_PATH/iperf3"
@@ -819,7 +840,7 @@ if [ -z "$SKIP_IPERF" ]; then
 
 	# if the "REDUCE_NET" flag is activated, then do a shorter iperf test with only three locations
 	# (Clouvider London, Clouvider NYC, and Online.net France)
-	if [ ! -z "$REDUCE_NET" ]; then
+	if [ -n "$REDUCE_NET" ]; then
 		IPERF_LOCS=( \
 			"lon.speedtest.clouvider.net" "5200-5209" "Clouvider" "London, UK (10G)" "IPv4|IPv6" \
 			"speedtest.sin1.sg.leaseweb.net" "5201-5210" "Leaseweb" "Singapore, SG (10G)" "IPv4|IPv6" \
@@ -832,12 +853,12 @@ if [ -z "$SKIP_IPERF" ]; then
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
 	
 	if [ -z "$IPERF_DL_FAIL" ]; then
-		[[ ! -z $JSON ]] && JSON_RESULT+=',"iperf":['
+		[[ -n $JSON ]] && JSON_RESULT+=',"iperf":['
 		# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
-		[ ! -z "$IPV4_CHECK" ] && launch_iperf "IPv4"
+		[ -n "$IPV4_CHECK" ] && launch_iperf "IPv4"
 		# check if the host has IPv6 connectivity, if so, run iperf3 IPv6 tests
-		[ ! -z "$IPV6_CHECK" ] && launch_iperf "IPv6"
-		[[ ! -z $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+		[ -n "$IPV6_CHECK" ] && launch_iperf "IPv6"
+		[[ -n $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	else
 		echo -e "\niperf3 binary download failed. Skipping iperf network tests..."
 	fi
@@ -859,7 +880,7 @@ function launch_geekbench {
 	GB_RUN=""
 
 	# check for curl vs wget
-	[[ ! -z $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
+	[[ -n $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
 
 	if [[ $VERSION == *4* && ($ARCH = *aarch64* || $ARCH = *arm*) ]]; then
 		echo -e "\nARM architecture not supported by Geekbench 4, use Geekbench 5 or 6."
@@ -944,20 +965,20 @@ function launch_geekbench {
 			printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
 			printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
 
-			if [ ! -z $JSON ]; then
+			if [ -n $JSON ]; then
 				JSON_RESULT+='{"version":'$VERSION',"single":'$GEEKBENCH_SCORES_SINGLE',"multi":'$GEEKBENCH_SCORES_MULTI
 				JSON_RESULT+=',"url":"'$GEEKBENCH_URL'"},'
 			fi
 
 			# write the geekbench claim URL to a file so the user can add the results to their profile (if desired)
-			[ ! -z "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" >> geekbench_claim.url 2> /dev/null
+			[ -n "$GEEKBENCH_URL_CLAIM" ] && echo -e "$GEEKBENCH_URL_CLAIM" >> geekbench_claim.url 2> /dev/null
 		fi
 	fi
 }
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
-	[[ ! -z $JSON ]] && JSON_RESULT+=',"geekbench":['
+	[[ -n $JSON ]] && JSON_RESULT+=',"geekbench":['
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
@@ -969,8 +990,8 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_6 == *True* ]]; then
 		launch_geekbench 6
 	fi
-	[[ ! -z $JSON ]] && [[ $(echo -n $JSON_RESULT | tail -c 1) == ',' ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1}
-	[[ ! -z $JSON ]] && JSON_RESULT+=']'
+	[[ -n $JSON ]] && [[ $(echo -n $JSON_RESULT | tail -c 1) == ',' ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1}
+	[[ -n $JSON ]] && JSON_RESULT+=']'
 fi
 
 # finished all tests, clean up all YABS files and exit
@@ -996,12 +1017,12 @@ function calculate_time_taken() {
 	else
 		echo "YABS completed in ${time_taken} sec"
 	fi
-	[[ ! -z $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
+	[[ -n $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
 }
 
 calculate_time_taken $YABS_END_TIME $YABS_START_TIME
 
-if [[ ! -z $JSON ]]; then
+if [[ -n $JSON ]]; then
 	JSON_RESULT+='}'
 
 	# write json results to file
@@ -1014,7 +1035,7 @@ if [[ ! -z $JSON ]]; then
 		IFS=',' read -r -a JSON_SITES <<< "$JSON_SEND"
 		for JSON_SITE in "${JSON_SITES[@]}"
 		do
-			if [[ ! -z $LOCAL_CURL ]]; then
+			if [[ -n $LOCAL_CURL ]]; then
 				curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' $JSON_SITE
 			else
 				wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' $JSON_SITE
