@@ -233,7 +233,11 @@ echo -e "---------------------------------"
 UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
 echo -e "Uptime     : $UPTIME"
 # check for local lscpu installs
-command -v lscpu >/dev/null 2>&1 && LOCAL_LSCPU=true || unset LOCAL_LSCPU
+if command -v lscpu >/dev/null 2>&1; then
+  LOCAL_LSCPU=true
+else
+  unset LOCAL_LSCPU
+fi
 if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
@@ -405,10 +409,10 @@ function format_speed {
 	# divide the raw result to get the corresponding formatted result (based on determined unit)
 	RESULT=$(awk -v a="$RESULT" -v b="$DENOM" 'BEGIN { print a / b }')
 	# shorten the formatted result to two decimal places (i.e. x.xx)
-	RESULT=$(echo $RESULT | awk -F. '{ printf "%0.2f",$1"."substr($2,1,2) }')
+	RESULT=$(echo "$RESULT" | awk -F. '{ printf "%0.2f",$1"."substr($2,1,2) }')
 	# concat formatted result value with units and return result
 	RESULT="$RESULT $UNIT"
-	echo $RESULT
+	echo "$RESULT"
 }
 
 # format_iops
@@ -462,21 +466,21 @@ function disk_test {
 	for BS in "${BLOCK_SIZES[@]}"; do
 		# run rand read/write mixed fio test with block size = $BS
 		echo -en "Running fio random mixed R+W disk test with $BS block size..."
-		DISK_TEST=$(timeout 35 $FIO_CMD --name=rand_rw_$BS --ioengine=libaio --rw=randrw --rwmixread=50 --bs=$BS --iodepth=64 --numjobs=2 --size=$FIO_SIZE --runtime=30 --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_rw_$BS)
-		DISK_IOPS_R=$(echo $DISK_TEST | awk -F';' '{print $8}')
-		DISK_IOPS_W=$(echo $DISK_TEST | awk -F';' '{print $49}')
+		DISK_TEST=$(timeout 35 "$FIO_CMD" --name=rand_rw_"$BS" --ioengine=libaio --rw=randrw --rwmixread=50 --bs="$BS" --iodepth=64 --numjobs=2 --size="$FIO_SIZE" --runtime=30 --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_rw_"$BS")
+		DISK_IOPS_R=$(echo "$DISK_TEST" | awk -F';' '{print $8}')
+		DISK_IOPS_W=$(echo "$DISK_TEST" | awk -F';' '{print $49}')
 		DISK_IOPS=$(awk -v a="$DISK_IOPS_R" -v b="$DISK_IOPS_W" 'BEGIN { print a + b }')
-		DISK_TEST_R=$(echo $DISK_TEST | awk -F';' '{print $7}')
-		DISK_TEST_W=$(echo $DISK_TEST | awk -F';' '{print $48}')
+		DISK_TEST_R=$(echo "$DISK_TEST" | awk -F';' '{print $7}')
+		DISK_TEST_W=$(echo "$DISK_TEST" | awk -F';' '{print $48}')
 		DISK_TEST=$(awk -v a="$DISK_TEST_R" -v b="$DISK_TEST_W" 'BEGIN { print a + b }')
 		DISK_RESULTS_RAW+=( "$DISK_TEST" "$DISK_TEST_R" "$DISK_TEST_W" "$DISK_IOPS" "$DISK_IOPS_R" "$DISK_IOPS_W" )
 
-		DISK_IOPS=$(format_iops $DISK_IOPS)
-		DISK_IOPS_R=$(format_iops $DISK_IOPS_R)
-		DISK_IOPS_W=$(format_iops $DISK_IOPS_W)
-		DISK_TEST=$(format_speed $DISK_TEST)
-		DISK_TEST_R=$(format_speed $DISK_TEST_R)
-		DISK_TEST_W=$(format_speed $DISK_TEST_W)
+		DISK_IOPS=$(format_iops "$DISK_IOPS")
+		DISK_IOPS_R=$(format_iops "$DISK_IOPS_R")
+		DISK_IOPS_W=$(format_iops "$DISK_IOPS_W")
+		DISK_TEST=$(format_speed "$DISK_TEST")
+		DISK_TEST_R=$(format_speed "$DISK_TEST_R")
+		DISK_TEST_W=$(format_speed "$DISK_TEST_W")
 
 		DISK_RESULTS+=( "$DISK_TEST" "$DISK_TEST_R" "$DISK_TEST_W" "$DISK_IOPS" "$DISK_IOPS_R" "$DISK_IOPS_W" )
 		echo -en "\r\033[0K"
@@ -501,19 +505,19 @@ function dd_test {
 	do
 		# write test using dd, "direct" flag is used to test direct I/O for data being stored to disk
 		DISK_WRITE_TEST=$(dd if=/dev/zero of="$DISK_PATH/$DATE.test" bs=64k count=16k oflag=direct |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
-		VAL=$(echo $DISK_WRITE_TEST | cut -d " " -f 1)
+		VAL=$(echo "$DISK_WRITE_TEST" | cut -d " " -f 1)
 		[[ "$DISK_WRITE_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_WRITE_TEST_RES+=( "$DISK_WRITE_TEST" )
 		DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
 		# read test using dd using the 1G file written during the write test
 		DISK_READ_TEST=$(dd if="$DISK_PATH/$DATE.test" of=/dev/null bs=8k |& grep copied | awk '{ print $(NF-1) " " $(NF)}')
-		VAL=$(echo $DISK_READ_TEST | cut -d " " -f 1)
+		VAL=$(echo "$DISK_READ_TEST" | cut -d " " -f 1)
 		[[ "$DISK_READ_TEST" == *"GB"* ]] && VAL=$(awk -v a="$VAL" 'BEGIN { print a * 1000 }')
 		DISK_READ_TEST_RES+=( "$DISK_READ_TEST" )
 		DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" -v b="$VAL" 'BEGIN { print a + b }')
 
-		I=$(( $I + 1 ))
+		I=$(( I + 1 ))
 	done
 	# calculate the write and read speed averages using the results from the three runs
 	DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" 'BEGIN { print a / 3 }')
@@ -531,13 +535,13 @@ elif [ -z "$SKIP_FIO" ]; then
 	# Perform ZFS filesystem detection and determine if we have enough free space according to spa_asize_inflation
 	ZFSCHECK="/sys/module/zfs/parameters/spa_asize_inflation"
 	if [[ -f "$ZFSCHECK" ]];then
-		mul_spa=$((($(cat /sys/module/zfs/parameters/spa_asize_inflation)*2)))
+		mul_spa=$(( $(cat /sys/module/zfs/parameters/spa_asize_inflation) * 2 ))
 		warning=0
 		poss=()
 
 		for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
 		do
-			if [[ "${PWD##$pathls}" != "${PWD}" ]]; then
+			if [[ "${PWD##$pathls}" != "$PWD" ]]; then
 				poss+=("$pathls")
 			fi
 		done
@@ -546,14 +550,14 @@ elif [ -z "$SKIP_FIO" ]; then
 		m=-1
 		for x in "${poss[@]}"
 		do
-			if [ ${#x} -gt $m ];then
+			if [ "${#x}" -gt "$m" ];then
 				m=${#x}
 				long=$x
 			fi
 		done
 
-		size_b=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | tail -c -2 | head -c 1)
-		free_space=$(df -Th | grep -w $long | grep -i zfs | awk '{print $5}' | head -c -2)
+		size_b=$(df -Th | grep -w "$long" | grep -i zfs | awk '{print $5}' | tail -c -2 | head -c 1)
+		free_space=$(df -Th | grep -w "$long" | grep -i zfs | awk '{print $5}' | head -c -2)
 
 		if [[ $size_b == 'T' ]]; then
 			free_space=$(awk "BEGIN {print int($free_space * 1024)}")
