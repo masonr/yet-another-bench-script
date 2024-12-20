@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2024-12-17"
+YABS_VERSION="v2024-12-20"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -436,11 +436,11 @@ function format_iops {
 		# divide the raw result by 1k
 		RESULT=$(awk -v a="$RESULT" 'BEGIN { print a / 1000 }')
 		# shorten the formatted result to one decimal place (i.e. x.x)
-		RESULT=$(echo $RESULT | awk -F. '{ printf "%0.1f",$1"."substr($2,1,1) }')
+		RESULT=$(echo "$RESULT" | awk -F. '{ printf "%0.1f",$1"."substr($2,1,1) }')
 		RESULT="$RESULT"k
 	fi
 
-	echo $RESULT
+	echo "$RESULT"
 }
 
 # disk_test
@@ -541,7 +541,7 @@ elif [ -z "$SKIP_FIO" ]; then
 
 		for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
 		do
-			if [[ "${PWD##$pathls}" != "$PWD" ]]; then
+			if [[ "${PWD##"$pathls"}" != "$PWD" ]]; then
 				poss+=("$pathls")
 			fi
 		done
@@ -564,7 +564,7 @@ elif [ -z "$SKIP_FIO" ]; then
 			size_b='G'
 		fi
 
-		if [[ $(df -Th | grep -w $long) == *"zfs"* ]];then
+		if [[ $(df -Th | grep -w "$long") == *"zfs"* ]];then
 
 			if [[ $size_b == 'G' ]]; then
 				if ((free_space < mul_spa)); then
@@ -627,13 +627,13 @@ elif [ -z "$SKIP_FIO" ]; then
 		dd_test
 
 		# format the speed averages by converting to GB/s if > 1000 MB/s
-		if [ $(echo $DISK_WRITE_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		if [ "$(echo "$DISK_WRITE_TEST_AVG" | cut -d "." -f 1)" -ge 1000 ]; then
 			DISK_WRITE_TEST_AVG=$(awk -v a="$DISK_WRITE_TEST_AVG" 'BEGIN { print a / 1000 }')
 			DISK_WRITE_TEST_UNIT="GB/s"
 		else
 			DISK_WRITE_TEST_UNIT="MB/s"
 		fi
-		if [ $(echo $DISK_READ_TEST_AVG | cut -d "." -f 1) -ge 1000 ]; then
+		if [ "$(echo "$DISK_READ_TEST_AVG" | cut -d "." -f 1)" -ge 1000 ]; then
 			DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" 'BEGIN { print a / 1000 }')
 			DISK_READ_TEST_UNIT="GB/s"
 		else
@@ -645,21 +645,21 @@ elif [ -z "$SKIP_FIO" ]; then
 		echo -e "dd Sequential Disk Speed Tests:"
 		echo -e "---------------------------------"
 		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n" "" "Test 1" "" "Test 2" ""  "Test 3" "" "Avg" ""
-		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n"
+		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n" "" "" "" "" "" "" "" "" ""
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
 		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
 	else # fio tests completed successfully, print results
 		CURRENT_PARTITION=$(df -P . 2>/dev/null | tail -1 | cut -d' ' -f 1)
 		[[ -n $JSON ]] && JSON_RESULT+=',"partition":"'$CURRENT_PARTITION'","fio":['
-		DISK_RESULTS_NUM=$(expr ${#DISK_RESULTS[@]} / 6)
+		DISK_RESULTS_NUM=$((${#DISK_RESULTS[@]} / 6))
 		DISK_COUNT=0
 
 		# print disk speed test results
 		echo -e "fio Disk Speed Tests (Mixed R/W 50/50) (Partition $CURRENT_PARTITION):"
 		echo -e "---------------------------------"
 
-		while [ $DISK_COUNT -lt $DISK_RESULTS_NUM ] ; do
-			if [ $DISK_COUNT -gt 0 ]; then printf "%-10s | %-20s | %-20s\n"; fi
+		while [[ $DISK_COUNT -lt $DISK_RESULTS_NUM ]] ; do
+			if [[ $DISK_COUNT -gt 0 ]]; then printf "%-10s | %-20s | %-20s\n" "" "" ""; fi
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Block Size" "${BLOCK_SIZES[DISK_COUNT]}" "(IOPS)" "${BLOCK_SIZES[DISK_COUNT+1]}" "(IOPS)"
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "  ------" "---" "---- " "----" "---- "
 			printf "%-10s | %-11s %8s | %-11s %8s\n" "Read" "${DISK_RESULTS[DISK_COUNT*6+1]}" "(${DISK_RESULTS[DISK_COUNT*6+4]})" "${DISK_RESULTS[(DISK_COUNT+1)*6+1]}" "(${DISK_RESULTS[(DISK_COUNT+1)*6+4]})"
@@ -673,7 +673,7 @@ elif [ -z "$SKIP_FIO" ]; then
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}',"iops_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}
 				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}',"speed_units":"KBps"},'
 			fi
-			DISK_COUNT=$(expr $DISK_COUNT + 2)
+			DISK_COUNT=$(($DISK_COUNT + 2))
 		done
 		[[ -n $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	fi
@@ -701,20 +701,20 @@ function iperf_test {
 	do
 		echo -en "Performing $MODE iperf3 send test to $HOST (Attempt #$I of 3)..."
 		# select a random iperf port from the range provided
-		PORT=$(shuf -i $PORTS -n 1)
+		PORT=$(shuf -i "$PORTS" -n 1)
 		# run the iperf test sending data from the host to the iperf server; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_SEND="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 2> /dev/null)"
+		IPERF_RUN_SEND="$(timeout 15 "$IPERF_CMD" "$FLAGS" -c "$URL" -p "$PORT" -P 8 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_SEND" == *"receiver"* && "$IPERF_RUN_SEND" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
 			SPEED=$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver | awk '{ print $6 }')
 			# if speed result is blank or bad (0.00), rerun, otherwise set counter to exit loop
-			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( $I + 1 )) || I=11
+			[[ -z $SPEED || "$SPEED" == "0.00" ]] && I=$(( I + 1 )) || I=11
 		else
 			# if iperf server is not responding, set counter to exit, otherwise increment, sleep, and rerun
-			[[ "$IPERF_RUN_SEND" == *"unable to connect"* ]] && I=11 || I=$(( $I + 1 )) && sleep 2
+			[[ "$IPERF_RUN_SEND" == *"unable to connect"* ]] && I=11 || I=$(( I + 1 )) && sleep 2
 		fi
 		echo -en "\r\033[0K"
 	done
@@ -729,32 +729,32 @@ function iperf_test {
 	do
 		echo -n "Performing $MODE iperf3 recv test from $HOST (Attempt #$J of 3)..."
 		# select a random iperf port from the range provided
-		PORT=$(shuf -i $PORTS -n 1)
+		PORT=$(shuf -i "$PORTS" -n 1)
 		# run the iperf test receiving data from the iperf server to the host; includes
 		#   a timeout of 15s in case the iperf server is not responding; uses 8 parallel
 		#   threads for the network test
-		IPERF_RUN_RECV="$(timeout 15 $IPERF_CMD $FLAGS -c "$URL" -p $PORT -P 8 -R 2> /dev/null)"
+		IPERF_RUN_RECV="$(timeout 15 "$IPERF_CMD" "$FLAGS" -c "$URL" -p "$PORT" -P 8 -R 2> /dev/null)"
 		# check if iperf exited cleanly and did not return an error
 		if [[ "$IPERF_RUN_RECV" == *"receiver"* && "$IPERF_RUN_RECV" != *"error"* ]]; then
 			# test did not result in an error, parse speed result
 			SPEED=$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver | awk '{ print $6 }')
 			# if speed result is blank or bad (0.00), rerun, otherwise set counter to exit loop
-			[[ -z $SPEED || "$SPEED" == "0.00" ]] && J=$(( $J + 1 )) || J=11
+			[[ -z $SPEED || "$SPEED" == "0.00" ]] && J=$(( J + 1 )) || J=11
 		else
 			# if iperf server is not responding, set counter to exit, otherwise increment, sleep, and rerun
-			[[ "$IPERF_RUN_RECV" == *"unable to connect"* ]] && J=11 || J=$(( $J + 1 )) && sleep 2
+			[[ "$IPERF_RUN_RECV" == *"unable to connect"* ]] && J=11 || J=$(( J + 1 )) && sleep 2
 		fi
 		echo -en "\r\033[0K"
 	done
 	
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	[[ -n $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 $URL 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
+	[[ -n $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 "$URL" 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
 	[[ -z $LATENCY_RUN ]] && LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
 	IPERF_SENDRESULT="$(echo "${IPERF_RUN_SEND}" | grep SUM | grep receiver)"
 	IPERF_RECVRESULT="$(echo "${IPERF_RUN_RECV}" | grep SUM | grep receiver)"
-	LATENCY_RESULT="$(echo "${LATENCY_RUN}")"
+	LATENCY_RESULT="${LATENCY_RUN}"
 }
 
 # launch_iperf
@@ -780,11 +780,11 @@ function launch_iperf {
 			# call the iperf_test function passing the required parameters
 			iperf_test "${IPERF_LOCS[i*5]}" "${IPERF_LOCS[i*5+1]}" "${IPERF_LOCS[i*5+2]}" "$IPERF_FLAGS"
 			# parse the send and receive speed results
-			IPERF_SENDRESULT_VAL=$(echo $IPERF_SENDRESULT | awk '{ print $6 }')
-			IPERF_SENDRESULT_UNIT=$(echo $IPERF_SENDRESULT | awk '{ print $7 }')
-			IPERF_RECVRESULT_VAL=$(echo $IPERF_RECVRESULT | awk '{ print $6 }')
-			IPERF_RECVRESULT_UNIT=$(echo $IPERF_RECVRESULT | awk '{ print $7 }')
-			LATENCY_VAL=$(echo $LATENCY_RESULT)
+			IPERF_SENDRESULT_VAL=$(echo "$IPERF_SENDRESULT" | awk '{ print $6 }')
+			IPERF_SENDRESULT_UNIT=$(echo "$IPERF_SENDRESULT" | awk '{ print $7 }')
+			IPERF_RECVRESULT_VAL=$(echo "$IPERF_RECVRESULT" | awk '{ print $6 }')
+			IPERF_RECVRESULT_UNIT=$(echo "$IPERF_RECVRESULT" | awk '{ print $7 }')
+			LATENCY_VAL="${LATENCY_RESULT}"
 			# if the results are blank, then the server is "busy" and being overutilized
 			[[ -z $IPERF_SENDRESULT_VAL || "$IPERF_SENDRESULT_VAL" == *"0.00"* ]] && IPERF_SENDRESULT_VAL="busy" && IPERF_SENDRESULT_UNIT=""
 			[[ -z $IPERF_RECVRESULT_VAL || "$IPERF_RECVRESULT_VAL" == *"0.00"* ]] && IPERF_RECVRESULT_VAL="busy" && IPERF_RECVRESULT_UNIT=""
@@ -924,7 +924,7 @@ function launch_geekbench {
 		fi
 
 		# unlock if license file detected
-		test -f "geekbench.license" && "$GEEKBENCH_PATH/$GB_CMD" --unlock $(cat geekbench.license) > /dev/null 2>&1
+		test -f "geekbench.license" && "$GEEKBENCH_PATH/$GB_CMD" --unlock "$(cat geekbench.license)" > /dev/null 2>&1
 
 		# run the Geekbench test and grep the test results URL given at the end of the test
 		GEEKBENCH_TEST=$("$GEEKBENCH_PATH/$GB_CMD" --upload 2>/dev/null | grep "https://browser")
@@ -947,24 +947,24 @@ function launch_geekbench {
 			fi
 		else
 			# if the Geekbench test succeeded, parse the test results URL
-			GEEKBENCH_URL=$(echo -e $GEEKBENCH_TEST | head -1)
-			GEEKBENCH_URL_CLAIM=$(echo $GEEKBENCH_URL | awk '{ print $2 }')
-			GEEKBENCH_URL=$(echo $GEEKBENCH_URL | awk '{ print $1 }')
+			GEEKBENCH_URL=$(echo -e "$GEEKBENCH_TEST" | head -1)
+			GEEKBENCH_URL_CLAIM=$(echo "$GEEKBENCH_URL" | awk '{ print $2 }')
+			GEEKBENCH_URL=$(echo "$GEEKBENCH_URL" | awk '{ print $1 }')
 			# sleep a bit to wait for results to be made available on the geekbench website
 			sleep 10
 			# parse the public results page for the single and multi core geekbench scores
-			[[ $VERSION == *4* ]] && GEEKBENCH_SCORES=$($DL_CMD $GEEKBENCH_URL | grep "span class='score'") || \
-				GEEKBENCH_SCORES=$($DL_CMD $GEEKBENCH_URL | grep "div class='score'")
+			[[ $VERSION == *4* ]] && GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "span class='score'") || \
+				GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "div class='score'")
 				
-			GEEKBENCH_SCORES_SINGLE=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $3 }')
-			GEEKBENCH_SCORES_MULTI=$(echo $GEEKBENCH_SCORES | awk -v FS="(>|<)" '{ print $7 }')
+			GEEKBENCH_SCORES_SINGLE=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }')
+			GEEKBENCH_SCORES_MULTI=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $7 }')
 		
 			# print the Geekbench results
 			echo -en "\r\033[0K"
 			echo -e "Geekbench $VERSION Benchmark Test:"
 			echo -e "---------------------------------"
 			printf "%-15s | %-30s\n" "Test" "Value"
-			printf "%-15s | %-30s\n"
+			printf "%-15s | %-30s\n" "" ""
 			printf "%-15s | %-30s\n" "Single Core" "$GEEKBENCH_SCORES_SINGLE"
 			printf "%-15s | %-30s\n" "Multi Core" "$GEEKBENCH_SCORES_MULTI"
 			printf "%-15s | %-30s\n" "Full Test" "$GEEKBENCH_URL"
@@ -982,7 +982,7 @@ function launch_geekbench {
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
-	[[ -n $JSON ]] && JSON_RESULT+=',"geekbench":['
+	[[ -n $JSON ]] && JSON_RESULT+=(",\"geekbench\":[")
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
@@ -994,7 +994,7 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_6 == *True* ]]; then
 		launch_geekbench 6
 	fi
-	[[ -n $JSON ]] && [[ $(echo -n $JSON_RESULT | tail -c 1) == ',' ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1}
+	[[ -n $JSON ]] && [[ "${JSON_RESULT: -1}" == ',' ]] && JSON_RESULT=$(echo "$JSON_RESULT" | sed 's/,$//')
 	[[ -n $JSON ]] && JSON_RESULT+=']'
 fi
 
@@ -1013,10 +1013,10 @@ function calculate_time_taken() {
 	end_time=$1
 	start_time=$2
 
-	time_taken=$(( ${end_time} - ${start_time} ))
+	time_taken=$(( end_time - start_time ))
 	if [ ${time_taken} -gt 60 ]; then
-		min=$(expr $time_taken / 60)
-		sec=$(expr $time_taken % 60)
+		min=$(( time_taken / 60 ))
+		sec=$(( time_taken % 60 ))
 		echo "YABS completed in ${min} min ${sec} sec"
 	else
 		echo "YABS completed in ${time_taken} sec"
@@ -1024,14 +1024,14 @@ function calculate_time_taken() {
 	[[ -n $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
 }
 
-calculate_time_taken $YABS_END_TIME $YABS_START_TIME
+calculate_time_taken "$YABS_END_TIME" "$YABS_START_TIME"
 
 if [[ -n $JSON ]]; then
 	JSON_RESULT+='}'
 
 	# write json results to file
 	if [[ $JSON = *w* ]]; then
-		echo $JSON_RESULT > "$JSON_FILE"
+		echo "$JSON_RESULT" > "$JSON_FILE"
 	fi
 
 	# send json results
@@ -1040,9 +1040,9 @@ if [[ -n $JSON ]]; then
 		for JSON_SITE in "${JSON_SITES[@]}"
 		do
 			if [[ -n $LOCAL_CURL ]]; then
-				curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' $JSON_SITE
+				curl -s -H "Content-Type:application/json" -X POST --data ''"$JSON_RESULT"'' "$JSON_SITE"
 			else
-				wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' $JSON_SITE
+				wget -qO- --post-data=''"$JSON_RESULT"'' --header='Content-Type:application/json' "$JSON_SITE"
 			fi
 		done
 	fi
@@ -1050,7 +1050,7 @@ if [[ -n $JSON ]]; then
 	# print json result to screen
 	if [[ $JSON = *j* ]]; then
 		echo -e
-		echo $JSON_RESULT
+		echo "$JSON_RESULT"
 	fi
 fi
 
