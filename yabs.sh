@@ -673,7 +673,7 @@ elif [ -z "$SKIP_FIO" ]; then
 				JSON_RESULT+=',"speed_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+2]}',"iops_w":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+5]}',"speed_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6]}
 				JSON_RESULT+=',"iops_rw":'${DISK_RESULTS_RAW[(DISK_COUNT+1)*6+3]}',"speed_units":"KBps"},'
 			fi
-			DISK_COUNT=$(($DISK_COUNT + 2))
+			DISK_COUNT=$((DISK_COUNT + 2))
 		done
 		[[ -n $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
 	fi
@@ -982,7 +982,7 @@ function launch_geekbench {
 
 # if the skip geekbench flag was set, skip the system performance test, otherwise test system performance
 if [ -z "$SKIP_GEEKBENCH" ]; then
-	[[ -n $JSON ]] && JSON_RESULT+=(",\"geekbench\":[")
+	[[ -n $JSON ]] && JSON_RESULT+=",\"geekbench\":["
 	if [[ $GEEKBENCH_4 == *True* ]]; then
 		launch_geekbench 4
 	fi
@@ -994,8 +994,8 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 	if [[ $GEEKBENCH_6 == *True* ]]; then
 		launch_geekbench 6
 	fi
-	[[ -n $JSON ]] && [[ "${JSON_RESULT: -1}" == ',' ]] && JSON_RESULT=$(echo "$JSON_RESULT" | sed 's/,$//')
-	[[ -n $JSON ]] && JSON_RESULT+=']'
+	[[ -n $JSON ]] && [[ "${JSON_RESULT: -1}" == ',' ]] && JSON_RESULT="${JSON_RESULT%,}"
+	[[ -n $JSON ]] && JSON_RESULT+="]"
 fi
 
 # finished all tests, clean up all YABS files and exit
@@ -1021,13 +1021,13 @@ function calculate_time_taken() {
 	else
 		echo "YABS completed in ${time_taken} sec"
 	fi
-	[[ -n $JSON ]] && JSON_RESULT+=',"runtime":{"start":'$start_time',"end":'$end_time',"elapsed":'$time_taken'}'
+	[[ -n $JSON ]] && JSON_RESULT+=",\"runtime\":{\"start\":'$start_time',\"end\":'$end_time',\"elapsed\":'$time_taken'}"
 }
 
 calculate_time_taken "$YABS_END_TIME" "$YABS_START_TIME"
 
 if [[ -n $JSON ]]; then
-	JSON_RESULT+='}'
+	JSON_RESULT+="}"
 
 	# write json results to file
 	if [[ $JSON = *w* ]]; then
