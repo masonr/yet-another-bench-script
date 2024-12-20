@@ -1021,7 +1021,7 @@ function calculate_time_taken() {
 	else
 		echo "YABS completed in ${time_taken} sec"
 	fi
-	[[ -n $JSON ]] && JSON_RESULT+=",\"runtime\":{\"start\":'$start_time',\"end\":'$end_time',\"elapsed\":'$time_taken'}"
+	[[ -n $JSON ]] && JSON_RESULT+=",\"runtime\":{\"start\":$start_time,\"end\":$end_time,\"elapsed\":$time_taken}"
 }
 
 calculate_time_taken "$YABS_END_TIME" "$YABS_START_TIME"
