@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Dec 2024
+# Initial Oct 2019; Last update Jan 2025
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2024-12-20"
+YABS_VERSION="v2025-01-01"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -947,9 +947,8 @@ function launch_geekbench {
 			fi
 		else
 			# if the Geekbench test succeeded, parse the test results URL
-			GEEKBENCH_URL=$(echo -e "$GEEKBENCH_TEST" | head -1)
-			GEEKBENCH_URL_CLAIM=$(echo "$GEEKBENCH_URL" | awk '{ print $2 }')
-			GEEKBENCH_URL=$(echo "$GEEKBENCH_URL" | awk '{ print $1 }')
+			GEEKBENCH_URL=$(echo -e "$GEEKBENCH_TEST" | head -1 | awk '{ print $1 }')
+			GEEKBENCH_URL_CLAIM=$(echo -e "$GEEKBENCH_TEST" | tail -1 | awk '{ print $1 }')
 			# sleep a bit to wait for results to be made available on the geekbench website
 			sleep 10
 			# parse the public results page for the single and multi core geekbench scores
