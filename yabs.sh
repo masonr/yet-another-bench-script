@@ -267,7 +267,7 @@ TOTAL_SWAP_RAW=$(free | grep Swap | awk '{ print $2 }')
 TOTAL_SWAP=$(format_size "$TOTAL_SWAP_RAW")
 echo -e "Swap       : $TOTAL_SWAP"
 # total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
-TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
+TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t exfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
 TOTAL_DISK=$(format_size "$TOTAL_DISK_RAW")
 echo -e "Disk       : $TOTAL_DISK"
 DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
