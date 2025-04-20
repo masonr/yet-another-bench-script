@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jan 2025
+# Initial Oct 2019; Last update Apr 2025
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2025-01-01"
+YABS_VERSION="v2025-04-20"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -69,7 +69,7 @@ while getopts 'bfdignhr4596jw:s:' flag; do
 		f) SKIP_FIO="True" ;;
 		d) SKIP_FIO="True" ;;
 		i) SKIP_IPERF="True" ;;
-		g) SKIP_GEEKBENCH="True" ;;
+		g) SKIP_GEEKBENCH="True" && unset GEEKBENCH_6 ;;
 		n) SKIP_NET="True" ;;
 		h) PRINT_HELP="True" ;;
 		r) REDUCE_NET="True" ;;
@@ -163,11 +163,11 @@ if [ -n "$PRINT_HELP" ]; then
 	[[ -n $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
 	echo -e
 	echo -e "Local Binary Check:"
-	[[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary" ||
-		[[ -z $PREFER_BIN ]] && echo -e "       fio detected, using local package" ||
+	([[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary") ||
+		([[ -z $PREFER_BIN ]] && echo -e "       fio detected, using local package") ||
 		echo -e "       fio detected, but using precompiled binary instead"
-	[[ -z $LOCAL_IPERF ]] && echo -e "       iperf3 not detected, will download precompiled binary" ||
-		[[ -z $PREFER_BIN ]] && echo -e "       iperf3 detected, using local package" ||
+	([[ -z $LOCAL_IPERF ]] && echo -e "       iperf3 not detected, will download precompiled binary") ||
+		([[ -z $PREFER_BIN ]] && echo -e "       iperf3 detected, using local package") ||
 		echo -e "       iperf3 detected, but using precompiled binary instead"
 	echo -e
 	echo -e "Detected Connectivity:"
@@ -904,8 +904,8 @@ function launch_geekbench {
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
 				GB_CMD="geekbench5"
 			else # Geekbench v6
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.3.0-Linux.tar.gz"
+				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.4.0-LinuxARMPreview.tar.gz" \
+					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.4.0-Linux.tar.gz"
 				GB_CMD="geekbench6"
 			fi
 			GB_RUN="True"

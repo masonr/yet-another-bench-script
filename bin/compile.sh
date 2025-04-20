@@ -36,7 +36,7 @@ source /hbb_exe/activate
 
 # download and compile fio
 cd ~
-curl -L https://github.com/axboe/fio/archive/fio-3.38.tar.gz -o "fio.tar.gz"
+curl -L https://github.com/axboe/fio/archive/fio-3.39.tar.gz -o "fio.tar.gz"
 tar xf fio.tar.gz
 cd fio-fio*
 ./configure --disable-native
