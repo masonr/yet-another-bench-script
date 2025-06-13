@@ -570,41 +570,51 @@ elif [ -z "$SKIP_FIO" ]; then
 
         # If a valid free space value was extracted
         if [[ -n "$avail_space_with_unit" ]]; then
-            # Use bash regex to extract the numeric part and the unit
-            # e.g., "7.3T" -> numeric_part="7.3", unit="T"
-            if [[ "$avail_space_with_unit" =~ ^([0-9.]+\.?)([KMGT]?)$ ]]; then
-                numeric_part="${BASH_REMATCH[1]}"
-                unit="${BASH_REMATCH[2]}"
-                # Convert unit to uppercase for consistent case statement matching
-                unit=$(echo "$unit" | tr '[:lower:]' '[:upper:]')
+            # Use awk to parse the numeric part and unit, then convert to Gigabytes (integer)
+            # This handles units like T, G, M, K, or empty (assumed bytes) and rounds to nearest integer
+            free_space_gb_int=$(echo "$avail_space_with_unit" | awk '
+            {
+                # Extract numeric part and unit
+                numeric_part = $0;
+                unit = "";
+                # Use match to find the number and an optional unit at the end
+                if (match($0, /([0-9.]+)([KMGTB]?)$/)) {
+                    numeric_part = substr($0, RSTART, RLENGTH - length(substr($0, RSTART + RLENGTH - 1, 1)));
+                    unit = substr($0, RSTART + RLENGTH - 1, 1);
+                    # If the last character was part of the number (e.g., "1.2"), unit should be empty
+                    if (unit ~ /[0-9.]/) {
+                        unit = "";
+                    }
+                }
 
-                # Convert all values to Gigabytes using 'bc -l' for accurate floating-point arithmetic
-                free_space_gb=0
-                case "$unit" in
-                    T) free_space_gb=$(echo "$numeric_part * 1024" | bc -l) ;;
-                    G) free_space_gb=$(echo "$numeric_part" | bc -l) ;;
-                    M) free_space_gb=$(echo "$numeric_part / 1024" | bc -l) ;;
-                    K) free_space_gb=$(echo "$numeric_part / (1024 * 1024)" | bc -l) ;;
-                    # If no unit or 'B' (bytes), assume bytes and convert to GB
-                    B|"") free_space_gb=$(echo "$numeric_part / (1024 * 1024 * 1024)" | bc -l) ;;
-                    *) free_space_gb=0 ;; # Fallback for unexpected units
-                esac
+                # Convert unit to uppercase for consistent logic
+                unit = toupper(unit);
 
-                # Round the result to the nearest integer for comparison in bash's arithmetic context
-                # printf "%.0f" ensures it's an integer string.
-                free_space_gb_int=$(awk "BEGIN {printf \"%.0f\", $free_space_gb}")
+                converted_value_gb = 0;
+                if (unit == "T") {
+                    converted_value_gb = numeric_part * 1024;
+                } else if (unit == "G") {
+                    converted_value_gb = numeric_part;
+                } else if (unit == "M") {
+                    converted_value_gb = numeric_part / 1024;
+                } else if (unit == "K") {
+                    converted_value_gb = numeric_part / (1024 * 1024);
+                } else if (unit == "B" || unit == "") { # Assume bytes if unit is B or empty
+                    converted_value_gb = numeric_part / (1024 * 1024 * 1024);
+                }
 
-                # Now, perform the arithmetic comparison with the integer free_space_gb_int
-                if ((free_space_gb_int < mul_spa)); then
-                    warning=1
-                fi
-            else
-                # Handle case where avail_space_with_unit doesn't match expected format
-                echo "Warning: Could not parse free space format for $long: '$avail_space_with_unit'"
-                # Potentially set warning=1 here if unparseable space is critical
+                # Print rounded to nearest integer
+                printf "%.0f\n", converted_value_gb;
+            }')
+
+            # Now, perform the arithmetic comparison with the integer free_space_gb_int
+            if ((free_space_gb_int < mul_spa)); then
+                warning=1
             fi
         else
-            echo "Warning: No ZFS entry found for path $long or could not extract available space."
+            # Handle case where avail_space_with_unit doesn't match expected format
+            echo "Warning: Could not parse free space format for $long: '$avail_space_with_unit'"
+            # Potentially set warning=1 here if unparseable space is critical
         fi
     else
         echo "Note: No relevant filesystem path detected for current directory ($PWD)."
@@ -614,7 +624,8 @@ elif [ -z "$SKIP_FIO" ]; then
     if [[ $warning -eq 1 ]];then
         echo -en "\nWarning! You are running YABS on a ZFS Filesystem and your disk space is too low for the fio test. Your test results will be inaccurate. You need at least $mul_spa GB free in order to complete this test accurately. For more information, please see https://github.com/masonr/yet-another-bench-script/issues/13\n"
     fi
-fi	
+fi
+
 	echo -en "\nPreparing system for disk tests..."
 
 	# create temp directory to store disk write/read test files
