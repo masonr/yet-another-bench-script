@@ -534,53 +534,98 @@ elif [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 524288 && ("$ARCH" = "aarch64" || "
 elif [ -z "$SKIP_FIO" ]; then
 	# Perform ZFS filesystem detection and determine if we have enough free space according to spa_asize_inflation
 	ZFSCHECK="/sys/module/zfs/parameters/spa_asize_inflation"
-	if [[ -f "$ZFSCHECK" ]];then
-		mul_spa=$(( $(cat /sys/module/zfs/parameters/spa_asize_inflation) * 2 ))
-		warning=0
-		poss=()
+	if [[ -f "$ZFSCHECK" ]]; then
+    # Calculate mul_spa, which is assumed to be an integer (e.g., 2 * 2 = 4)
+    mul_spa=$(( $(cat /sys/module/zfs/parameters/spa_asize_inflation) * 2 ))
+    warning=0
+    poss=()
 
-		for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
-		do
-			if [[ "${PWD##"$pathls"}" != "$PWD" ]]; then
-				poss+=("$pathls")
-			fi
-		done
+    # Find relevant filesystem paths that are parent directories or the current directory itself
+    for pathls in $(df -Th | awk '{print $7}' | tail -n +2)
+    do
+        # Check if PWD starts with (is a subdirectory of or same as) pathls
+        if [[ "${PWD}" == "${pathls}"* ]]; then
+            poss+=("$pathls")
+        fi
+    done
 
-		long=""
-		m=-1
-		for x in "${poss[@]}"
-		do
-			if [ "${#x}" -gt "$m" ];then
-				m=${#x}
-				long=$x
-			fi
-		done
+    long=""
+    m=-1 # Initialize max length to -1 to ensure the first valid path is picked
+    # Select the longest matching path from the 'poss' array
+    # This ensures we get the most specific mounted point for the current directory
+    for x in "${poss[@]}"
+    do
+        if [ "${#x}" -gt "$m" ];then
+            m=${#x}
+            long=$x
+        fi
+    done
 
-		size_b=$(df -Th | grep -w "$long" | grep -i zfs | awk '{print $5}' | tail -c -2 | head -c 1)
-		free_space=$(df -Th | grep -w "$long" | grep -i zfs | awk '{print $5}' | head -c -2)
+    # Proceed only if a relevant ZFS path was found
+    if [[ -n "$long" ]]; then
+        # Get the 'Avail' space directly for the detected path and explicitly for ZFS type
+        # The 'Avail' column is the 4th field in `df -Th` output
+        # Example: '7.3T', '104G', '17G'
+        avail_space_with_unit=$(df -Th | grep -w "$long" | awk '$2 == "zfs" {print $4; exit}')
 
-		if [[ $size_b == 'T' ]]; then
-			free_space=$(awk "BEGIN {print int($free_space * 1024)}")
-			size_b='G'
-		fi
+        # If a valid free space value was extracted
+        if [[ -n "$avail_space_with_unit" ]]; then
+            # Use awk to parse the numeric part and unit, then convert to Gigabytes (integer)
+            # This handles units like T, G, M, K, or empty (assumed bytes) and rounds to nearest integer
+            free_space_gb_int=$(echo "$avail_space_with_unit" | awk '
+            {
+                # Extract numeric part and unit
+                numeric_part = $0;
+                unit = "";
+                # Use match to find the number and an optional unit at the end
+                if (match($0, /([0-9.]+)([KMGTB]?)$/)) {
+                    numeric_part = substr($0, RSTART, RLENGTH - length(substr($0, RSTART + RLENGTH - 1, 1)));
+                    unit = substr($0, RSTART + RLENGTH - 1, 1);
+                    # If the last character was part of the number (e.g., "1.2"), unit should be empty
+                    if (unit ~ /[0-9.]/) {
+                        unit = "";
+                    }
+                }
 
-		if [[ $(df -Th | grep -w "$long") == *"zfs"* ]];then
+                # Convert unit to uppercase for consistent logic
+                unit = toupper(unit);
 
-			if [[ $size_b == 'G' ]]; then
-				if ((free_space < mul_spa)); then
-					warning=1
-				fi
-			else
-				warning=1
-			fi
+                converted_value_gb = 0;
+                if (unit == "T") {
+                    converted_value_gb = numeric_part * 1024;
+                } else if (unit == "G") {
+                    converted_value_gb = numeric_part;
+                } else if (unit == "M") {
+                    converted_value_gb = numeric_part / 1024;
+                } else if (unit == "K") {
+                    converted_value_gb = numeric_part / (1024 * 1024);
+                } else if (unit == "B" || unit == "") { # Assume bytes if unit is B or empty
+                    converted_value_gb = numeric_part / (1024 * 1024 * 1024);
+                }
 
-		fi
+                # Print rounded to nearest integer
+                printf "%.0f\n", converted_value_gb;
+            }')
 
-		if [[ $warning -eq 1 ]];then
-			echo -en "\nWarning! You are running YABS on a ZFS Filesystem and your disk space is too low for the fio test. Your test results will be inaccurate. You need at least $mul_spa GB free in order to complete this test accurately. For more information, please see https://github.com/masonr/yet-another-bench-script/issues/13\n"
-		fi
-	fi
-	
+            # Now, perform the arithmetic comparison with the integer free_space_gb_int
+            if ((free_space_gb_int < mul_spa)); then
+                warning=1
+            fi
+        else
+            # Handle case where avail_space_with_unit doesn't match expected format
+            echo "Warning: Could not parse free space format for $long: '$avail_space_with_unit'"
+            # Potentially set warning=1 here if unparseable space is critical
+        fi
+    else
+        echo "Note: No relevant filesystem path detected for current directory ($PWD)."
+    fi
+
+    # Display warning if conditions are met
+    if [[ $warning -eq 1 ]];then
+        echo -en "\nWarning! You are running YABS on a ZFS Filesystem and your disk space is too low for the fio test. Your test results will be inaccurate. You need at least $mul_spa GB free in order to complete this test accurately. For more information, please see https://github.com/masonr/yet-another-bench-script/issues/13\n"
+    fi
+fi
+
 	echo -en "\nPreparing system for disk tests..."
 
 	# create temp directory to store disk write/read test files
