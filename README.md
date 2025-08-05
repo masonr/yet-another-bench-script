@@ -32,6 +32,21 @@ wget -qO- yabs.sh | bash
 
 **Windows Users**: This script can be run on Windows systems by using [Windows Subsystem for Linux v2 (WSL 2)](https://learn.microsoft.com/en-us/windows/wsl/about). WSLv1 will not run the script and binaries correctly.
 
+### Docker
+
+A container image is available from the GitHub Container Registry:
+
+```sh
+docker run --rm ghcr.io/masonr/yet-another-bench-script
+```
+
+Additional flags can be passed after the image name, for example:
+
+```sh
+docker run --rm ghcr.io/masonr/yet-another-bench-script -f -i
+```
+
+
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
 
 ```

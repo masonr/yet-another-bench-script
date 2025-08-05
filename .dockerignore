@@ -1,0 +1,6 @@
+.git
+.github
+bin/compile.sh
+bin/cross-compile.sh
+bin/README.md
+bin/example.json
