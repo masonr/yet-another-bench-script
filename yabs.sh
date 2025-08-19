@@ -151,7 +151,7 @@ if [ -n "$PRINT_HELP" ]; then
 	echo -e "       -s <url> : send jsonified YABS results to URL"
 	echo -e "       -p <servers> : specify custom iperf servers (format: host:port_range:name:location:network_modes)"
 	echo -e "                      multiple servers separated by commas"
-	echo -e "                      example: -p \"example.com:5201-5210:MyServer:New York, NY (10G):IPv4|IPv6\""
+	echo -e "                      example: -p \"example.com:5201-5210:MyServer:New York (10G):IPv4|IPv6\""
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
