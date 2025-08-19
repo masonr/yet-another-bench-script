@@ -8,7 +8,7 @@
 #
 # Purpose:    The purpose of this script is to quickly gauge the performance of a Linux-
 #             based server by benchmarking network performance via iperf3, CPU and
-#             overall system performance via Geekbench 4/5, and random disk
+#             overall system performance via Geekbench 4/5/6, and random disk
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
