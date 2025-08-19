@@ -59,11 +59,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE IPERF_SERVERS
 GEEKBENCH_6="True" # gb6 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdignhr4596jw:s:' flag; do
+while getopts 'bfdignhr4596jw:s:p:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -77,9 +77,10 @@ while getopts 'bfdignhr4596jw:s:' flag; do
 		5) GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
 		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
 		6) GEEKBENCH_6="True" ;;
-		j) JSON+="j" ;; 
+		j) JSON+="j" ;;
 		w) JSON+="w" && JSON_FILE=${OPTARG} ;;
-		s) JSON+="s" && JSON_SEND=${OPTARG} ;; 
+		s) JSON+="s" && JSON_SEND=${OPTARG} ;;
+		p) IPERF_SERVERS=${OPTARG} ;;
 		*) exit 1 ;;
 	esac
 done
@@ -148,6 +149,9 @@ if [ -n "$PRINT_HELP" ]; then
 	echo -e "       -j : print jsonified YABS results at conclusion of test"
 	echo -e "       -w <filename> : write jsonified YABS results to disk using file name provided"
 	echo -e "       -s <url> : send jsonified YABS results to URL"
+	echo -e "       -p <servers> : specify custom iperf servers (format: host:port_range:name:location:network_modes)"
+	echo -e "                      multiple servers separated by commas"
+	echo -e "                      example: -p \"example.com:5201-5210:MyServer:New York, NY (10G):IPv4|IPv6\""
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
@@ -161,6 +165,7 @@ if [ -n "$PRINT_HELP" ]; then
 	[[ -n $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
 	[[ -n $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
 	[[ -n $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
+	[[ -n $IPERF_SERVERS ]] && echo -e "       -p, using custom iperf servers: $IPERF_SERVERS"
 	echo -e
 	echo -e "Local Binary Check:"
 	([[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary") ||
@@ -180,7 +185,7 @@ if [ -n "$PRINT_HELP" ]; then
 	[[ -z $JSON ]] && echo -e "       none"
 	[[ $JSON = *j* ]] && echo -e "       printing json to screen after test"
 	[[ $JSON = *w* ]] && echo -e "       writing json to file ($JSON_FILE) after test"
-	[[ $JSON = *s* ]] && echo -e "       sharing json YABS results to $JSON_SEND" 
+	[[ $JSON = *s* ]] && echo -e "       sharing json YABS results to $JSON_SEND"
 	echo -e
 	echo -e "Exiting..."
 
@@ -202,7 +207,7 @@ function format_size {
 	# ensure the raw value is a number, otherwise return blank
 	re='^[0-9]+$'
 	if ! [[ $RAW =~ $re ]] ; then
-		echo "" 
+		echo ""
 		return 0
 	fi
 
@@ -227,7 +232,7 @@ function format_size {
 }
 
 # gather basic system information (inc. CPU, AES-NI/virt status, RAM + swap + disk size)
-echo -e 
+echo -e
 echo -e "Basic System Information:"
 echo -e "---------------------------------"
 UPTIME=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
@@ -288,7 +293,7 @@ function ip_info() {
 
 	# declare local vars
 	local ip6me_resp net_type net_ip response country region region_code city isp org as
- 
+
 	ip6me_resp="$($DL_CMD http://ip6.me/api/)"
 	net_type="$(echo "$ip6me_resp" | cut -d, -f1)"
 	net_ip="$(echo "$ip6me_resp" | cut -d, -f2)"
@@ -307,7 +312,7 @@ function ip_info() {
 	isp=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^isp/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
 	org=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^org/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
 	as=$(echo "$response" | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^as/ {print $2}' | sed 's/^"\(.*\)"$/\1/')
-	
+
 	echo
 	echo "$net_type Network Information:"
 	echo "---------------------------------"
@@ -330,7 +335,7 @@ function ip_info() {
 	fi
 	if [[ -n "$country" ]]; then
 		echo "Country    : $country"
-	fi 
+	fi
 
 	[[ -n $JSON ]] && JSON_RESULT+=',"ip_info":{"protocol":"'$net_type'","isp":"'$isp'","asn":"'$as'","org":"'$org'","city":"'$city'","region":"'$region'","region_code":"'$region_code'","country":"'$country'"}'
 }
@@ -489,7 +494,7 @@ function disk_test {
 
 # dd_test
 # Purpose: This method is invoked if the fio disk test failed. dd sequential speed tests are
-#          not indiciative or real-world results, however, some form of disk speed measure 
+#          not indiciative or real-world results, however, some form of disk speed measure
 #          is better than nothing.
 # Parameters:
 #          - (none)
@@ -691,8 +696,8 @@ fi
 		echo -e "---------------------------------"
 		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n" "" "Test 1" "" "Test 2" ""  "Test 3" "" "Avg" ""
 		printf "%-6s | %-6s %-4s | %-6s %-4s | %-6s %-4s | %-6s %-4s\n" "" "" "" "" "" "" "" "" ""
-		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}" 
-		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}" 
+		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Write" "${DISK_WRITE_TEST_RES[0]}" "${DISK_WRITE_TEST_RES[1]}" "${DISK_WRITE_TEST_RES[2]}" "${DISK_WRITE_TEST_AVG}" "${DISK_WRITE_TEST_UNIT}"
+		printf "%-6s | %-11s | %-11s | %-11s | %-6.2f %-4s\n" "Read" "${DISK_READ_TEST_RES[0]}" "${DISK_READ_TEST_RES[1]}" "${DISK_READ_TEST_RES[2]}" "${DISK_READ_TEST_AVG}" "${DISK_READ_TEST_UNIT}"
 	else # fio tests completed successfully, print results
 		CURRENT_PARTITION=$(df -P . 2>/dev/null | tail -1 | cut -d' ' -f 1)
 		[[ -n $JSON ]] && JSON_RESULT+=',"partition":"'$CURRENT_PARTITION'","fio":['
@@ -726,7 +731,7 @@ fi
 
 # iperf_test
 # Purpose: This method is designed to test the network performance of the host by executing an
-#          iperf3 test to/from the public iperf server passed to the function. Both directions 
+#          iperf3 test to/from the public iperf server passed to the function. Both directions
 #          (send and receive) are tested.
 # Parameters:
 #          1. URL - URL/domain name of the iperf server
@@ -738,7 +743,7 @@ function iperf_test {
 	PORTS=$2
 	HOST=$3
 	FLAGS=$4
-	
+
 	# attempt the iperf send test 3 times, allowing for a slot to become available on the
 	#   server or to throw out any bad/error results
 	I=1
@@ -791,9 +796,9 @@ function iperf_test {
 		fi
 		echo -en "\r\033[0K"
 	done
-	
+
 	# Run a latency test via ping -c1 command -> will return "xx.x ms"
-	[[ -n $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 "$URL" 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)" 
+	[[ -n $LOCAL_PING ]] && LATENCY_RUN="$(ping -c1 "$URL" 2>/dev/null | grep -o 'time=.*' | sed s/'time='//)"
 	[[ -z $LATENCY_RUN ]] && LATENCY_RUN="--"
 
 	# parse the resulting send and receive speed results
@@ -817,7 +822,7 @@ function launch_iperf {
 	echo -e "---------------------------------"
 	printf "%-15s | %-25s | %-15s | %-15s | %-15s\n" "Provider" "Location (Link)" "Send Speed" "Recv Speed" "Ping"
 	printf "%-15s | %-25s | %-15s | %-15s | %-15s\n" "-----" "-----" "----" "----" "----"
-	
+
 	# loop through iperf locations array to run iperf test using each public iperf server
 	for (( i = 0; i < IPERF_LOCS_NUM; i++ )); do
 		# test if the current iperf location supports the network mode being tested (IPv4/IPv6)
@@ -867,7 +872,7 @@ if [ -z "$SKIP_IPERF" ]; then
 			IPERF_CMD=$IPERF_PATH/iperf3
 		fi
 	fi
-	
+
 	# array containing all currently available iperf3 public servers to use for the network test
 	# format: "1" "2" "3" "4" "5" \
 	#   1. domain name of the iperf server
@@ -896,11 +901,29 @@ if [ -z "$SKIP_IPERF" ]; then
 			"speedtest.nyc1.us.leaseweb.net" "5201-5210" "Leaseweb" "NYC, NY, US (10G)" "IPv4|IPv6" \
 		)
 	fi
-	
+
+	# if custom iperf servers are provided, use them instead of the default servers
+	if [ -n "$IPERF_SERVERS" ]; then
+		# clear the default iperf locations array
+		IPERF_LOCS=()
+
+		# parse the custom iperf servers and add them to the array
+		IFS=',' read -ra CUSTOM_SERVERS <<< "$IPERF_SERVERS"
+		for server in "${CUSTOM_SERVERS[@]}"; do
+			# parse server definition: host:port_range:name:location:network_modes
+			IFS=':' read -ra SERVER_PARTS <<< "$server"
+			if [ ${#SERVER_PARTS[@]} -eq 5 ]; then
+				IPERF_LOCS+=("${SERVER_PARTS[0]}" "${SERVER_PARTS[1]}" "${SERVER_PARTS[2]}" "${SERVER_PARTS[3]}" "${SERVER_PARTS[4]}")
+			else
+				echo -e "Invalid server format: $server (expected format: host:port_range:name:location:network_modes)"
+			fi
+		done
+	fi
+
 	# get the total number of iperf locations (total array size divided by 5 since each location has 5 elements)
 	IPERF_LOCS_NUM=${#IPERF_LOCS[@]}
 	IPERF_LOCS_NUM=$((IPERF_LOCS_NUM / 5))
-	
+
 	if [ -z "$IPERF_DL_FAIL" ]; then
 		[[ -n $JSON ]] && JSON_RESULT+=',"iperf":['
 		# check if the host has IPv4 connectivity, if so, run iperf3 IPv4 tests
@@ -914,7 +937,7 @@ if [ -z "$SKIP_IPERF" ]; then
 fi
 
 # launch_geekbench
-# Purpose: This method is designed to run the Primate Labs' Geekbench 4/5 Cross-Platform Benchmark utility
+# Purpose: This method is designed to run the Primate Labs' Geekbench 4/5/6 Cross-Platform Benchmark utility
 # Parameters:
 #          1. VERSION - indicates which Geekbench version to run
 function launch_geekbench {
@@ -999,10 +1022,10 @@ function launch_geekbench {
 			# parse the public results page for the single and multi core geekbench scores
 			[[ $VERSION == *4* ]] && GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "span class='score'") || \
 				GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "div class='score'")
-				
+
 			GEEKBENCH_SCORES_SINGLE=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | head -n 1)
 			GEEKBENCH_SCORES_MULTI=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | tail -n 1)
-		
+
 			# print the Geekbench results
 			echo -en "\r\033[0K"
 			echo -e "Geekbench $VERSION Benchmark Test:"
