@@ -126,7 +126,7 @@ jobs:
           HOST="${{ matrix.host }}"
           
           # Use musl cross-compilation for all architectures
-          docker run -t -i --rm -v $(pwd):/io --env ARCH=$ARCH --env CROSS=$CROSS --env HOST=$HOST --env VERSION="${{ needs.check-release.outputs.latest-version }}" phusion/holy-build-box-64:latest bash /io/compile-fio.sh
+          docker run --rm -v $(pwd):/io --env ARCH=$ARCH --env CROSS=$CROSS --env HOST=$HOST --env VERSION="${{ needs.check-release.outputs.latest-version }}" phusion/holy-build-box-64:latest bash /io/compile-fio.sh
 
       - name: Verify binary
         run: |
