@@ -1,0 +1,74 @@
+name: Monitor External Releases for Updates
+
+on:
+  schedule:
+    # Check every hour for new releases
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check fio releases
+        id: check-fio
+        run: |
+          # Get latest fio release
+          LATEST_FIO=$(curl -s https://api.github.com/repos/axboe/fio/releases/latest | jq -r '.tag_name')
+          echo "Latest fio: $LATEST_FIO"
+          
+          # Check if we already have this version
+          if ! gh release view "fio-$LATEST_FIO" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "New fio version found: $LATEST_FIO"
+            echo "trigger-fio=true" >> $GITHUB_OUTPUT
+            echo "fio-version=$LATEST_FIO" >> $GITHUB_OUTPUT
+          else
+            echo "fio $LATEST_FIO already exists"
+            echo "trigger-fio=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check iperf3 releases
+        id: check-iperf3
+        run: |
+          # Get latest iperf3 release
+          LATEST_IPERF3=$(curl -s https://api.github.com/repos/esnet/iperf/releases/latest | jq -r '.tag_name')
+          echo "Latest iperf3: $LATEST_IPERF3"
+          
+          # Check if we already have this version
+          if ! gh release view "iperf3-$LATEST_IPERF3" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "New iperf3 version found: $LATEST_IPERF3"
+            echo "trigger-iperf3=true" >> $GITHUB_OUTPUT
+            echo "iperf3-version=$LATEST_IPERF3" >> $GITHUB_OUTPUT
+          else
+            echo "iperf3 $LATEST_IPERF3 already exists"
+            echo "trigger-iperf3=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger fio build workflow
+        if: steps.check-fio.outputs.trigger-fio == 'true'
+        run: |
+          echo "Triggering fio build for version ${{ steps.check-fio.outputs.fio-version }}"
+          gh workflow run build-fio.yml --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger iperf3 build workflow
+        if: steps.check-iperf3.outputs.trigger-iperf3 == 'true'
+        run: |
+          echo "Triggering iperf3 build for version ${{ steps.check-iperf3.outputs.iperf3-version }}"
+          gh workflow run build-iperf3.yml --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Summary
+        run: |
+          echo "## Release Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- fio: ${{ steps.check-fio.outputs.trigger-fio == 'true' && 'New version triggered build' || 'No new version' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- iperf3: ${{ steps.check-iperf3.outputs.trigger-iperf3 == 'true' && 'New version triggered build' || 'No new version' }}" >> $GITHUB_STEP_SUMMARY
