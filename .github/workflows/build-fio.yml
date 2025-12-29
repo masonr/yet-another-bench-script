@@ -5,7 +5,7 @@ on:
 
 jobs:
   check-release:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       latest-version: ${{ steps.get-version.outputs.version }}
       should-build: ${{ steps.check-version.outputs.should-build }}
@@ -40,7 +40,7 @@ jobs:
   build:
     needs: check-release
     if: needs.check-release.outputs.should-build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         include:
@@ -144,7 +144,7 @@ jobs:
   virustotal-scan:
     needs: [check-release, build]
     if: needs.check-release.outputs.should-build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       scan-results: ${{ steps.scan-summary.outputs.results }}
       all-clean: ${{ steps.scan-summary.outputs.all-clean }}
@@ -274,7 +274,7 @@ jobs:
   create-release:
     needs: [check-release, build, virustotal-scan]
     if: needs.check-release.outputs.should-build == 'true' && needs.virustotal-scan.outputs.all-clean == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -342,7 +342,7 @@ jobs:
   notify-failure:
     needs: [check-release, build, virustotal-scan]
     if: always() && needs.check-release.outputs.should-build == 'true' && (failure() || needs.virustotal-scan.outputs.all-clean == 'false')
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Send failure notification
         run: |
