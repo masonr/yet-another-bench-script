@@ -10,9 +10,6 @@ jobs:
       latest-version: ${{ steps.get-version.outputs.version }}
       should-build: ${{ steps.check-version.outputs.should-build }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Get latest fio release
         id: get-version
         run: |
@@ -58,9 +55,6 @@ jobs:
             host: arm-linux-gnueabihf
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
