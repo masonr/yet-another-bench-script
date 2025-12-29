@@ -110,7 +110,8 @@ jobs:
           cd fio*
           CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ./configure --disable-native --build-static
           CFLAGS+=' -include linux/falloc.h'
-          make
+          LDFLAGS+=' -latomic'
+          make 
           
           # verify no external shared library links
           libcheck fio
