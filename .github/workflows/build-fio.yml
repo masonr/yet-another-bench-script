@@ -90,7 +90,7 @@ jobs:
           
           # download musl cross compilation toolchain
           cd ~
-          curl -L "https://musl.cc/\$CROSS-cross.tgz" -o "\$CROSS-cross.tgz"
+          curl -L -4 --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 "https://musl.cc/\$CROSS-cross.tgz" -o "\$CROSS-cross.tgz"
           tar xf "\$CROSS-cross.tgz"
           
           # download, compile, and install libaio as static library
