@@ -107,7 +107,7 @@ jobs:
           cd ~
           curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/axboe/fio/archive/\$VERSION.tar.gz" -o "fio.tar.gz"
           tar xf fio.tar.gz
-          cd fio-\${VERSION#fio-}*
+          cd fio*
           CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ./configure --disable-native --build-static
           make
           
