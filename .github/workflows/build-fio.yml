@@ -17,7 +17,7 @@ jobs:
         id: get-version
         run: |
           # Get the latest release tag from GitHub API
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/axboe/fio/releases/latest | jq -r '.tag_name')
+          LATEST_VERSION=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s https://api.github.com/repos/axboe/fio/releases/latest | jq -r '.tag_name')
           echo "Latest fio version: $LATEST_VERSION"
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
@@ -90,12 +90,12 @@ jobs:
           
           # download musl cross compilation toolchain
           cd ~
-          curl -L -4 --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 15 "https://musl.cc/\$CROSS-cross.tgz" -o "\$CROSS-cross.tgz"
+          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://musl.cc/\$CROSS-cross.tgz" -o "\$CROSS-cross.tgz"
           tar xf "\$CROSS-cross.tgz"
           
           # download, compile, and install libaio as static library
           cd ~
-          curl -L http://ftp.de.debian.org/debian/pool/main/liba/libaio/libaio_0.3.113.orig.tar.gz -o "libaio.tar.gz"
+          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 http://ftp.de.debian.org/debian/pool/main/liba/libaio/libaio_0.3.113.orig.tar.gz -o "libaio.tar.gz"
           tar xf libaio.tar.gz
           cd libaio-*/src
           CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ENABLE_SHARED=0 make prefix=/hbb_exe install
@@ -105,7 +105,7 @@ jobs:
           
           # download and compile fio
           cd ~
-          curl -L "https://github.com/axboe/fio/archive/\$VERSION.tar.gz" -o "fio.tar.gz"
+          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/axboe/fio/archive/\$VERSION.tar.gz" -o "fio.tar.gz"
           tar xf fio.tar.gz
           cd fio-\${VERSION#fio-}*
           CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ./configure --disable-native --build-static
@@ -175,7 +175,7 @@ jobs:
             echo "Uploading $filename to VirusTotal..."
             
             # Upload to VirusTotal
-            upload_response=$(curl -s --request POST \
+            upload_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request POST \
               --url https://www.virustotal.com/api/v3/files \
               --header 'accept: application/json' \
               --header 'content-type: multipart/form-data' \
@@ -212,7 +212,7 @@ jobs:
             echo "Retrieving results for $filename (ID: $analysis_id)..."
             
             # Get scan results
-            result_response=$(curl -s --request GET \
+            result_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request GET \
               --url "https://www.virustotal.com/api/v3/analyses/$analysis_id" \
               --header 'accept: application/json' \
               --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
