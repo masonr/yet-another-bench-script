@@ -2,6 +2,7 @@
 
 # Yet Another Bench Script by Mason Rowe
 # Initial Oct 2019; Last update Apr 2025
+# Enhanced version with extended tests, CPU benchmarks, and RAM performance testing
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -11,12 +12,17 @@
 #             overall system performance via Geekbench 4/5/6, and random disk
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
+#
+# Enhanced Features:
+#             - Extended disk tests (-e): Sequential R/W, longer duration, separate random R/W tests
+#             - CPU benchmarks: sysbench prime calculations, OpenSSL cryptographic speed tests
+#             - RAM benchmarks: sysbench memory bandwidth and latency tests
 
-YABS_VERSION="v2025-04-20"
+YABS_VERSION="v2025-04-20-enhanced"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
-echo -e '#                     '$YABS_VERSION'                    #'
+echo -e '#                 '$YABS_VERSION'              #'
 echo -e '# https://github.com/masonr/yet-another-bench-script #'
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 
@@ -60,10 +66,11 @@ fi
 
 # flags to skip certain performance tests
 unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE IPERF_SERVERS
+unset EXTENDED_TEST SKIP_SYSBENCH SKIP_RAM
 GEEKBENCH_6="True" # gb6 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdignhr4596jw:s:p:' flag; do
+while getopts 'bfdignhr4596jw:s:p:ecm' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -81,6 +88,9 @@ while getopts 'bfdignhr4596jw:s:p:' flag; do
 		w) JSON+="w" && JSON_FILE=${OPTARG} ;;
 		s) JSON+="s" && JSON_SEND=${OPTARG} ;;
 		p) IPERF_SERVERS=${OPTARG} ;;
+		e) EXTENDED_TEST="True" ;;
+		c) SKIP_SYSBENCH="True" ;;
+		m) SKIP_RAM="True" ;;
 		*) exit 1 ;;
 	esac
 done
@@ -112,6 +122,19 @@ else
     unset LOCAL_CURL
 fi
 
+# check for sysbench
+if command -v sysbench >/dev/null 2>&1; then
+    LOCAL_SYSBENCH=true
+else
+    unset LOCAL_SYSBENCH
+fi
+
+# check for openssl
+if command -v openssl >/dev/null 2>&1; then
+    LOCAL_OPENSSL=true
+else
+    unset LOCAL_OPENSSL
+fi
 
 # test if the host has IPv4/IPv6 connectivity
 [[ -n $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
@@ -152,6 +175,10 @@ if [ -n "$PRINT_HELP" ]; then
 	echo -e "       -p <servers> : specify custom iperf servers (format: host:port_range:name:location:network_modes)"
 	echo -e "                      multiple servers separated by commas"
 	echo -e "                      example: -p \"example.com:5201-5210:MyServer:New York (10G):IPv4|IPv6\""
+	echo -e "       -e : enable extended tests (longer disk tests with sequential I/O,"
+	echo -e "            additional CPU benchmarks via sysbench and openssl)"
+	echo -e "       -c : skip CPU benchmarks (sysbench and openssl speed tests)"
+	echo -e "       -m : skip RAM/memory benchmark test"
 	echo -e
 	echo -e "Detected Arch: $ARCH"
 	echo -e
@@ -166,6 +193,9 @@ if [ -n "$PRINT_HELP" ]; then
 	[[ -n $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
 	[[ -n $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
 	[[ -n $IPERF_SERVERS ]] && echo -e "       -p, using custom iperf servers: $IPERF_SERVERS"
+	[[ -n $EXTENDED_TEST ]] && echo -e "       -e, running extended tests"
+	[[ -n $SKIP_SYSBENCH ]] && echo -e "       -c, skipping CPU benchmarks (sysbench/openssl)"
+	[[ -n $SKIP_RAM ]] && echo -e "       -m, skipping RAM benchmark"
 	echo -e
 	echo -e "Local Binary Check:"
 	([[ -z $LOCAL_FIO ]] && echo -e "       fio not detected, will download precompiled binary") ||
@@ -174,6 +204,10 @@ if [ -n "$PRINT_HELP" ]; then
 	([[ -z $LOCAL_IPERF ]] && echo -e "       iperf3 not detected, will download precompiled binary") ||
 		([[ -z $PREFER_BIN ]] && echo -e "       iperf3 detected, using local package") ||
 		echo -e "       iperf3 detected, but using precompiled binary instead"
+	([[ -z $LOCAL_SYSBENCH ]] && echo -e "       sysbench not detected (CPU/RAM benchmarks will be limited)") ||
+		echo -e "       sysbench detected"
+	([[ -z $LOCAL_OPENSSL ]] && echo -e "       openssl not detected (crypto benchmark unavailable)") ||
+		echo -e "       openssl detected"
 	echo -e
 	echo -e "Detected Connectivity:"
 	[[ -n $IPV4_CHECK ]] && echo -e "       IPv4 connected" ||
@@ -529,6 +563,143 @@ function dd_test {
 	DISK_READ_TEST_AVG=$(awk -v a="$DISK_READ_TEST_AVG" 'BEGIN { print a / 3 }')
 }
 
+# disk_test_extended
+# Purpose: Run extended disk tests with longer duration, sequential I/O, and separate random read/write tests
+# Parameters:
+#          - (none)
+function disk_test_extended {
+	if [[ "$ARCH" = "aarch64" || "$ARCH" = "arm" ]]; then
+		FIO_SIZE=512M
+	else
+		FIO_SIZE=2G
+	fi
+
+	# Extended test uses 60 second runtime instead of 30
+	FIO_RUNTIME=60
+	FIO_TIMEOUT=$((FIO_RUNTIME + 10))
+
+	# Sequential read/write tests with different block sizes
+	EXTENDED_BLOCK_SIZES=( "128k" "1m" "4m" )
+
+	# Initialize arrays for extended results
+	declare -a DISK_EXT_SEQ_RESULTS DISK_EXT_SEQ_RESULTS_RAW
+	declare -a DISK_EXT_RANDREAD_RESULTS DISK_EXT_RANDREAD_RESULTS_RAW
+	declare -a DISK_EXT_RANDWRITE_RESULTS DISK_EXT_RANDWRITE_RESULTS_RAW
+
+	echo -e "\nExtended Disk Tests (Sequential R/W):"
+	echo -e "---------------------------------"
+
+	# Sequential Read tests
+	for BS in "${EXTENDED_BLOCK_SIZES[@]}"; do
+		echo -en "Running extended fio sequential READ test with $BS block size (${FIO_RUNTIME}s)..."
+		SEQ_READ_TEST=$(timeout "$FIO_TIMEOUT" "$FIO_CMD" --name=seq_read_"$BS" --ioengine=libaio --rw=read --bs="$BS" --iodepth=64 --numjobs=2 --size="$FIO_SIZE" --runtime="$FIO_RUNTIME" --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep seq_read_"$BS")
+		SEQ_READ_IOPS=$(echo "$SEQ_READ_TEST" | awk -F';' '{print $8}')
+		SEQ_READ_SPEED=$(echo "$SEQ_READ_TEST" | awk -F';' '{print $7}')
+		DISK_EXT_SEQ_RESULTS_RAW+=( "read" "$BS" "$SEQ_READ_SPEED" "$SEQ_READ_IOPS" )
+		DISK_EXT_SEQ_RESULTS+=( "read" "$BS" "$(format_speed "$SEQ_READ_SPEED")" "$(format_iops "$SEQ_READ_IOPS")" )
+		echo -en "\r\033[0K"
+	done
+
+	# Sequential Write tests
+	for BS in "${EXTENDED_BLOCK_SIZES[@]}"; do
+		echo -en "Running extended fio sequential WRITE test with $BS block size (${FIO_RUNTIME}s)..."
+		SEQ_WRITE_TEST=$(timeout "$FIO_TIMEOUT" "$FIO_CMD" --name=seq_write_"$BS" --ioengine=libaio --rw=write --bs="$BS" --iodepth=64 --numjobs=2 --size="$FIO_SIZE" --runtime="$FIO_RUNTIME" --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep seq_write_"$BS")
+		SEQ_WRITE_IOPS=$(echo "$SEQ_WRITE_TEST" | awk -F';' '{print $49}')
+		SEQ_WRITE_SPEED=$(echo "$SEQ_WRITE_TEST" | awk -F';' '{print $48}')
+		DISK_EXT_SEQ_RESULTS_RAW+=( "write" "$BS" "$SEQ_WRITE_SPEED" "$SEQ_WRITE_IOPS" )
+		DISK_EXT_SEQ_RESULTS+=( "write" "$BS" "$(format_speed "$SEQ_WRITE_SPEED")" "$(format_iops "$SEQ_WRITE_IOPS")" )
+		echo -en "\r\033[0K"
+	done
+
+	# Print sequential test results
+	printf "%-10s | %-10s | %-15s | %-10s\n" "Type" "Block Size" "Speed" "IOPS"
+	printf "%-10s | %-10s | %-15s | %-10s\n" "------" "----------" "-----" "----"
+	local i=0
+	while [[ $i -lt ${#DISK_EXT_SEQ_RESULTS[@]} ]]; do
+		printf "%-10s | %-10s | %-15s | %-10s\n" "${DISK_EXT_SEQ_RESULTS[$i]}" "${DISK_EXT_SEQ_RESULTS[$((i+1))]}" "${DISK_EXT_SEQ_RESULTS[$((i+2))]}" "${DISK_EXT_SEQ_RESULTS[$((i+3))]}"
+		i=$((i + 4))
+	done
+
+	echo -e "\nExtended Disk Tests (Random Read-only):"
+	echo -e "---------------------------------"
+	RANDOM_BLOCK_SIZES=( "4k" "64k" "512k" )
+
+	# Random Read-only tests
+	for BS in "${RANDOM_BLOCK_SIZES[@]}"; do
+		echo -en "Running extended fio random READ-only test with $BS block size (${FIO_RUNTIME}s)..."
+		RAND_READ_TEST=$(timeout "$FIO_TIMEOUT" "$FIO_CMD" --name=rand_read_"$BS" --ioengine=libaio --rw=randread --bs="$BS" --iodepth=64 --numjobs=2 --size="$FIO_SIZE" --runtime="$FIO_RUNTIME" --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_read_"$BS")
+		RAND_READ_IOPS=$(echo "$RAND_READ_TEST" | awk -F';' '{print $8}')
+		RAND_READ_SPEED=$(echo "$RAND_READ_TEST" | awk -F';' '{print $7}')
+		DISK_EXT_RANDREAD_RESULTS_RAW+=( "$BS" "$RAND_READ_SPEED" "$RAND_READ_IOPS" )
+		DISK_EXT_RANDREAD_RESULTS+=( "$BS" "$(format_speed "$RAND_READ_SPEED")" "$(format_iops "$RAND_READ_IOPS")" )
+		echo -en "\r\033[0K"
+	done
+
+	# Print random read results
+	printf "%-10s | %-15s | %-10s\n" "Block Size" "Speed" "IOPS"
+	printf "%-10s | %-15s | %-10s\n" "----------" "-----" "----"
+	i=0
+	while [[ $i -lt ${#DISK_EXT_RANDREAD_RESULTS[@]} ]]; do
+		printf "%-10s | %-15s | %-10s\n" "${DISK_EXT_RANDREAD_RESULTS[$i]}" "${DISK_EXT_RANDREAD_RESULTS[$((i+1))]}" "${DISK_EXT_RANDREAD_RESULTS[$((i+2))]}"
+		i=$((i + 3))
+	done
+
+	echo -e "\nExtended Disk Tests (Random Write-only):"
+	echo -e "---------------------------------"
+
+	# Random Write-only tests
+	for BS in "${RANDOM_BLOCK_SIZES[@]}"; do
+		echo -en "Running extended fio random WRITE-only test with $BS block size (${FIO_RUNTIME}s)..."
+		RAND_WRITE_TEST=$(timeout "$FIO_TIMEOUT" "$FIO_CMD" --name=rand_write_"$BS" --ioengine=libaio --rw=randwrite --bs="$BS" --iodepth=64 --numjobs=2 --size="$FIO_SIZE" --runtime="$FIO_RUNTIME" --gtod_reduce=1 --direct=1 --filename="$DISK_PATH/test.fio" --group_reporting --minimal 2> /dev/null | grep rand_write_"$BS")
+		RAND_WRITE_IOPS=$(echo "$RAND_WRITE_TEST" | awk -F';' '{print $49}')
+		RAND_WRITE_SPEED=$(echo "$RAND_WRITE_TEST" | awk -F';' '{print $48}')
+		DISK_EXT_RANDWRITE_RESULTS_RAW+=( "$BS" "$RAND_WRITE_SPEED" "$RAND_WRITE_IOPS" )
+		DISK_EXT_RANDWRITE_RESULTS+=( "$BS" "$(format_speed "$RAND_WRITE_SPEED")" "$(format_iops "$RAND_WRITE_IOPS")" )
+		echo -en "\r\033[0K"
+	done
+
+	# Print random write results
+	printf "%-10s | %-15s | %-10s\n" "Block Size" "Speed" "IOPS"
+	printf "%-10s | %-15s | %-10s\n" "----------" "-----" "----"
+	i=0
+	while [[ $i -lt ${#DISK_EXT_RANDWRITE_RESULTS[@]} ]]; do
+		printf "%-10s | %-15s | %-10s\n" "${DISK_EXT_RANDWRITE_RESULTS[$i]}" "${DISK_EXT_RANDWRITE_RESULTS[$((i+1))]}" "${DISK_EXT_RANDWRITE_RESULTS[$((i+2))]}"
+		i=$((i + 3))
+	done
+
+	# Store results for JSON output
+	if [[ -n $JSON ]]; then
+		JSON_RESULT+=',"fio_extended":{"sequential":['
+		i=0
+		while [[ $i -lt ${#DISK_EXT_SEQ_RESULTS_RAW[@]} ]]; do
+			JSON_RESULT+='{"type":"'${DISK_EXT_SEQ_RESULTS_RAW[$i]}'","bs":"'${DISK_EXT_SEQ_RESULTS_RAW[$((i+1))]}'",'
+			JSON_RESULT+='"speed":'${DISK_EXT_SEQ_RESULTS_RAW[$((i+2))]}','
+			JSON_RESULT+='"iops":'${DISK_EXT_SEQ_RESULTS_RAW[$((i+3))]}',"speed_units":"KBps"},'
+			i=$((i + 4))
+		done
+		JSON_RESULT=${JSON_RESULT%,}
+		JSON_RESULT+='],"random_read":['
+		i=0
+		while [[ $i -lt ${#DISK_EXT_RANDREAD_RESULTS_RAW[@]} ]]; do
+			JSON_RESULT+='{"bs":"'${DISK_EXT_RANDREAD_RESULTS_RAW[$i]}'",'
+			JSON_RESULT+='"speed":'${DISK_EXT_RANDREAD_RESULTS_RAW[$((i+1))]}','
+			JSON_RESULT+='"iops":'${DISK_EXT_RANDREAD_RESULTS_RAW[$((i+2))]}',"speed_units":"KBps"},'
+			i=$((i + 3))
+		done
+		JSON_RESULT=${JSON_RESULT%,}
+		JSON_RESULT+='],"random_write":['
+		i=0
+		while [[ $i -lt ${#DISK_EXT_RANDWRITE_RESULTS_RAW[@]} ]]; do
+			JSON_RESULT+='{"bs":"'${DISK_EXT_RANDWRITE_RESULTS_RAW[$i]}'",'
+			JSON_RESULT+='"speed":'${DISK_EXT_RANDWRITE_RESULTS_RAW[$((i+1))]}','
+			JSON_RESULT+='"iops":'${DISK_EXT_RANDWRITE_RESULTS_RAW[$((i+2))]}',"speed_units":"KBps"},'
+			i=$((i + 3))
+		done
+		JSON_RESULT=${JSON_RESULT%,}
+		JSON_RESULT+=']}'
+	fi
+}
+
 # check if disk performance is being tested and the host has required space (2G)
 AVAIL_SPACE=$(df -k . | awk 'NR==2{print $4}')
 if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 && "$ARCH" != "aarch64" && "$ARCH" != "arm" ]]; then # 2GB = 2097152KB
@@ -726,6 +897,11 @@ fi
 			DISK_COUNT=$((DISK_COUNT + 2))
 		done
 		[[ -n $JSON ]] && JSON_RESULT=${JSON_RESULT::${#JSON_RESULT}-1} && JSON_RESULT+=']'
+
+		# run extended disk tests if extended mode is enabled
+		if [[ -n "$EXTENDED_TEST" ]]; then
+			disk_test_extended
+		fi
 	fi
 fi
 
@@ -934,6 +1110,277 @@ if [ -z "$SKIP_IPERF" ]; then
 	else
 		echo -e "\niperf3 binary download failed. Skipping iperf network tests..."
 	fi
+fi
+
+# sysbench_cpu_test
+# Purpose: This method runs sysbench CPU benchmark to measure CPU performance
+# Parameters:
+#          1. THREADS - number of threads to use (optional, defaults to all cores)
+#          2. TIME - duration in seconds (optional, defaults to 30)
+function sysbench_cpu_test {
+	local THREADS=${1:-$CPU_CORES}
+	local TIME=${2:-30}
+
+	echo -en "Running sysbench CPU test with $THREADS threads for ${TIME}s..."
+
+	# Run sysbench CPU benchmark (prime numbers calculation up to 20000)
+	SYSBENCH_RESULT=$(sysbench cpu --cpu-max-prime=20000 --threads="$THREADS" --time="$TIME" run 2>/dev/null)
+
+	# Parse results
+	SYSBENCH_EVENTS=$(echo "$SYSBENCH_RESULT" | grep "total number of events" | awk '{print $NF}')
+	SYSBENCH_EVENTS_SEC=$(echo "$SYSBENCH_RESULT" | grep "events per second" | awk '{print $NF}')
+	SYSBENCH_LATENCY_AVG=$(echo "$SYSBENCH_RESULT" | grep "avg:" | awk '{print $NF}')
+	SYSBENCH_LATENCY_MAX=$(echo "$SYSBENCH_RESULT" | grep "max:" | awk '{print $NF}')
+
+	echo -en "\r\033[0K"
+}
+
+# openssl_speed_test
+# Purpose: This method runs openssl speed benchmark to measure cryptographic performance
+# Parameters:
+#          - (none)
+function openssl_speed_test {
+	echo -en "Running OpenSSL speed benchmark..."
+
+	# Test AES-256-GCM (commonly used cipher)
+	OPENSSL_AES=$(openssl speed -elapsed -evp aes-256-gcm 2>/dev/null | grep "aes-256-gcm" | tail -1)
+	OPENSSL_AES_16=$(echo "$OPENSSL_AES" | awk '{print $2}')
+	OPENSSL_AES_64=$(echo "$OPENSSL_AES" | awk '{print $3}')
+	OPENSSL_AES_256=$(echo "$OPENSSL_AES" | awk '{print $4}')
+	OPENSSL_AES_1024=$(echo "$OPENSSL_AES" | awk '{print $5}')
+	OPENSSL_AES_8192=$(echo "$OPENSSL_AES" | awk '{print $6}')
+	OPENSSL_AES_16384=$(echo "$OPENSSL_AES" | awk '{print $7}')
+
+	# Test SHA256 (commonly used hash)
+	OPENSSL_SHA256=$(openssl speed -elapsed sha256 2>/dev/null | grep "sha256" | tail -1)
+	OPENSSL_SHA256_16=$(echo "$OPENSSL_SHA256" | awk '{print $2}')
+	OPENSSL_SHA256_64=$(echo "$OPENSSL_SHA256" | awk '{print $3}')
+	OPENSSL_SHA256_256=$(echo "$OPENSSL_SHA256" | awk '{print $4}')
+	OPENSSL_SHA256_1024=$(echo "$OPENSSL_SHA256" | awk '{print $5}')
+	OPENSSL_SHA256_8192=$(echo "$OPENSSL_SHA256" | awk '{print $6}')
+	OPENSSL_SHA256_16384=$(echo "$OPENSSL_SHA256" | awk '{print $7}')
+
+	echo -en "\r\033[0K"
+}
+
+# format_openssl_speed
+# Purpose: Format OpenSSL speed results to human-readable form
+# Parameters:
+#          1. SPEED - the raw speed in bytes per second
+# Returns:
+#          Formatted speed in appropriate units (KB/s, MB/s, GB/s)
+function format_openssl_speed {
+	local SPEED=$1
+
+	# Handle empty or invalid input
+	if [[ -z "$SPEED" || "$SPEED" == "0" ]]; then
+		echo "N/A"
+		return
+	fi
+
+	# Convert to numeric (handle scientific notation if present)
+	local SPEED_NUM=$(echo "$SPEED" | awk '{printf "%.0f", $1}')
+
+	if [[ $SPEED_NUM -ge 1073741824 ]]; then
+		echo "$(awk -v s="$SPEED_NUM" 'BEGIN {printf "%.2f GB/s", s/1073741824}')"
+	elif [[ $SPEED_NUM -ge 1048576 ]]; then
+		echo "$(awk -v s="$SPEED_NUM" 'BEGIN {printf "%.2f MB/s", s/1048576}')"
+	elif [[ $SPEED_NUM -ge 1024 ]]; then
+		echo "$(awk -v s="$SPEED_NUM" 'BEGIN {printf "%.2f KB/s", s/1024}')"
+	else
+		echo "${SPEED_NUM} B/s"
+	fi
+}
+
+# launch_cpu_benchmarks
+# Purpose: Run CPU benchmarks (sysbench and openssl) and display results
+function launch_cpu_benchmarks {
+	echo -e
+	echo -e "CPU Performance Benchmarks:"
+	echo -e "---------------------------------"
+
+	# Sysbench CPU test
+	if [[ -n $LOCAL_SYSBENCH ]]; then
+		# Single-threaded test
+		sysbench_cpu_test 1 30
+		SYSBENCH_SINGLE_EVENTS=$SYSBENCH_EVENTS
+		SYSBENCH_SINGLE_EPS=$SYSBENCH_EVENTS_SEC
+		SYSBENCH_SINGLE_LAT=$SYSBENCH_LATENCY_AVG
+
+		# Multi-threaded test (all cores)
+		sysbench_cpu_test "$CPU_CORES" 30
+		SYSBENCH_MULTI_EVENTS=$SYSBENCH_EVENTS
+		SYSBENCH_MULTI_EPS=$SYSBENCH_EVENTS_SEC
+		SYSBENCH_MULTI_LAT=$SYSBENCH_LATENCY_AVG
+
+		echo -e "Sysbench CPU Test (Prime Numbers up to 20000):"
+		printf "%-20s | %-15s | %-15s | %-15s\n" "Test" "Events" "Events/Sec" "Avg Latency"
+		printf "%-20s | %-15s | %-15s | %-15s\n" "----" "------" "----------" "-----------"
+		printf "%-20s | %-15s | %-15s | %-15s\n" "Single Thread" "$SYSBENCH_SINGLE_EVENTS" "$SYSBENCH_SINGLE_EPS" "${SYSBENCH_SINGLE_LAT}ms"
+		printf "%-20s | %-15s | %-15s | %-15s\n" "Multi Thread ($CPU_CORES)" "$SYSBENCH_MULTI_EVENTS" "$SYSBENCH_MULTI_EPS" "${SYSBENCH_MULTI_LAT}ms"
+
+		if [[ -n $JSON ]]; then
+			JSON_RESULT+=',"sysbench_cpu":{"single":{"events":'${SYSBENCH_SINGLE_EVENTS:-0}',"events_per_sec":'${SYSBENCH_SINGLE_EPS:-0}',"latency_avg":'${SYSBENCH_SINGLE_LAT:-0}'},'
+			JSON_RESULT+='"multi":{"threads":'$CPU_CORES',"events":'${SYSBENCH_MULTI_EVENTS:-0}',"events_per_sec":'${SYSBENCH_MULTI_EPS:-0}',"latency_avg":'${SYSBENCH_MULTI_LAT:-0}'}}'
+		fi
+	else
+		echo -e "Sysbench not installed. Skipping sysbench CPU benchmark."
+		echo -e "Install with: apt install sysbench (Debian/Ubuntu) or yum install sysbench (RHEL/CentOS)"
+	fi
+
+	# OpenSSL speed test
+	if [[ -n $LOCAL_OPENSSL ]]; then
+		echo -e
+		echo -e "OpenSSL Cryptographic Performance:"
+
+		openssl_speed_test
+
+		echo -e "AES-256-GCM Encryption:"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "Block" "Speed" "Block" "Speed"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "-----" "-----" "-----" "-----"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "16 bytes" "$(format_openssl_speed "$OPENSSL_AES_16")" "1024 bytes" "$(format_openssl_speed "$OPENSSL_AES_1024")"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "64 bytes" "$(format_openssl_speed "$OPENSSL_AES_64")" "8192 bytes" "$(format_openssl_speed "$OPENSSL_AES_8192")"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "256 bytes" "$(format_openssl_speed "$OPENSSL_AES_256")" "16384 bytes" "$(format_openssl_speed "$OPENSSL_AES_16384")"
+
+		echo -e
+		echo -e "SHA256 Hashing:"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "Block" "Speed" "Block" "Speed"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "-----" "-----" "-----" "-----"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "16 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_16")" "1024 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_1024")"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "64 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_64")" "8192 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_8192")"
+		printf "%-10s | %-15s | %-15s | %-15s\n" "256 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_256")" "16384 bytes" "$(format_openssl_speed "$OPENSSL_SHA256_16384")"
+
+		if [[ -n $JSON ]]; then
+			JSON_RESULT+=',"openssl":{"aes_256_gcm":{"16":'${OPENSSL_AES_16:-0}',"64":'${OPENSSL_AES_64:-0}',"256":'${OPENSSL_AES_256:-0}',"1024":'${OPENSSL_AES_1024:-0}',"8192":'${OPENSSL_AES_8192:-0}',"16384":'${OPENSSL_AES_16384:-0}'},'
+			JSON_RESULT+='"sha256":{"16":'${OPENSSL_SHA256_16:-0}',"64":'${OPENSSL_SHA256_64:-0}',"256":'${OPENSSL_SHA256_256:-0}',"1024":'${OPENSSL_SHA256_1024:-0}',"8192":'${OPENSSL_SHA256_8192:-0}',"16384":'${OPENSSL_SHA256_16384:-0}'}}'
+		fi
+	else
+		echo -e "\nOpenSSL not installed. Skipping openssl speed benchmark."
+	fi
+}
+
+# Run CPU benchmarks if not skipped
+if [[ -z "$SKIP_SYSBENCH" ]]; then
+	launch_cpu_benchmarks
+fi
+
+# sysbench_memory_test
+# Purpose: This method runs sysbench memory benchmark to measure RAM performance
+# Parameters:
+#          1. THREADS - number of threads to use
+#          2. BLOCK_SIZE - memory block size for operations
+#          3. TOTAL_SIZE - total data size to transfer
+#          4. OPERATION - read or write
+function sysbench_memory_test {
+	local THREADS=${1:-1}
+	local BLOCK_SIZE=${2:-"1K"}
+	local TOTAL_SIZE=${3:-"10G"}
+	local OPERATION=${4:-"read"}
+
+	echo -en "Running sysbench memory $OPERATION test ($BLOCK_SIZE blocks, $THREADS threads)..."
+
+	# Run sysbench memory benchmark
+	SYSBENCH_MEM_RESULT=$(sysbench memory --memory-block-size="$BLOCK_SIZE" --memory-total-size="$TOTAL_SIZE" --memory-oper="$OPERATION" --threads="$THREADS" run 2>/dev/null)
+
+	# Parse results
+	MEM_OPERATIONS=$(echo "$SYSBENCH_MEM_RESULT" | grep "Total operations:" | awk '{print $3}')
+	MEM_THROUGHPUT=$(echo "$SYSBENCH_MEM_RESULT" | grep -E "transferred \(" | sed 's/.*(\(.*\))/\1/')
+	MEM_OPS_SEC=$(echo "$SYSBENCH_MEM_RESULT" | grep "Total operations:" | awk -F'[()]' '{print $2}' | awk '{print $1}')
+	MEM_LATENCY_AVG=$(echo "$SYSBENCH_MEM_RESULT" | grep "avg:" | awk '{print $NF}')
+
+	echo -en "\r\033[0K"
+}
+
+# launch_ram_benchmark
+# Purpose: Run RAM/memory benchmarks and display results
+function launch_ram_benchmark {
+	echo -e
+	echo -e "RAM Performance Benchmark:"
+	echo -e "---------------------------------"
+
+	if [[ -n $LOCAL_SYSBENCH ]]; then
+		declare -a RAM_RESULTS RAM_RESULTS_RAW
+
+		# Test different block sizes and operations
+		BLOCK_SIZES_MEM=( "1K" "4K" "1M" )
+
+		# Single-threaded read tests
+		echo -e "Memory Read Performance (Single Thread):"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "Block Size" "Throughput" "Operations/Sec" "Latency"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "----------" "----------" "--------------" "-------"
+
+		for BS in "${BLOCK_SIZES_MEM[@]}"; do
+			sysbench_memory_test 1 "$BS" "10G" "read"
+			printf "%-12s | %-20s | %-15s | %-12s\n" "$BS" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "${MEM_LATENCY_AVG}ms"
+			RAM_RESULTS_RAW+=( "read" "1" "$BS" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "$MEM_LATENCY_AVG" )
+		done
+
+		# Single-threaded write tests
+		echo -e
+		echo -e "Memory Write Performance (Single Thread):"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "Block Size" "Throughput" "Operations/Sec" "Latency"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "----------" "----------" "--------------" "-------"
+
+		for BS in "${BLOCK_SIZES_MEM[@]}"; do
+			sysbench_memory_test 1 "$BS" "10G" "write"
+			printf "%-12s | %-20s | %-15s | %-12s\n" "$BS" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "${MEM_LATENCY_AVG}ms"
+			RAM_RESULTS_RAW+=( "write" "1" "$BS" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "$MEM_LATENCY_AVG" )
+		done
+
+		# Multi-threaded test with all cores (using 1M blocks for bandwidth test)
+		echo -e
+		echo -e "Memory Bandwidth (Multi-Thread, $CPU_CORES threads, 1M blocks):"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "Operation" "Throughput" "Operations/Sec" "Latency"
+		printf "%-12s | %-20s | %-15s | %-12s\n" "---------" "----------" "--------------" "-------"
+
+		sysbench_memory_test "$CPU_CORES" "1M" "20G" "read"
+		MEM_MULTI_READ_THROUGHPUT=$MEM_THROUGHPUT
+		MEM_MULTI_READ_OPS=$MEM_OPS_SEC
+		MEM_MULTI_READ_LAT=$MEM_LATENCY_AVG
+		printf "%-12s | %-20s | %-15s | %-12s\n" "Read" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "${MEM_LATENCY_AVG}ms"
+		RAM_RESULTS_RAW+=( "read" "$CPU_CORES" "1M" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "$MEM_LATENCY_AVG" )
+
+		sysbench_memory_test "$CPU_CORES" "1M" "20G" "write"
+		MEM_MULTI_WRITE_THROUGHPUT=$MEM_THROUGHPUT
+		MEM_MULTI_WRITE_OPS=$MEM_OPS_SEC
+		MEM_MULTI_WRITE_LAT=$MEM_LATENCY_AVG
+		printf "%-12s | %-20s | %-15s | %-12s\n" "Write" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "${MEM_LATENCY_AVG}ms"
+		RAM_RESULTS_RAW+=( "write" "$CPU_CORES" "1M" "$MEM_THROUGHPUT" "$MEM_OPS_SEC" "$MEM_LATENCY_AVG" )
+
+		# Add to JSON results
+		if [[ -n $JSON ]]; then
+			JSON_RESULT+=',"ram_benchmark":{"single_thread":['
+			local i=0
+			local count=0
+			while [[ $count -lt 6 ]]; do
+				JSON_RESULT+='{"operation":"'${RAM_RESULTS_RAW[$i]}'","threads":'${RAM_RESULTS_RAW[$((i+1))]}',"block_size":"'${RAM_RESULTS_RAW[$((i+2))]}'",'
+				JSON_RESULT+='"throughput":"'${RAM_RESULTS_RAW[$((i+3))]}'",'
+				JSON_RESULT+='"ops_per_sec":"'${RAM_RESULTS_RAW[$((i+4))]}'",'
+				JSON_RESULT+='"latency_ms":'${RAM_RESULTS_RAW[$((i+5))]:-0}'},'
+				i=$((i + 6))
+				count=$((count + 1))
+			done
+			JSON_RESULT=${JSON_RESULT%,}
+			JSON_RESULT+='],"multi_thread":['
+			while [[ $i -lt ${#RAM_RESULTS_RAW[@]} ]]; do
+				JSON_RESULT+='{"operation":"'${RAM_RESULTS_RAW[$i]}'","threads":'${RAM_RESULTS_RAW[$((i+1))]}',"block_size":"'${RAM_RESULTS_RAW[$((i+2))]}'",'
+				JSON_RESULT+='"throughput":"'${RAM_RESULTS_RAW[$((i+3))]}'",'
+				JSON_RESULT+='"ops_per_sec":"'${RAM_RESULTS_RAW[$((i+4))]}'",'
+				JSON_RESULT+='"latency_ms":'${RAM_RESULTS_RAW[$((i+5))]:-0}'},'
+				i=$((i + 6))
+			done
+			JSON_RESULT=${JSON_RESULT%,}
+			JSON_RESULT+=']}'
+		fi
+	else
+		echo -e "Sysbench not installed. Skipping RAM benchmark."
+		echo -e "Install with: apt install sysbench (Debian/Ubuntu) or yum install sysbench (RHEL/CentOS)"
+	fi
+}
+
+# Run RAM benchmark if not skipped
+if [[ -z "$SKIP_RAM" ]]; then
+	launch_ram_benchmark
 fi
 
 # launch_geekbench
