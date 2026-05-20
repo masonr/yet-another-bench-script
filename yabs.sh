@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-05-11"
+YABS_VERSION="v2026-05-19"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -569,9 +569,9 @@ elif [ -z "$SKIP_FIO" ]; then
     # Proceed only if a relevant ZFS path was found
     if [[ -n "$long" ]]; then
         # Get the 'Avail' space directly for the detected path and explicitly for ZFS type
-        # The 'Avail' column is the 4th field in `df -Th` output
+        # The 'Avail' column is the 5th field in `df -Th` output (-T adds a Type column, shifting fields right)
         # Example: '7.3T', '104G', '17G'
-        avail_space_with_unit=$(df -Th | grep -w "$long" | awk '$2 == "zfs" {print $4; exit}')
+        avail_space_with_unit=$(df -Th | grep -w "$long" | awk '$2 == "zfs" {print $5; exit}')
 
         # If a valid free space value was extracted
         if [[ -n "$avail_space_with_unit" ]]; then
