@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update May 2026
+# Initial Oct 2019; Last update Jul 2026
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-05-19"
+YABS_VERSION="v2026-07-03"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -383,16 +383,18 @@ function catch_abort() {
 
 # format_speed
 # Purpose: This method is a convenience function to format the output of the fio disk tests which
-#          always returns a result in KB/s. If result is >= 1 GB/s, use GB/s. If result is < 1 GB/s
-#          and >= 1 MB/s, then use MB/s. Otherwise, use KB/s.
+#          always returns a result in KiB/s (fio terse v3 bandwidth fields are always KiB/s regardless
+#          of --kb_base setting). Converts KiB/s to decimal units (KB/s, MB/s, GB/s) for display.
+#          Conversion: multiply KiB/s by 1024 to get bytes/s, then divide by 1000, 1000000, or
+#          1000000000 to get KB/s, MB/s, or GB/s respectively.
+#          Thresholds (in KiB/s): >= 976563 -> GB/s, >= 977 -> MB/s, otherwise -> KB/s
 # Parameters:
-#          1. RAW - the raw disk speed result (in KB/s)
+#          1. RAW - the raw disk speed result (in KiB/s)
 # Returns:
 #          Formatted disk speed in GB/s, MB/s, or KB/s
 function format_speed {
-	RAW=$1 # disk speed in KB/s
+	RAW=$1 # disk speed in KiB/s
 	RESULT=$RAW
-	local DENOM=1
 	local UNIT="KB/s"
 
 	# ensure raw value is not null, if it is, return blank
@@ -401,18 +403,19 @@ function format_speed {
 		return 0
 	fi
 
-	# check if disk speed >= 1 GB/s
-	if [ "$RAW" -ge 1000000 ]; then
-		DENOM=1000000
+	# check if disk speed >= 1 GB/s (976563 KiB/s = 1,000,000,000 bytes/s)
+	if [ "$RAW" -ge 976563 ]; then
 		UNIT="GB/s"
-	# check if disk speed < 1 GB/s && >= 1 MB/s
-	elif [ "$RAW" -ge 1000 ]; then
-		DENOM=1000
+		RESULT=$(awk -v a="$RAW" 'BEGIN { print a * 1024 / 1000000000 }')
+	# check if disk speed >= 1 MB/s (977 KiB/s ~ 1,000,000 bytes/s)
+	elif [ "$RAW" -ge 977 ]; then
 		UNIT="MB/s"
+		RESULT=$(awk -v a="$RAW" 'BEGIN { print a * 1024 / 1000000 }')
+	else
+		# convert KiB/s to KB/s (multiply by 1.024)
+		RESULT=$(awk -v a="$RAW" 'BEGIN { print a * 1024 / 1000 }')
 	fi
 
-	# divide the raw result to get the corresponding formatted result (based on determined unit)
-	RESULT=$(awk -v a="$RESULT" -v b="$DENOM" 'BEGIN { print a / b }')
 	# shorten the formatted result to two decimal places (i.e. x.xx)
 	RESULT=$(echo "$RESULT" | awk -F. '{ printf "%0.2f",$1"."substr($2,1,2) }')
 	# concat formatted result value with units and return result
