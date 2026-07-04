@@ -7,15 +7,17 @@ Logo design by [Dian Pratama](https://github.com/dianp)
 
 This script automates the execution of the best benchmarking tools in the industry. Included are several tests to check the performance of critical areas of a server: disk performance with [fio](https://github.com/axboe/fio), network performance with [iperf3](https://github.com/esnet/iperf), and CPU/memory performance with [Geekbench](https://www.geekbench.com/). The script is designed to not require any external dependencies to be installed nor elevated privileges to run. If there are any features that you would like to see added, feel free to submit an issue describing your feature request or fork the project and submit a PR!
 
+View Daily and Historical 📊 **[YABS Usage Stats Here](https://stats.yabs.sh/)** 📈 ([source](https://github.com/masonr/yabs-stats)).
+
 ### **What's New With YABS?**
+* [04 Jul 2026](https://stats.yabs.sh/) - Check out YABS usage stats here -> https://stats.yabs.sh/
 * [27 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/06eaa2ab3b32355bec8278c51c4be93b3662a96d) - Newly released [Geekbench 6](https://www.geekbench.com/) is added as the default Geekbench test.
 * [26 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/f075baf59c3057983fff0a30ea0c746b5ea88d91) - Network information added to YABS output using [ip-api](https://ip-api.com/).
-* [15 Aug 2022](https://github.com/masonr/yet-another-bench-script/commit/ae24e70fbf7a4848e81a70cf829ec44e060e63d5) - Added JSON output/upload support to export or auto-upload of YABS results for sharing.
 
 ## How to Run
 
 ```
-curl -sL https://yabs.sh | bash
+curl -sL yabs.sh | bash
 ```
 
 or 
@@ -35,7 +37,7 @@ wget -qO- yabs.sh | bash
 ### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
 
 ```
-curl -sL https://yabs.sh | bash -s -- -flags
+curl -sL yabs.sh | bash -s -- -flags
 ```
 
 | Flag | Description |
@@ -73,8 +75,9 @@ Sites supporting submission of YABS JSON results:
 
 | Website | Example Command |
 | --- | --- |
-| [YABSdb](https://yabsdb.com/) | `curl -sL https://yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
-| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL https://yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
+| [YABSdb](https://yabsdb.com/) | `curl -sL yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
+| [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
+| [ServerVerify](https://serververify.com/benchmarks) | (sign up for account) |
 
 Example JSON output: [example.json](bin/example.json).
 
