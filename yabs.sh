@@ -8,11 +8,11 @@
 #
 # Purpose:    The purpose of this script is to quickly gauge the performance of a Linux-
 #             based server by benchmarking network performance via iperf3, CPU and
-#             overall system performance via Geekbench 4/5/6, and random disk
+#             overall system performance via Geekbench 4/5/6/7, and random disk
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-07-03"
+YABS_VERSION="v2026-07-24"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -59,11 +59,11 @@ else
 fi
 
 # flags to skip certain performance tests
-unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE IPERF_SERVERS
+unset PREFER_BIN SKIP_FIO SKIP_IPERF SKIP_GEEKBENCH SKIP_NET PRINT_HELP REDUCE_NET GEEKBENCH_4 GEEKBENCH_5 GEEKBENCH_6 GEEKBENCH_7 DD_FALLBACK IPERF_DL_FAIL JSON JSON_SEND JSON_RESULT JSON_FILE IPERF_SERVERS
 GEEKBENCH_6="True" # gb6 test enabled by default
 
 # get any arguments that were passed to the script and set the associated skip flags (if applicable)
-while getopts 'bfdignhr4596jw:s:p:' flag; do
+while getopts 'bfdignhr45796jw:s:p:' flag; do
 	case "${flag}" in
 		b) PREFER_BIN="True" ;;
 		f) SKIP_FIO="True" ;;
@@ -75,6 +75,7 @@ while getopts 'bfdignhr4596jw:s:p:' flag; do
 		r) REDUCE_NET="True" ;;
 		4) GEEKBENCH_4="True" && unset GEEKBENCH_6 ;;
 		5) GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
+		7) GEEKBENCH_7="True" && unset GEEKBENCH_6 ;;
 		9) GEEKBENCH_4="True" && GEEKBENCH_5="True" && unset GEEKBENCH_6 ;;
 		6) GEEKBENCH_6="True" ;;
 		j) JSON+="j" ;;
@@ -144,8 +145,9 @@ if [ -n "$PRINT_HELP" ]; then
 	echo -e "            to lessen bandwidth usage"
 	echo -e "       -4 : use geekbench 4 instead of geekbench 6"
 	echo -e "       -5 : use geekbench 5 instead of geekbench 6"
+	echo -e "       -7 : use geekbench 7 instead of geekbench 6"
 	echo -e "       -9 : use both geekbench 4 AND geekbench 5 instead of geekbench 6"
-	echo -e "       -6 : use geekbench 6 in addition to 4 and/or 5 (only needed if -4, -5, or -9 are set; -6 must come last)"
+	echo -e "       -6 : use geekbench 6 in addition to 4, 5, and/or 7 (only needed if -4, -5, -7, or -9 are set; -6 must come last)"
 	echo -e "       -j : print jsonified YABS results at conclusion of test"
 	echo -e "       -w <filename> : write jsonified YABS results to disk using file name provided"
 	echo -e "       -s <url> : send jsonified YABS results to URL"
@@ -165,6 +167,7 @@ if [ -n "$PRINT_HELP" ]; then
 	[[ -n $GEEKBENCH_4 ]] && echo -e "       running geekbench 4"
 	[[ -n $GEEKBENCH_5 ]] && echo -e "       running geekbench 5"
 	[[ -n $GEEKBENCH_6 ]] && echo -e "       running geekbench 6"
+	[[ -n $GEEKBENCH_7 ]] && echo -e "       running geekbench 7"
 	[[ -n $IPERF_SERVERS ]] && echo -e "       -p, using custom iperf servers: $IPERF_SERVERS"
 	echo -e
 	echo -e "Local Binary Check:"
@@ -940,7 +943,7 @@ if [ -z "$SKIP_IPERF" ]; then
 fi
 
 # launch_geekbench
-# Purpose: This method is designed to run the Primate Labs' Geekbench 4/5/6 Cross-Platform Benchmark utility
+# Purpose: This method is designed to run the Primate Labs' Geekbench 4/5/6/7 Cross-Platform Benchmark utility
 # Parameters:
 #          1. VERSION - indicates which Geekbench version to run
 function launch_geekbench {
@@ -963,8 +966,8 @@ function launch_geekbench {
 		GB_URL="https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz"
 		[[ "$ARCH" == *"x86"* ]] && GB_CMD="geekbench_x86_32" || GB_CMD="geekbench4"
 		GB_RUN="True"
-	elif [[ $VERSION == *5* || $VERSION == *6* ]]; then # Geekbench v5/6
-		if [[ $ARCH = *x86* && $GEEKBENCH_4 == *False* ]]; then # don't run Geekbench 5 if on 32-bit arch
+	elif [[ $VERSION == *5* || $VERSION == *6* || $VERSION == *7* ]]; then # Geekbench v5/6/7
+		if [[ $ARCH = *x86* && $GEEKBENCH_4 == *False* ]]; then # don't run Geekbench 5/6/7 if on 32-bit arch
 			echo -e "\nGeekbench $VERSION cannot run on 32-bit architectures. Re-run with -4 flag to use"
 			echo -e "Geekbench 4, which can support 32-bit architectures. Skipping Geekbench $VERSION."
 		elif [[ $ARCH = *x86* && $GEEKBENCH_4 == *True* ]]; then
@@ -974,10 +977,14 @@ function launch_geekbench {
 				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-LinuxARMPreview.tar.gz" \
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
 				GB_CMD="geekbench5"
-			else # Geekbench v6
+			elif [[ $VERSION == *6* ]]; then # Geekbench v6
 				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.7.1-LinuxARMPreview.tar.gz" \
 					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.7.1-Linux.tar.gz"
 				GB_CMD="geekbench6"
+			else # Geekbench v7
+				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-7.0.0-LinuxARMPreview.tar.gz" \
+					|| GB_URL="https://cdn.geekbench.com/Geekbench-7.0.0-Linux.tar.gz"
+				GB_CMD="geekbench7"
 			fi
 			GB_RUN="True"
 		fi
@@ -1010,7 +1017,7 @@ function launch_geekbench {
 				# Geekbench test failed to download because host lacks IPv4 (cdn.geekbench.com = IPv4 only)
 				echo -e "\r\033[0KGeekbench releases can only be downloaded over IPv4. FTP the Geekbench files and run manually."
 			elif [[ $VERSION != *4* && $TOTAL_RAM_RAW -le 1048576 ]]; then
-				# Geekbench 5/6 test failed with low memory (<=1GB)
+				# Geekbench 5/6/7 test failed with low memory (<=1GB)
 				echo -e "\r\033[0KGeekbench test failed and low memory was detected. Add at least 1GB of SWAP or use GB4 instead (higher compatibility with low memory systems)."
 			elif [[ $ARCH != *x86* ]]; then
 				# if the Geekbench test failed for any other reason, exit cleanly and print error message
@@ -1063,6 +1070,10 @@ if [ -z "$SKIP_GEEKBENCH" ]; then
 
 	if [[ $GEEKBENCH_6 == *True* ]]; then
 		launch_geekbench 6
+	fi
+
+	if [[ $GEEKBENCH_7 == *True* ]]; then
+		launch_geekbench 7
 	fi
 	[[ -n $JSON ]] && [[ "${JSON_RESULT: -1}" == ',' ]] && JSON_RESULT="${JSON_RESULT%,}"
 	[[ -n $JSON ]] && JSON_RESULT+="]"
