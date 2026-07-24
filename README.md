@@ -10,6 +10,7 @@ This script automates the execution of the best benchmarking tools in the indust
 View Daily and Historical 📊 **[YABS Usage Stats Here](https://stats.yabs.sh/)** 📈 ([source](https://github.com/masonr/yabs-stats)).
 
 ### **What's New With YABS?**
+* [24 Jul 2026](https://github.com/masonr/yet-another-bench-script) - [Geekbench 7](https://www.geekbench.com/) is now available via the `-7` flag (Geekbench 6 remains the default).
 * [04 Jul 2026](https://stats.yabs.sh/) - Check out YABS usage stats here -> https://stats.yabs.sh/
 * [27 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/06eaa2ab3b32355bec8278c51c4be93b3662a96d) - Newly released [Geekbench 6](https://www.geekbench.com/) is added as the default Geekbench test.
 * [26 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/f075baf59c3057983fff0a30ea0c746b5ea88d91) - Network information added to YABS output using [ip-api](https://ip-api.com/).
@@ -34,7 +35,7 @@ wget -qO- yabs.sh | bash
 
 **Windows Users**: This script can be run on Windows systems by using [Windows Subsystem for Linux v2 (WSL 2)](https://learn.microsoft.com/en-us/windows/wsl/about). WSLv1 will not run the script and binaries correctly.
 
-### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6, etc.)
+### Flags (Skipping Tests, Reducing iperf Locations, Geekbench 4/5/6/7, etc.)
 
 ```
 curl -sL yabs.sh | bash -s -- -flags
@@ -51,8 +52,9 @@ curl -sL yabs.sh | bash -s -- -flags
 | -r | Reduces the number of iperf locations (Scaleway/Clouvider LON+NYC) to lessen bandwidth usage |
 | -4 | Runs a Geekbench 4 test and disables the Geekbench 6 test |
 | -5 | Runs a Geekbench 5 test and disables the Geekbench 6 test |
+| -7 | Runs a Geekbench 7 test and disables the Geekbench 6 test |
 | -9 | Runs both the Geekbench 4 and 5 tests instead of the Geekbench 6 test |
-| -6 | Re-enables the Geekbench 6 test if any of the following were used: -4, -5, or -9 (-6 flag must be last to not be overridden) |
+| -6 | Re-enables the Geekbench 6 test if any of the following were used: -4, -5, -7, or -9 (-6 flag must be last to not be overridden) |
 | -j | Prints a JSON representation of the results to the screen |
 | -w \<filename\> | Writes the JSON results to a file using the file name provided |
 | -s \<url\> | Sends a JSON representation of the results to the designated URL(s) (see section below) |
@@ -85,7 +87,7 @@ Example JSON output: [example.json](bin/example.json).
 
 * **[fio](https://github.com/axboe/fio)** - the most comprehensive I/O testing software available, fio grants the ability to evaluate disk performance in a variety of methods with a variety of options. Four random read and write fio disk tests are conducted as part of this script with 4k, 64k, 512k, and 1m block sizes. The tests are designed to evaluate disk throughput in near-real world (using random) scenarios with a 50/50 split (50% reads and 50% writes per test).
 * **[iperf3](https://github.com/esnet/iperf)** - the industry standard for testing download and upload speeds to various locations. This script utilizes iperf3 with 8 parallel threads and tests both download and upload speeds. If an iperf server is busy after 5 tries, the speed test for that location/direction is skipped.
-* **[Geekbench](https://www.geekbench.com/)** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench result to your Geekbench profile is written to a file in the directory that this script is executed from. By default, Geekbench 6 is the only Geekbench test performed, however, Geekbench 4 and/or 5 can also be toggled on by passing the appropriate flag.
+* **[Geekbench](https://www.geekbench.com/)** - Geekbench is a benchmarking program that measures system performance, which is widely used in the tech community. The web URL is displayed to be able to see complete test and individual benchmark results and allow comparison to other geekbench'd systems. The claim URL to add the Geekbench result to your Geekbench profile is written to a file in the directory that this script is executed from. By default, Geekbench 6 is the only Geekbench test performed, however, Geekbench 4, 5, and/or 7 can also be toggled on by passing the appropriate flag.
 
 ### Security Notice
 
