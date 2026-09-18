@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Yet Another Bench Script by Mason Rowe
-# Initial Oct 2019; Last update Jul 2026
+# Initial Oct 2019; Last update Sep 2026
 
 # Disclaimer: This project is a work in progress. Any errors or suggestions should be
 #             relayed to me via the GitHub project page linked below.
@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-07-24"
+YABS_VERSION="v2026-09-17"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -1005,7 +1005,8 @@ function launch_geekbench {
 		test -f "geekbench.license" && "$GEEKBENCH_PATH/$GB_CMD" --unlock "$(cat geekbench.license)" > /dev/null 2>&1
 
 		# run the Geekbench test and grep the test results URL given at the end of the test
-		GEEKBENCH_TEST=$("$GEEKBENCH_PATH/$GB_CMD" --upload 2>/dev/null | grep "https://browser")
+		GEEKBENCH_OUTPUT=$("$GEEKBENCH_PATH/$GB_CMD" --upload 2>/dev/null)
+		GEEKBENCH_TEST=$(echo "$GEEKBENCH_OUTPUT" | grep "https://browser")
 
 		# ensure the test ran successfully
 		if [ -z "$GEEKBENCH_TEST" ]; then
@@ -1027,14 +1028,26 @@ function launch_geekbench {
 			# if the Geekbench test succeeded, parse the test results URL
 			GEEKBENCH_URL=$(echo -e "$GEEKBENCH_TEST" | head -1 | awk '{ print $1 }')
 			GEEKBENCH_URL_CLAIM=$(echo -e "$GEEKBENCH_TEST" | tail -1 | awk '{ print $1 }')
-			# sleep a bit to wait for results to be made available on the geekbench website
-			sleep 10
-			# parse the public results page for the single and multi core geekbench scores
-			[[ $VERSION == *4* ]] && GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "span class='score'") || \
-				GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "div class='score'")
 
-			GEEKBENCH_SCORES_SINGLE=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | head -n 1)
-			GEEKBENCH_SCORES_MULTI=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | tail -n 1)
+			# newer Geekbench 6/7 releases print the single and multi-core scores to stdout
+			# in the "Benchmark Summary" section; parse them directly from the test output
+			if [[ $VERSION == *6* || $VERSION == *7* ]]; then
+				GEEKBENCH_SCORES_SINGLE=$(echo "$GEEKBENCH_OUTPUT" | grep "Single-Core Score" | awk '{ print $NF }')
+				GEEKBENCH_SCORES_MULTI=$(echo "$GEEKBENCH_OUTPUT" | grep "Multi-Core Score" | awk '{ print $NF }')
+			fi
+
+			# if the scores were not found in the test output (i.e. Geekbench 4/5 or older
+			# 6/7 releases), fetch and parse the public results page for them instead
+			if [[ -z "$GEEKBENCH_SCORES_SINGLE" || -z "$GEEKBENCH_SCORES_MULTI" ]]; then
+				# sleep a bit to wait for results to be made available on the geekbench website
+				sleep 10
+				# parse the public results page for the single and multi core geekbench scores
+				[[ $VERSION == *4* ]] && GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "span class='score'") || \
+					GEEKBENCH_SCORES=$($DL_CMD "$GEEKBENCH_URL" | grep "div class='score'")
+
+				GEEKBENCH_SCORES_SINGLE=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | head -n 1)
+				GEEKBENCH_SCORES_MULTI=$(echo "$GEEKBENCH_SCORES" | awk -v FS="(>|<)" '{ print $3 }' | tail -n 1)
+			fi
 
 			# print the Geekbench results
 			echo -en "\r\033[0K"
