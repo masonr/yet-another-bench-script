@@ -88,9 +88,12 @@ jobs:
           yum install -y yum-plugin-ovl # fix for docker overlay fs
           yum install -y xz
 
-          # download musl cross compilation toolchain
+          # download musl cross compilation toolchain - mirrored as a release asset on
+          # this repo since musl.cc blocks GitHub Actions IP ranges (musl.cc fallback
+          # kept for local runs)
           cd ~
-          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://musl.cc/$CROSS-cross.tgz" -o "$CROSS-cross.tgz"
+          curl -fL -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/masonr/yet-another-bench-script/releases/download/toolchains/$CROSS-cross.tgz" -o "$CROSS-cross.tgz" \
+            || curl -fL -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://musl.cc/$CROSS-cross.tgz" -o "$CROSS-cross.tgz"
           tar xf "$CROSS-cross.tgz"
 
           # Activate Holy Build Box exe compilation environment
