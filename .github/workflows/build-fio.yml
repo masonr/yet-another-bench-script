@@ -2,32 +2,40 @@ name: Build fio Static Binaries
 
 on:
   workflow_dispatch:
+  schedule:
+    # check upstream for a new fio release once a day
+    - cron: '23 5 * * *'
+
+permissions:
+  contents: write
 
 jobs:
   check-release:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       latest-version: ${{ steps.get-version.outputs.version }}
       should-build: ${{ steps.check-version.outputs.should-build }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Get latest fio release
         id: get-version
         run: |
-          # Get the latest release tag from GitHub API
+          # Get the latest release tag from GitHub API (e.g. "fio-3.41")
           LATEST_VERSION=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s https://api.github.com/repos/axboe/fio/releases/latest | jq -r '.tag_name')
           echo "Latest fio version: $LATEST_VERSION"
+          if [ -z "$LATEST_VERSION" ] || [ "$LATEST_VERSION" = "null" ]; then
+            echo "Failed to determine latest fio version"
+            exit 1
+          fi
           echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if version exists in releases
         id: check-version
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
-          
-          # Check if this version already exists in our releases
-          if gh release view "fio-$VERSION" --repo ${{ github.repository }} >/dev/null 2>&1; then
+
+          # Check if this version already exists in our releases (upstream tag is
+          # already prefixed, e.g. "fio-3.41", so it can be used as-is)
+          if gh release view "$VERSION" --repo ${{ github.repository }} >/dev/null 2>&1; then
             echo "Version $VERSION already exists in releases"
             echo "should-build=false" >> $GITHUB_OUTPUT
           else
@@ -40,8 +48,9 @@ jobs:
   build:
     needs: check-release
     if: needs.check-release.outputs.should-build == 'true'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: x64
@@ -58,81 +67,69 @@ jobs:
             host: arm-linux-gnueabihf
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Create compilation script
         run: |
-          VERSION="${{ needs.check-release.outputs.latest-version }}"
-          ARCH="${{ matrix.arch }}"
-          CROSS="${{ matrix.cross }}"
-          HOST="${{ matrix.host }}"
-          
           # Single script for all architectures using musl cross-compilation
-          cat > compile-fio.sh << EOF
+          cat > compile-fio.sh << 'EOF'
           #!/bin/bash
           set -e
-          
+
           # Activate Holy Build Box lib compilation environment
           source /hbb/activate
-          
-          set -x 
-          
+
+          set -x
+
           # remove obsolete CentOS repos
           cd /etc/yum.repos.d/
           rm -f CentOS-Base.repo CentOS-SCLo-scl-rh.repo CentOS-SCLo-scl.repo CentOS-fasttrack.repo CentOS-x86_64-kernel.repo
-          
+
           yum install -y yum-plugin-ovl # fix for docker overlay fs
           yum install -y xz
-          
+
           # download musl cross compilation toolchain
           cd ~
-          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://musl.cc/\$CROSS-cross.tgz" -o "\$CROSS-cross.tgz"
-          tar xf "\$CROSS-cross.tgz"
-          
+          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://musl.cc/$CROSS-cross.tgz" -o "$CROSS-cross.tgz"
+          tar xf "$CROSS-cross.tgz"
+
           # download, compile, and install libaio as static library
           cd ~
           curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 http://ftp.de.debian.org/debian/pool/main/liba/libaio/libaio_0.3.113.orig.tar.gz -o "libaio.tar.gz"
           tar xf libaio.tar.gz
           cd libaio-*/src
-          CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ENABLE_SHARED=0 make prefix=/hbb_exe install
-          
+          CC=/root/$CROSS-cross/bin/$CROSS-gcc ENABLE_SHARED=0 make prefix=/hbb_exe install
+
           # Activate Holy Build Box exe compilation environment
           source /hbb_exe/activate
-          
+
           # download and compile fio
           cd ~
-          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/axboe/fio/archive/\$VERSION.tar.gz" -o "fio.tar.gz"
+          curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/axboe/fio/archive/$VERSION.tar.gz" -o "fio.tar.gz"
           tar xf fio.tar.gz
-          cd fio-\${VERSION#fio-}*
-          CC=/root/\$CROSS-cross/bin/\$CROSS-gcc ./configure --disable-native --build-static
-          make
-          
+          cd fio-fio-*
+          # fio >= 3.42 includes both linux/prctl.h and sys/prctl.h in backend.c, which
+          # redefines struct prctl_mm_map under musl; sys/prctl.h alone is sufficient
+          sed -i '/#include <linux\/prctl.h>/d' backend.c
+          CC=/root/$CROSS-cross/bin/$CROSS-gcc ./configure --disable-native --build-static
+          # link against libatomic for 32-bit/ARM targets that lack native 64-bit atomics
+          make EXTLIBS+=' -latomic'
+
           # verify no external shared library links
           libcheck fio
           # copy fio binary to mounted dir
-          cp fio "/io/fio_\$ARCH"
+          cp fio "/io/fio_$ARCH"
           EOF
-          
+
           chmod +x compile-fio.sh
 
       - name: Compile fio binary
         run: |
-          ARCH="${{ matrix.arch }}"
-          CROSS="${{ matrix.cross }}"
-          HOST="${{ matrix.host }}"
-          
           # Use musl cross-compilation for all architectures
-          docker run --rm -v $(pwd):/io --env ARCH=$ARCH --env CROSS=$CROSS --env HOST=$HOST --env VERSION="${{ needs.check-release.outputs.latest-version }}" phusion/holy-build-box-64:latest bash /io/compile-fio.sh
+          docker run --rm -v $(pwd):/io --env ARCH=${{ matrix.arch }} --env CROSS=${{ matrix.cross }} --env HOST=${{ matrix.host }} --env VERSION="${{ needs.check-release.outputs.latest-version }}" phusion/holy-build-box-64:latest bash /io/compile-fio.sh
 
       - name: Verify binary
         run: |
-          ARCH="${{ matrix.arch }}"
-          ls -la fio_$ARCH
-          file fio_$ARCH
+          ls -la fio_${{ matrix.arch }}
+          file fio_${{ matrix.arch }}
 
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
@@ -144,7 +141,7 @@ jobs:
   virustotal-scan:
     needs: [check-release, build]
     if: needs.check-release.outputs.should-build == 'true'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       scan-results: ${{ steps.scan-summary.outputs.results }}
       all-clean: ${{ steps.scan-summary.outputs.all-clean }}
@@ -166,14 +163,13 @@ jobs:
           echo "## VirusTotal Scan Results" > scan_results.md
           echo "| Binary | Status | Malicious | Suspicious | Undetected | VirusTotal URL |" >> scan_results.md
           echo "|--------|--------|-----------|------------|------------|----------------|" >> scan_results.md
-          
+
           ALL_CLEAN=true
-          SCAN_DATA=""
-          
+
           for binary in scan-binaries/fio_*; do
             filename=$(basename "$binary")
             echo "Uploading $filename to VirusTotal..."
-            
+
             # Upload to VirusTotal
             upload_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request POST \
               --url https://www.virustotal.com/api/v3/files \
@@ -181,23 +177,21 @@ jobs:
               --header 'content-type: multipart/form-data' \
               --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}" \
               --form "file=@$binary")
-            
+
             analysis_id=$(echo "$upload_response" | jq -r '.data.id')
             echo "Analysis ID for $filename: $analysis_id"
-            
+
             if [ "$analysis_id" = "null" ] || [ -z "$analysis_id" ]; then
               echo "Failed to upload $filename to VirusTotal"
               echo "| $filename | Upload Failed | N/A | N/A | N/A | N/A |" >> scan_results.md
               ALL_CLEAN=false
               continue
             fi
-            
+
             # Store analysis ID for later retrieval
             echo "${filename}:${analysis_id}" >> analysis_ids.txt
           done
-          
-          echo "all_clean_upload=$ALL_CLEAN" >> $GITHUB_OUTPUT
-          
+
           # Wait 2 minutes for scans to complete
           echo "Waiting 2 minutes for VirusTotal scans to complete..."
           sleep 120
@@ -206,60 +200,61 @@ jobs:
         id: get-results
         run: |
           ALL_CLEAN=true
-          SCAN_SUMMARY=""
-          
+
           while IFS=':' read -r filename analysis_id; do
             echo "Retrieving results for $filename (ID: $analysis_id)..."
-            
+
             # Get scan results
             result_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request GET \
               --url "https://www.virustotal.com/api/v3/analyses/$analysis_id" \
               --header 'accept: application/json' \
               --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
-            
+
             status=$(echo "$result_response" | jq -r '.data.attributes.status // "unknown"')
-            
+
             if [ "$status" = "completed" ]; then
               malicious=$(echo "$result_response" | jq -r '.data.attributes.stats.malicious // 0')
               suspicious=$(echo "$result_response" | jq -r '.data.attributes.stats.suspicious // 0')
               undetected=$(echo "$result_response" | jq -r '.data.attributes.stats.undetected // 0')
-              
+
               # Get file hash from the item link
               item_link=$(echo "$result_response" | jq -r '.data.links.item // ""')
               file_hash=$(echo "$item_link" | sed 's/.*files\///')
               vt_url="https://www.virustotal.com/gui/file/$file_hash"
-              
+
               if [ "$malicious" -gt 0 ] || [ "$suspicious" -gt 0 ]; then
                 status_text="⚠️ FLAGGED"
                 ALL_CLEAN=false
               else
                 status_text="✅ Clean"
               fi
-              
+
               echo "| $filename | $status_text | $malicious | $suspicious | $undetected | [$file_hash]($vt_url) |" >> scan_results.md
-              
+
             else
               echo "| $filename | ⏳ Pending | N/A | N/A | N/A | Scan not completed |" >> scan_results.md
               ALL_CLEAN=false
             fi
-            
+
           done < analysis_ids.txt
-          
+
           echo "all_clean=$ALL_CLEAN" >> $GITHUB_OUTPUT
-          
+
           # Add summary to GitHub step summary
           cat scan_results.md >> $GITHUB_STEP_SUMMARY
 
       - name: Create scan summary
         id: scan-summary
         run: |
-          RESULTS=$(cat scan_results.md)
           ALL_CLEAN="${{ steps.get-results.outputs.all_clean }}"
-          
-          # Escape newlines for GitHub output
-          RESULTS_ESCAPED=$(echo "$RESULTS" | sed ':a;N;$!ba;s/\n/\\n/g')
-          
-          echo "results=$RESULTS_ESCAPED" >> $GITHUB_OUTPUT
+
+          # Pass the scan results through as a multi-line output (heredoc delimiter
+          # syntax) so the markdown table renders correctly in the release body
+          {
+            echo "results<<RESULTS_EOF"
+            cat scan_results.md
+            echo "RESULTS_EOF"
+          } >> $GITHUB_OUTPUT
           echo "all-clean=$ALL_CLEAN" >> $GITHUB_OUTPUT
 
       - name: Upload scan results as artifact
@@ -274,11 +269,8 @@ jobs:
   create-release:
     needs: [check-release, build, virustotal-scan]
     if: needs.check-release.outputs.should-build == 'true' && needs.virustotal-scan.outputs.all-clean == 'true'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -289,6 +281,13 @@ jobs:
           mkdir -p release-assets
           # Move all binaries to release-assets directory
           find artifacts -name "fio_*" -type f -exec cp {} release-assets/ \;
+          ls -la release-assets/
+
+      - name: Download upstream source tarball
+        run: |
+          # Attach the exact upstream source these binaries were built from
+          # (fio is GPL-2.0; distributing binaries requires offering the source)
+          curl -L --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/axboe/fio/archive/${{ needs.check-release.outputs.latest-version }}.tar.gz" -o "release-assets/${{ needs.check-release.outputs.latest-version }}.tar.gz"
           ls -la release-assets/
 
       - name: Generate SHA256 checksums
@@ -304,36 +303,40 @@ jobs:
           path: vt-results
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: fio-${{ needs.check-release.outputs.latest-version }}
-          name: fio ${{ needs.check-release.outputs.latest-version }} Static Binaries
+          tag_name: ${{ needs.check-release.outputs.latest-version }}
+          name: ${{ needs.check-release.outputs.latest-version }} Static Binaries
           body: |
-            Static binaries for fio ${{ needs.check-release.outputs.latest-version }}
-            
+            Static binaries for ${{ needs.check-release.outputs.latest-version }}
+
             Built using musl toolchains for maximum compatibility.
-            
+
             **Architectures:**
             - `fio_x64` - x86_64 (64-bit)
             - `fio_x86` - i686 (32-bit)
             - `fio_aarch64` - ARM 64-bit
             - `fio_arm` - ARM 32-bit
-            
+
             **Security Verification:**
             All binaries have been scanned by VirusTotal and verified clean.
-            
+
             ${{ needs.virustotal-scan.outputs.scan-results }}
-            
+
             **Checksum Verification:**
             ```bash
             # Verify checksums
             sha256sum -c fio-checksums.sha256
             ```
-            
-            For usage in YABS script, place these binaries in the `bin/fio/` directory.
+
+            **License & Source:**
+            fio is licensed under [GPL-2.0](https://github.com/axboe/fio/blob/master/COPYING) (© Jens Axboe).
+            These are unofficial static builds produced by CI for use by [YABS](https://github.com/masonr/yet-another-bench-script);
+            the exact upstream source is attached as `${{ needs.check-release.outputs.latest-version }}.tar.gz`.
           files: |
             release-assets/fio_*
             release-assets/fio-checksums.sha256
+            release-assets/*.tar.gz
           draft: false
           prerelease: false
         env:
@@ -342,13 +345,13 @@ jobs:
   notify-failure:
     needs: [check-release, build, virustotal-scan]
     if: always() && needs.check-release.outputs.should-build == 'true' && (failure() || needs.virustotal-scan.outputs.all-clean == 'false')
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Send failure notification
         run: |
           echo "## ⚠️ fio Build Failed" >> $GITHUB_STEP_SUMMARY
           echo "Version: ${{ needs.check-release.outputs.latest-version }}" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.virustotal-scan.outputs.all-clean }}" == "false" ]; then
             echo "**Reason:** VirusTotal scan detected issues with one or more binaries" >> $GITHUB_STEP_SUMMARY
             echo "**Scan Results:**" >> $GITHUB_STEP_SUMMARY
@@ -356,5 +359,5 @@ jobs:
           else
             echo "**Reason:** Build compilation failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "Check the workflow logs for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
