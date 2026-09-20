@@ -10,10 +10,9 @@ This script automates the execution of the best benchmarking tools in the indust
 View Daily and Historical 📊 **[YABS Usage Stats Here](https://stats.yabs.sh/)** 📈 ([source](https://github.com/masonr/yabs-stats)).
 
 ### **What's New With YABS?**
+* [19 Sep 2026](https://github.com/masonr/yet-another-bench-script/actions) - fio/iperf3 portable binary builds now automated via GitHub workflows.
 * [24 Jul 2026](https://github.com/masonr/yet-another-bench-script) - [Geekbench 7](https://www.geekbench.com/) is now available via the `-7` flag (Geekbench 6 remains the default).
 * [04 Jul 2026](https://stats.yabs.sh/) - Check out YABS usage stats here -> https://stats.yabs.sh/
-* [27 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/06eaa2ab3b32355bec8278c51c4be93b3662a96d) - Newly released [Geekbench 6](https://www.geekbench.com/) is added as the default Geekbench test.
-* [26 Feb 2023](https://github.com/masonr/yet-another-bench-script/commit/f075baf59c3057983fff0a30ea0c746b5ea88d91) - Network information added to YABS output using [ip-api](https://ip-api.com/).
 
 ## How to Run
 
@@ -79,6 +78,7 @@ Sites supporting submission of YABS JSON results:
 | --- | --- |
 | [YABSdb](https://yabsdb.com/) | `curl -sL yabs.sh \| bash -s -- -s "https://yabsdb.com/add"` |
 | [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
+| [serverlist.dev](https://serverlist.dev/) | `curl -sL yabs.sh | bash -s -- -s "https://serverlist.dev/api/v1/yabs/submit"` |
 | [ServerVerify](https://serververify.com/benchmarks) | (sign up for account) |
 
 Example JSON output: [example.json](bin/example.json).
@@ -91,7 +91,7 @@ Example JSON output: [example.json](bin/example.json).
 
 ### Security Notice
 
-This script relies on external binaries in order to complete the performance tests. The network (iperf3) and disk (fio) tests use binaries that are compiled by myself utilizing a [Holy Build Box](https://github.com/phusion/holy-build-box) compilation environment to ensure binary portability. The reasons for doing this include ensuring standardized (parsable) output, allowing support of both 32-bit and 64-bit architectures, bypassing the need for prerequisites to be compiled and/or installed, among other reasons. For the system test, a Geekbench tarball is downloaded, extracted, and the resulting binary is run. Use this script at your own risk as you would with any script publicly available on the net. Additional information regarding the binaries, including compilation notes and steps, can be found in the bin directory's [README page](bin/README.md).
+This script relies on external binaries in order to complete the performance tests. The network (iperf3) and disk (fio) tests use binaries that are built by GitHub Actions workflows in a [Holy Build Box](https://github.com/phusion/holy-build-box) compilation environment to ensure binary portability, and are published as release assets on this repository (scanned via VirusTotal with SHA-256 checksums included). The reasons for using pre-compiled binaries include ensuring standardized (parsable) output, allowing support of both 32-bit and 64-bit architectures, bypassing the need for prerequisites to be compiled and/or installed, among other reasons. For the system test, a Geekbench tarball is downloaded, extracted, and the resulting binary is run. Use this script at your own risk as you would with any script publicly available on the net. Additional information regarding the binaries, including compilation notes and steps, can be found in the bin directory's [README page](bin/README.md).
 
 ## Example Output
 

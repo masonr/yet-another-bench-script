@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-09-17"
+YABS_VERSION="v2026-09-20"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -193,6 +193,20 @@ if [ -n "$PRINT_HELP" ]; then
 	echo -e "Exiting..."
 
 	exit 0
+fi
+
+# determine which repo release tags to pull the precompiled fio/iperf3 binaries from:
+# auto-detect the latest matching releases from the repo's releases feed and fall
+# back to the pinned tags below if the lookup fails
+FIO_BIN_TAG="fio-3.42" # pinned fallback fio release
+IPERF_BIN_TAG="iperf3-3.21" # pinned fallback iperf3 release
+if [[ -z $SKIP_FIO || -z $SKIP_IPERF ]]; then
+	BIN_RELEASES_FEED=$($IP_CHECK_CMD https://github.com/masonr/yet-another-bench-script/releases.atom 2>/dev/null)
+	FIO_BIN_TAG_LATEST=$(echo "$BIN_RELEASES_FEED" | grep -oE 'fio-[0-9]+\.[0-9]+' | head -n 1)
+	IPERF_BIN_TAG_LATEST=$(echo "$BIN_RELEASES_FEED" | grep -oE 'iperf3-[0-9]+\.[0-9]+' | head -n 1)
+	[[ -n $FIO_BIN_TAG_LATEST ]] && FIO_BIN_TAG=$FIO_BIN_TAG_LATEST
+	[[ -n $IPERF_BIN_TAG_LATEST ]] && IPERF_BIN_TAG=$IPERF_BIN_TAG_LATEST
+	unset FIO_BIN_TAG_LATEST IPERF_BIN_TAG_LATEST BIN_RELEASES_FEED
 fi
 
 # format_size
@@ -646,14 +660,14 @@ fi
 	if [[ -z "$PREFER_BIN" && -n "$LOCAL_FIO" ]]; then # local fio has been detected, use instead of pre-compiled binary
 		FIO_CMD=fio
 	else
-		# download fio binary
+		# download fio binary from the binary release on the repo
 		if [[ -n $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -o "$DISK_PATH/fio"
+			curl -sfL --connect-timeout 5 --retry 5 --retry-delay 0 "https://github.com/masonr/yet-another-bench-script/releases/download/$FIO_BIN_TAG/fio_$ARCH" -o "$DISK_PATH/fio"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/fio/fio_$ARCH -O "$DISK_PATH/fio"
+			wget -q -T 5 -t 5 -w 0 "https://github.com/masonr/yet-another-bench-script/releases/download/$FIO_BIN_TAG/fio_$ARCH" -O "$DISK_PATH/fio"
 		fi
 
-		if [ ! -f "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
+		if [ ! -s "$DISK_PATH/fio" ]; then # ensure fio binary download successfully
 			echo -en "\r\033[0K"
 			echo -e "Fio binary download failed. Running dd test as fallback...."
 			DD_FALLBACK=True
@@ -864,14 +878,14 @@ if [ -z "$SKIP_IPERF" ]; then
 		IPERF_PATH=$YABS_PATH/iperf
 		mkdir -p "$IPERF_PATH"
 
-		# download iperf3 binary
+		# download iperf3 binary from the binary release on the repo
 		if [[ -n $LOCAL_CURL ]]; then
-			curl -s --connect-timeout 5 --retry 5 --retry-delay 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -o "$IPERF_PATH/iperf3"
+			curl -sfL --connect-timeout 5 --retry 5 --retry-delay 0 "https://github.com/masonr/yet-another-bench-script/releases/download/$IPERF_BIN_TAG/iperf3_$ARCH" -o "$IPERF_PATH/iperf3"
 		else
-			wget -q -T 5 -t 5 -w 0 https://raw.githubusercontent.com/masonr/yet-another-bench-script/master/bin/iperf/iperf3_$ARCH -O "$IPERF_PATH/iperf3"
+			wget -q -T 5 -t 5 -w 0 "https://github.com/masonr/yet-another-bench-script/releases/download/$IPERF_BIN_TAG/iperf3_$ARCH" -O "$IPERF_PATH/iperf3"
 		fi
 
-		if [ ! -f "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
+		if [ ! -s "$IPERF_PATH/iperf3" ]; then # ensure iperf3 binary downloaded successfully
 			IPERF_DL_FAIL=True
 		else
 			chmod +x "$IPERF_PATH/iperf3"
