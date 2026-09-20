@@ -196,25 +196,31 @@ jobs:
             echo "${filename}:${analysis_id}" >> analysis_ids.txt
           done
 
-          # Wait 2 minutes for scans to complete
-          echo "Waiting 2 minutes for VirusTotal scans to complete..."
-          sleep 120
-
       - name: Retrieve VirusTotal scan results
         id: get-results
         run: |
           ALL_CLEAN=true
 
+          # Poll each analysis until it completes; VirusTotal scans can take a few
+          # minutes after upload, so allow up to ~5 minutes per binary (10 polls,
+          # 30s apart) before giving up. Files are processed sequentially, so by
+          # the time the first completes the rest are usually already done.
           while IFS=':' read -r filename analysis_id; do
             echo "Retrieving results for $filename (ID: $analysis_id)..."
 
-            # Get scan results
-            result_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request GET \
-              --url "https://www.virustotal.com/api/v3/analyses/$analysis_id" \
-              --header 'accept: application/json' \
-              --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
+            status="queued"
+            for ((attempts=1; attempts<=10; attempts++)); do
+              # Get scan results
+              result_response=$(curl -4 --retry 5 --retry-delay 2 --connect-timeout 15 -s --request GET \
+                --url "https://www.virustotal.com/api/v3/analyses/$analysis_id" \
+                --header 'accept: application/json' \
+                --header "x-apikey: ${{ secrets.VIRUSTOTAL_API_KEY }}")
 
-            status=$(echo "$result_response" | jq -r '.data.attributes.status // "unknown"')
+              status=$(echo "$result_response" | jq -r '.data.attributes.status // "unknown"')
+              [ "$status" = "completed" ] && break
+              echo "$filename still scanning (attempt $attempts of 10), waiting 30s..."
+              sleep 30
+            done
 
             if [ "$status" = "completed" ]; then
               malicious=$(echo "$result_response" | jq -r '.data.attributes.stats.malicious // 0')
@@ -236,7 +242,7 @@ jobs:
               echo "| $filename | $status_text | $malicious | $suspicious | $undetected | [$file_hash]($vt_url) |" >> scan_results.md
 
             else
-              echo "| $filename | ⏳ Pending | N/A | N/A | N/A | Scan not completed |" >> scan_results.md
+              echo "| $filename | ⏳ Timed out | N/A | N/A | N/A | Scan did not complete in ~5 min |" >> scan_results.md
               ALL_CLEAN=false
             fi
 
