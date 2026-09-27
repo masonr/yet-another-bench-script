@@ -80,6 +80,7 @@ Sites supporting submission of YABS JSON results:
 | [VPSBenchmarks](https://www.vpsbenchmarks.com/yabs/get_started) | `curl -sL yabs.sh \| bash -s -- -s https://www.vpsbenchmarks.com/yabs/upload` |
 | [serverlist.dev](https://serverlist.dev/) | `curl -sL yabs.sh \| bash -s -- -s "https://serverlist.dev/api/v1/yabs/submit"` |
 | [ServerVerify](https://serververify.com/benchmarks) | (sign up for account) |
+| [VPS Host Review](https://vpshostreview.com/yabs) | `curl -sL yabs.sh \| bash -s -- -s "https://vpshostreview.com/yabs"` |
 
 Example JSON output: [example.json](bin/example.json).
 
