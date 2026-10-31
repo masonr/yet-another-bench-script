@@ -296,8 +296,18 @@ echo -e "RAM        : $TOTAL_RAM"
 TOTAL_SWAP_RAW=$(free | grep Swap | awk '{ print $2 }')
 TOTAL_SWAP=$(format_size "$TOTAL_SWAP_RAW")
 echo -e "Swap       : $TOTAL_SWAP"
-# total disk size is calculated by adding all partitions of the types listed below (after the -t flags)
-TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t exfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
+# total disk size is calculated by adding all mounted filesystems of the types listed below, counting each
+# source device only once so filesystems mounted multiple times (e.g. btrfs subvolumes, bind mounts) are
+# not double counted; only filtered mounts are stat'd so network mounts (nfs/cifs) are never touched
+DISK_FS_TYPES="simfs ext2 ext3 ext4 btrfs xfs vfat exfat ntfs swap"
+TOTAL_DISK_RAW=$(while read -r FS_SRC FS_MNT FS_TYPE _; do
+	case " $DISK_FS_TYPES " in *" $FS_TYPE "*)
+		# mount points are octal-escaped in /proc/mounts (e.g. "\040" for spaces), decode before use
+		echo "$FS_SRC $(stat -f -c '%b %S' "$(printf '%b' "$FS_MNT")" 2>/dev/null)" ;;
+	esac
+done 2>/dev/null < /proc/mounts | awk 'NF == 3 && !seen[$1]++ { total += $2 * $3 / 1024 } END { if (total > 0) printf "%d\n", total }')
+# fall back to the df-based calculation if the above produced nothing (e.g. stat or /proc/mounts unavailable)
+[[ -z $TOTAL_DISK_RAW ]] && TOTAL_DISK_RAW=$(df -t simfs -t ext2 -t ext3 -t ext4 -t btrfs -t xfs -t vfat -t exfat -t ntfs -t swap --total 2>/dev/null | grep total | awk '{ print $2 }')
 TOTAL_DISK=$(format_size "$TOTAL_DISK_RAW")
 echo -e "Disk       : $TOTAL_DISK"
 DISTRO=$(grep 'PRETTY_NAME' /etc/os-release | cut -d '"' -f 2 )
