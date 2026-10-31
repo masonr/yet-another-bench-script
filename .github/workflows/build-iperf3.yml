@@ -2,6 +2,11 @@ name: Build iperf3 Static Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild even if a release for the latest upstream version already exists (e.g. to add a new architecture)'
+        type: boolean
+        default: false
   schedule:
     # check upstream for a new iperf3 release once a day
     - cron: '47 5 * * *'
@@ -35,8 +40,15 @@ jobs:
 
           # Check if this version already exists in our releases
           if gh release view "iperf3-$VERSION" --repo ${{ github.repository }} >/dev/null 2>&1; then
-            echo "Version $VERSION already exists in releases"
-            echo "should-build=false" >> $GITHUB_OUTPUT
+            # an existing release normally skips the build, but a manual dispatch with
+            # force=true rebuilds anyway (e.g. to add a new architecture to the assets)
+            if [ "${{ inputs.force }}" = "true" ]; then
+              echo "Version $VERSION already exists but force rebuild requested"
+              echo "should-build=true" >> $GITHUB_OUTPUT
+            else
+              echo "Version $VERSION already exists in releases"
+              echo "should-build=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "Version $VERSION does not exist, should build"
             echo "should-build=true" >> $GITHUB_OUTPUT
@@ -67,6 +79,9 @@ jobs:
           - arch: arm
             cross: arm-linux-musleabihf
             host: arm-linux-gnueabihf
+          - arch: riscv64
+            cross: riscv64-linux-musl
+            host: riscv64-linux-gnu
 
     steps:
       - name: Create compilation script
@@ -104,7 +119,9 @@ jobs:
           curl -L -4 --retry 5 --retry-delay 2 --connect-timeout 15 "https://github.com/esnet/iperf/archive/$VERSION.tar.gz" -o "iperf.tar.gz"
           tar xf iperf.tar.gz
           cd iperf-*
-          CC=/root/$CROSS-cross/bin/$CROSS-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host "$HOST" --with-openssl=no --enable-static-bin
+          # -no-pie must be set via LDFLAGS at configure time (passing it to make overrides automake's LDFLAGS and
+          # drops --static); on default-PIE toolchains (riscv64) a static-PIE iperf3 links but segfaults at runtime
+          LDFLAGS="${LDFLAGS} -no-pie" CC=/root/$CROSS-cross/bin/$CROSS-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host "$HOST" --with-openssl=no --enable-static-bin
           # remove libatomic.la so libtool links the static libatomic.a rather than
           # attempting to link libatomic.so into the static binary (breaks arm32 builds)
           rm -f /root/$CROSS-cross/$CROSS/lib/libatomic.la
@@ -349,6 +366,7 @@ jobs:
             - `iperf3_x86` - i686 (32-bit)
             - `iperf3_aarch64` - ARM 64-bit
             - `iperf3_arm` - ARM 32-bit (if available)
+            - `iperf3_riscv64` - RISC-V 64-bit
 
             ${{ steps.check-arm.outputs.arm-note }}
 

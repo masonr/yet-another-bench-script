@@ -2,6 +2,11 @@ name: Build fio Static Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild even if a release for the latest upstream version already exists (e.g. to add a new architecture)'
+        type: boolean
+        default: false
   schedule:
     # check upstream for a new fio release once a day
     - cron: '23 5 * * *'
@@ -36,8 +41,15 @@ jobs:
           # Check if this version already exists in our releases (upstream tag is
           # already prefixed, e.g. "fio-3.41", so it can be used as-is)
           if gh release view "$VERSION" --repo ${{ github.repository }} >/dev/null 2>&1; then
-            echo "Version $VERSION already exists in releases"
-            echo "should-build=false" >> $GITHUB_OUTPUT
+            # an existing release normally skips the build, but a manual dispatch with
+            # force=true rebuilds anyway (e.g. to add a new architecture to the assets)
+            if [ "${{ inputs.force }}" = "true" ]; then
+              echo "Version $VERSION already exists but force rebuild requested"
+              echo "should-build=true" >> $GITHUB_OUTPUT
+            else
+              echo "Version $VERSION already exists in releases"
+              echo "should-build=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "Version $VERSION does not exist, should build"
             echo "should-build=true" >> $GITHUB_OUTPUT
@@ -65,6 +77,9 @@ jobs:
           - arch: arm
             cross: arm-linux-musleabihf
             host: arm-linux-gnueabihf
+          - arch: riscv64
+            cross: riscv64-linux-musl
+            host: riscv64-linux-gnu
 
     steps:
       - name: Create compilation script
@@ -113,8 +128,9 @@ jobs:
           # redefines struct prctl_mm_map under musl; sys/prctl.h alone is sufficient
           sed -i '/#include <linux\/prctl.h>/d' backend.c
           CC=/root/$CROSS-cross/bin/$CROSS-gcc ./configure --disable-native --build-static
-          # link against libatomic for 32-bit/ARM targets that lack native 64-bit atomics
-          make EXTLIBS+=' -latomic'
+          # link against libatomic for 32-bit/ARM targets that lack native 64-bit atomics; -no-pie forces a
+          # classic static executable on default-PIE toolchains (riscv64), where a static-PIE fails to link
+          make EXTLIBS+=' -latomic -no-pie'
 
           # verify no external shared library links
           libcheck fio
@@ -326,6 +342,7 @@ jobs:
             - `fio_x86` - i686 (32-bit)
             - `fio_aarch64` - ARM 64-bit
             - `fio_arm` - ARM 32-bit
+            - `fio_riscv64` - RISC-V 64-bit
 
             **Security Verification:**
             All binaries have been scanned by VirusTotal and verified clean.

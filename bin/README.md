@@ -7,8 +7,8 @@ repository** - they are built automatically by GitHub Actions workflows
 [build-iperf3.yml](../.github/workflows/build-iperf3.yml)) on GitHub-hosted
 runners and published as release assets on this repository:
 
-* `fio-*` releases (e.g. `fio-3.42`) - contain `fio_x64`, `fio_x86`, `fio_aarch64`, `fio_arm`
-* `iperf3-*` releases (e.g. `iperf3-3.21`) - contain `iperf3_x64`, `iperf3_x86`, `iperf3_aarch64`, `iperf3_arm`
+* `fio-*` releases (e.g. `fio-3.42`) - contain `fio_x64`, `fio_x86`, `fio_aarch64`, `fio_arm`, `fio_riscv64`
+* `iperf3-*` releases (e.g. `iperf3-3.21`) - contain `iperf3_x64`, `iperf3_x86`, `iperf3_aarch64`, `iperf3_arm`, `iperf3_riscv64`
 * `toolchains` release - musl cross-compilation toolchains mirrored from
   [musl.cc](https://musl.cc/) (which blocks GitHub Actions IP ranges); see the
   NOTICE.txt asset for licensing/source info
@@ -33,7 +33,7 @@ issue if the binaries are out of date and lacking any security-related and/or
 performance updates - the daily scheduled workflows should pick up new upstream
 releases automatically.
 
-Note: ARM compatibility is considered experimental.
+Note: ARM and RISC-V compatibility is considered experimental.
 
 ### Compile Notes (manual builds)
 
@@ -57,6 +57,10 @@ Compilation of 32-bit and ARM-compatible binaries requires additional
 environment variables to identify the proper musl toolchain and architecture to
 target for cross-compilation.
 
+The musl.cc riscv64 toolchain is default-PIE, so the scripts pass `-no-pie` to
+produce classic static executables (a static-PIE fio fails to link, and a
+static-PIE iperf3 links but segfaults at runtime).
+
 **Compiling 32-bit x86 binaries**:
 
 ```sh
@@ -73,4 +77,10 @@ docker run -t -i --rm -v `pwd`:/io --env ARCH=aarch64 --env CROSS=aarch64-linux-
 
 ```sh
 docker run -t -i --rm -v `pwd`:/io --env ARCH=arm --env CROSS=arm-linux-musleabihf --env HOST=arm-linux-gnueabihf phusion/holy-build-box-64:latest bash /io/cross-compile.sh
+```
+
+**Compiling RISC-V 64-bit binaries**:
+
+```sh
+docker run -t -i --rm -v `pwd`:/io --env ARCH=riscv64 --env CROSS=riscv64-linux-musl --env HOST=riscv64-linux-gnu phusion/holy-build-box-64:latest bash /io/cross-compile.sh
 ```

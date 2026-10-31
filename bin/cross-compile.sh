@@ -39,8 +39,9 @@ cd fio-fio-*
 # conflicts under musl; sys/prctl.h alone is sufficient
 sed -i '/#include <linux\/prctl.h>/d' backend.c
 CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-native --build-static
-# link against libatomic for 32-bit/ARM targets that lack native 64-bit atomics
-make EXTLIBS+=' -latomic'
+# link against libatomic for 32-bit/ARM targets that lack native 64-bit atomics; -no-pie forces a
+# classic static executable on default-PIE toolchains (riscv64), where a static-PIE fails to link
+make EXTLIBS+=' -latomic -no-pie'
 
 # verify no external shared library links
 libcheck fio
@@ -52,7 +53,9 @@ cd ~
 curl -L https://github.com/esnet/iperf/archive/3.21.tar.gz -o "iperf.tar.gz"
 tar xf iperf.tar.gz
 cd iperf-*
-CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host "${HOST}" --with-openssl=no --enable-static-bin
+# -no-pie must be set via LDFLAGS at configure time (passing it to make overrides automake's LDFLAGS and
+# drops --static); on default-PIE toolchains (riscv64) a static-PIE iperf3 links but segfaults at runtime
+LDFLAGS="${LDFLAGS} -no-pie" CC=/root/${CROSS}-cross/bin/${CROSS}-gcc ./configure --disable-shared --disable-profiling --build x86_64-pc-linux-gnu --host "${HOST}" --with-openssl=no --enable-static-bin
 # remove libatomic.la so libtool links the static libatomic.a rather than
 # attempting to link libatomic.so into the static binary (breaks arm32 builds)
 rm -f "/root/${CROSS}-cross/${CROSS}/lib/libatomic.la"
