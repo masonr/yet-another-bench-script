@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-10-07"
+YABS_VERSION="v2026-10-30"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -113,6 +113,12 @@ else
     unset LOCAL_CURL
 fi
 
+# check for tar (required to extract the Geekbench tarball)
+if command -v tar >/dev/null 2>&1; then
+    LOCAL_TAR=true
+else
+    unset LOCAL_TAR
+fi
 
 # test if the host has IPv4/IPv6 connectivity
 [[ -n $LOCAL_CURL ]] && IP_CHECK_CMD="curl -s -m 4" || IP_CHECK_CMD="wget -qO- -T 4"
@@ -177,6 +183,8 @@ if [ -n "$PRINT_HELP" ]; then
 	([[ -z $LOCAL_IPERF ]] && echo -e "       iperf3 not detected, will download precompiled binary") ||
 		([[ -z $PREFER_BIN ]] && echo -e "       iperf3 detected, using local package") ||
 		echo -e "       iperf3 detected, but using precompiled binary instead"
+	[[ -n $LOCAL_TAR ]] && echo -e "       tar detected, required to extract geekbench" ||
+		echo -e "       tar not detected, geekbench test will be skipped (install tar)"
 	echo -e
 	echo -e "Detected Connectivity:"
 	[[ -n $IPV4_CHECK ]] && echo -e "       IPv4 connected" ||
@@ -1004,7 +1012,11 @@ function launch_geekbench {
 		fi
 	fi
 
-	if [[ $GB_RUN == *True* ]]; then # run GB test
+	if [[ $GB_RUN == *True* ]] && [[ -z $LOCAL_TAR ]] && ! command -v "$GB_CMD" &>/dev/null; then
+		# tar is needed to extract the downloaded Geekbench tarball (missing on e.g. AlmaLinux 9 minimal)
+		echo -e "\nGeekbench $VERSION requires tar to extract the download, but tar was not found."
+		echo -e "Install tar (e.g. 'dnf install tar' or 'apt install tar') and re-run. Skipping Geekbench $VERSION."
+	elif [[ $GB_RUN == *True* ]]; then # run GB test
 		echo -en "\nRunning GB$VERSION benchmark test... *cue elevator music*"
 
 		# check for local geekbench installed
