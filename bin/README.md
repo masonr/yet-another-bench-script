@@ -33,7 +33,7 @@ issue if the binaries are out of date and lacking any security-related and/or
 performance updates - the daily scheduled workflows should pick up new upstream
 releases automatically.
 
-Note: ARM and RISC-V compatibility is considered experimental.
+Note: RISC-V compatibility is considered experimental.
 
 ### Compile Notes (manual builds)
 

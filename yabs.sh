@@ -12,7 +12,7 @@
 #             performance via fio. The script is designed to not require any dependencies
 #             - either compiled or installed - nor admin privileges to run.
 
-YABS_VERSION="v2026-10-30"
+YABS_VERSION="v2026-10-31"
 
 echo -e '# ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## #'
 echo -e '#              Yet-Another-Bench-Script              #'
@@ -51,7 +51,10 @@ elif [[ $ARCH = *aarch* || $ARCH = *arm* ]]; then
 		# host is running an ARM 32-bit kernel
 		ARCH="arm"
 	fi
-	echo -e "\nARM compatibility is considered *experimental*"
+elif [[ $ARCH = *riscv64* ]]; then
+	# host is running a RISC-V 64-bit kernel
+	ARCH="riscv64"
+	echo -e "\nRISC-V compatibility is considered *experimental*"
 else
 	# host is running a non-supported kernel
 	echo -e "Architecture not supported by YABS."
@@ -268,13 +271,28 @@ if command -v lscpu >/dev/null 2>&1; then
 else
   unset LOCAL_LSCPU
 fi
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
+if [[ $ARCH = *riscv64* ]]; then
+	# RISC-V /proc/cpuinfo lacks "model name"; try lscpu, the uarch field, the device tree, then fall back to the base ISA string
+	[[ -n $LOCAL_LSCPU ]] && CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
+	[[ -z $CPU_PROC ]] && CPU_PROC=$(awk -F: '/^uarch/ {print $2; exit}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+	[[ -z $CPU_PROC && -r /proc/device-tree/model ]] && CPU_PROC=$(tr -d '\0' < /proc/device-tree/model)
+	[[ -z $CPU_PROC ]] && CPU_PROC="RISC-V"
+	CPU_ISA=$(awk -F: '/^isa/ {print $2; exit}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
+	[[ -n $CPU_ISA ]] && CPU_PROC="$CPU_PROC (${CPU_ISA%%_*})"
+elif [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
 	CPU_PROC=$(lscpu | grep "Model name" | sed 's/Model name: *//g')
 else
 	CPU_PROC=$(awk -F: '/model name/ {name=$2} END {print name}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "Processor  : $CPU_PROC"
-if [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
+if [[ $ARCH = *riscv64* ]]; then
+	# RISC-V /proc/cpuinfo lacks "cpu MHz"; try lscpu then cpufreq sysfs
+	CPU_CORES=$(grep -c '^processor' /proc/cpuinfo)
+	[[ -n $LOCAL_LSCPU ]] && CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
+	[[ -z $CPU_FREQ && -r /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq ]] && CPU_FREQ=$(awk '{ printf "%d", $1 / 1000 }' /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)
+	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
+	CPU_FREQ="${CPU_FREQ} MHz"
+elif [[ $ARCH = *aarch64* || $ARCH = *arm* ]] && [[ -n $LOCAL_LSCPU ]]; then
 	CPU_CORES=$(lscpu | grep "^[[:blank:]]*CPU(s):" | sed 's/CPU(s): *//g')
 	CPU_FREQ=$(lscpu | grep "CPU max MHz" | sed 's/CPU max MHz: *//g')
 	[[ -z "$CPU_FREQ" ]] && CPU_FREQ="???"
@@ -284,10 +302,20 @@ else
 	CPU_FREQ=$(awk -F: ' /cpu MHz/ {freq=$2} END {print freq " MHz"}' /proc/cpuinfo | sed 's/^[ \t]*//;s/[ \t]*$//')
 fi
 echo -e "CPU cores  : $CPU_CORES @ $CPU_FREQ"
-CPU_AES=$(grep aes /proc/cpuinfo)
+if [[ $ARCH = *riscv64* ]]; then
+	# RISC-V advertises capabilities in the ISA string: Zkn/Zknd/Zkne = scalar AES crypto extensions
+	CPU_AES=$(echo "$CPU_ISA" | grep -o -E '_zkn[de]?(_|$)')
+else
+	CPU_AES=$(grep aes /proc/cpuinfo)
+fi
 [[ -z "$CPU_AES" ]] && CPU_AES="\xE2\x9D\x8C Disabled" || CPU_AES="\xE2\x9C\x94 Enabled"
 echo -e "AES-NI     : $CPU_AES"
-CPU_VIRT=$(grep 'vmx\|svm' /proc/cpuinfo)
+if [[ $ARCH = *riscv64* ]]; then
+	# RISC-V: "h" in the base ISA letters = hypervisor extension
+	CPU_VIRT=$(echo "${CPU_ISA%%_*}" | grep 'h')
+else
+	CPU_VIRT=$(grep 'vmx\|svm' /proc/cpuinfo)
+fi
 [[ -z "$CPU_VIRT" ]] && CPU_VIRT="\xE2\x9D\x8C Disabled" || CPU_VIRT="\xE2\x9C\x94 Enabled"
 echo -e "VM-x/AMD-V : $CPU_VIRT"
 TOTAL_RAM_RAW=$(free | awk 'NR==2 {print $2}')
@@ -492,7 +520,7 @@ function format_iops {
 # Parameters:
 #          - (none)
 function disk_test {
-	if [[ "$ARCH" = "aarch64" || "$ARCH" = "arm" ]]; then
+	if [[ "$ARCH" = "aarch64" || "$ARCH" = "arm" || "$ARCH" = "riscv64" ]]; then
 		FIO_SIZE=512M
 	else
 		FIO_SIZE=2G
@@ -569,9 +597,9 @@ function dd_test {
 
 # check if disk performance is being tested and the host has required space (2G)
 AVAIL_SPACE=$(df -k . | awk 'NR==2{print $4}')
-if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 && "$ARCH" != "aarch64" && "$ARCH" != "arm" ]]; then # 2GB = 2097152KB
+if [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 2097152 && "$ARCH" != "aarch64" && "$ARCH" != "arm" && "$ARCH" != "riscv64" ]]; then # 2GB = 2097152KB
 	echo -e "\nLess than 2GB of space available. Skipping disk test..."
-elif [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 524288 && ("$ARCH" = "aarch64" || "$ARCH" = "arm") ]]; then # 512MB = 524288KB
+elif [[ -z "$SKIP_FIO" && "$AVAIL_SPACE" -lt 524288 && ("$ARCH" = "aarch64" || "$ARCH" = "arm" || "$ARCH" = "riscv64") ]]; then # 512MB = 524288KB
 	echo -e "\nLess than 512MB of space available. Skipping disk test..."
 # if the skip disk flag was set, skip the disk performance test, otherwise test disk performance
 elif [ -z "$SKIP_FIO" ]; then
@@ -992,9 +1020,9 @@ function launch_geekbench {
 	# check for curl vs wget
 	[[ -n $LOCAL_CURL ]] && DL_CMD="curl -s" || DL_CMD="wget -qO-"
 
-	if [[ $VERSION == *4* && ($ARCH = *aarch64* || $ARCH = *arm*) ]]; then
-		echo -e "\nARM architecture not supported by Geekbench 4, use Geekbench 5 or 6."
-	elif [[ $VERSION == *4* && $ARCH != *aarch64* && $ARCH != *arm* ]]; then # Geekbench v4
+	if [[ $VERSION == *4* && ($ARCH = *aarch64* || $ARCH = *arm* || $ARCH = *riscv64*) ]]; then
+		echo -e "\nARM/RISC-V architectures not supported by Geekbench 4, use Geekbench 5 or 6."
+	elif [[ $VERSION == *4* && $ARCH != *aarch64* && $ARCH != *arm* && $ARCH != *riscv64* ]]; then # Geekbench v4
 		GB_URL="https://cdn.geekbench.com/Geekbench-4.4.4-Linux.tar.gz"
 		[[ "$ARCH" == *"x86"* ]] && GB_CMD="geekbench_x86_32" || GB_CMD="geekbench4"
 		GB_RUN="True"
@@ -1006,17 +1034,22 @@ function launch_geekbench {
 			echo -e "\nGeekbench $VERSION cannot run on 32-bit architectures. Skipping test."
 		else
 			if [[ $VERSION == *5* ]]; then # Geekbench v5
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-5.5.1-Linux.tar.gz"
+				GB_VER="5.5.1"
 				GB_CMD="geekbench5"
 			elif [[ $VERSION == *6* ]]; then # Geekbench v6
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-6.7.2-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-6.7.2-Linux.tar.gz"
+				GB_VER="6.7.2"
 				GB_CMD="geekbench6"
 			else # Geekbench v7
-				[[ $ARCH = *aarch64* || $ARCH = *arm* ]] && GB_URL="https://cdn.geekbench.com/Geekbench-7.1.0-LinuxARMPreview.tar.gz" \
-					|| GB_URL="https://cdn.geekbench.com/Geekbench-7.1.0-Linux.tar.gz"
+				GB_VER="7.1.0"
 				GB_CMD="geekbench7"
+			fi
+			# select the Geekbench build for the host architecture (ARM and RISC-V builds are "Preview" releases)
+			if [[ $ARCH = *aarch64* || $ARCH = *arm* ]]; then
+				GB_URL="https://cdn.geekbench.com/Geekbench-$GB_VER-LinuxARMPreview.tar.gz"
+			elif [[ $ARCH = *riscv64* ]]; then
+				GB_URL="https://cdn.geekbench.com/Geekbench-$GB_VER-LinuxRISCVPreview.tar.gz"
+			else
+				GB_URL="https://cdn.geekbench.com/Geekbench-$GB_VER-Linux.tar.gz"
 			fi
 			GB_RUN="True"
 		fi

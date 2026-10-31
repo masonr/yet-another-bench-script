@@ -10,6 +10,7 @@ This script automates the execution of the best benchmarking tools in the indust
 View Daily and Historical 📊 **[YABS Usage Stats Here](https://stats.yabs.sh/)** 📈 ([source](https://github.com/masonr/yabs-stats)).
 
 ### **What's New With YABS?**
+* [31 Oct 2026](https://github.com/masonr/yet-another-bench-script/issues/97) - Experimental RISC-V (riscv64) support added - fio/iperf3 static binaries and Geekbench 5/6/7 RISC-V preview builds are now supported.
 * [19 Sep 2026](https://github.com/masonr/yet-another-bench-script/actions) - fio/iperf3 portable binary builds now automated via GitHub workflows.
 * [24 Jul 2026](https://github.com/masonr/yet-another-bench-script) - [Geekbench 7](https://www.geekbench.com/) is now available via the `-7` flag (Geekbench 6 remains the default).
 * [04 Jul 2026](https://stats.yabs.sh/) - Check out YABS usage stats here -> https://stats.yabs.sh/
@@ -28,7 +29,7 @@ wget -qO- yabs.sh | bash
 
 **Local fio/iperf3 Packages**: If the tested system has fio and/or iperf3 already installed, the local package will take precedence over the precompiled binary.
 
-**Experimental ARM Compatibility**: Initial ARM compatibility has been introduced, however, is not considered entirely stable due to limited testing on distinct ARM devices. Report any errors or issues.
+**Experimental RISC-V Compatibility**: Initial RISC-V (riscv64) compatibility has been introduced, however, is not considered entirely stable due to limited testing on distinct RISC-V devices. Report any errors or issues.
 
 **High Bandwidth Usage Notice**: By default, this script will perform many iperf network tests, which will try to max out the network port for ~20s per location (10s in each direction). Low-bandwidth servers (such as a NAT VPS) should consider running this script with the `-r` flag (for reduced iperf locations) or the `-i` flag (to disable network tests entirely).
 
