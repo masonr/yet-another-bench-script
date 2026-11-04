@@ -9,7 +9,11 @@ This script automates the execution of the best benchmarking tools in the indust
 
 View Daily and Historical 📊 **[YABS Usage Stats Here](https://stats.yabs.sh/)** 📈 ([source](https://github.com/masonr/yabs-stats)).
 
+Not sure what your numbers mean? 🔎 **[Paste your result for a rough assessment](https://stats.yabs.sh/assess)** — flags storage class, network port, CPU scaling and common gotchas, with links to the [wiki](https://github.com/masonr/yet-another-bench-script/wiki/Interpreting-Results). Runs entirely in your browser; nothing is uploaded.
+
 ### **What's New With YABS?**
+* [04 Nov 2026](https://stats.yabs.sh/assess) - Paste YABS output at https://stats.yabs.sh/assess to get a quick and dirty assessment of disk, network and CPU results.
+* [31 Oct 2026](https://github.com/masonr/yet-another-bench-script/wiki) - Launch of comprehensive [YABS wiki](https://github.com/masonr/yet-another-bench-script/wiki) covering topics from interpreting results, testing details, history, and more.
 * [31 Oct 2026](https://github.com/masonr/yet-another-bench-script/issues/97) - Experimental RISC-V (riscv64) support added - fio/iperf3 static binaries and Geekbench 5/6/7 RISC-V preview builds are now supported.
 * [19 Sep 2026](https://github.com/masonr/yet-another-bench-script/actions) - fio/iperf3 portable binary builds now automated via GitHub workflows.
 * [24 Jul 2026](https://github.com/masonr/yet-another-bench-script) - [Geekbench 7](https://www.geekbench.com/) is now available via the `-7` flag (Geekbench 6 remains the default).
